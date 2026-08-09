@@ -222,7 +222,7 @@ export const ELEMENT_DEFINITIONS = {
     createDefaults: () => ({
       width: 40,
       height: 10,
-      content: "文本内容",
+      content: "",
       props: {
         autoHeight: false,
         whiteSpace: "pre-wrap",
@@ -242,7 +242,7 @@ export const ELEMENT_DEFINITIONS = {
       content: "",
       props: {
         src: "",
-        placeholder: "图片",
+        placeholder: "",
         keepAspectRatio: true,
       },
       style: {
@@ -257,7 +257,7 @@ export const ELEMENT_DEFINITIONS = {
   [ElementType.TABLE]: {
     label: "表格",
     createDefaults: () => {
-      const sampleData = defaultTableData(30);
+      const sampleData = [];
 
       return {
         width: 180,
@@ -265,7 +265,7 @@ export const ELEMENT_DEFINITIONS = {
         props: {
           columns: defaultTableColumns(),
           sampleData,
-          footerData: defaultTableFooterData(sampleData),
+          footerData: [],
           columnsVariable: "",
           dataVariable: "",
           footerDataVariable: "",
@@ -273,15 +273,16 @@ export const ELEMENT_DEFINITIONS = {
           autoPaginate: true,
           tfootRepeat: true,
           showHeader: true,
-          showFooter: true,
+          showFooter: false,
           designOmitRows: true,
+          designRowCount: 10,
           headerHeight: 10,
           rowHeight: 8,
           footerHeight: 10,
           embeddedCellTextPosition: "overlap",
           embeddedCellTextLayer: "below",
           repeatPerPage: false,
-          customScript: DEFAULT_TABLE_SCRIPT,
+          customScript: "",
         },
         style: {
           fontSize: 14,
@@ -314,7 +315,7 @@ export const ELEMENT_DEFINITIONS = {
     createDefaults: () => ({
       width: 12,
       height: 8,
-      content: "1",
+      content: "",
       props: {
         format: PAGE_NUMBER_FORMATS[0],
         totalPages: 1,
@@ -333,7 +334,7 @@ export const ELEMENT_DEFINITIONS = {
     createDefaults: () => ({
       width: 45,
       height: 16,
-      content: "123456789",
+      content: "",
       props: {
         format: BARCODE_FORMATS[0],
         displayValue: true,
@@ -349,7 +350,7 @@ export const ELEMENT_DEFINITIONS = {
     createDefaults: () => ({
       width: 22,
       height: 22,
-      content: "https://example.com",
+      content: "",
       props: {
         eccLevel: QRCODE_ECC_LEVELS[1],
       },
@@ -421,8 +422,8 @@ export const ELEMENT_DEFINITIONS = {
         gapX: 12,
         gapY: 12,
         direction: "row",
-        dataVariable: "@labels",
-        sampleData: defaultMultiLabelData(5, 3),
+        dataVariable: "",
+        sampleData: [],
       },
     }),
     renderer: "multiLabel",

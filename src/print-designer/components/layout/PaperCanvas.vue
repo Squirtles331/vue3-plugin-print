@@ -111,7 +111,7 @@
                   class="paper-canvas__barcode-value"
                   :style="barcodeValueStyle(object)"
                 >
-                  {{ encodedPreviewContent(object, "123456789") }}
+                  {{ encodedPreviewContent(object, "未配置编码值") }}
                 </div>
               </div>
             </template>
@@ -126,7 +126,7 @@
                   ></span>
                 </div>
                 <div class="paper-canvas__qrcode-caption">
-                  {{ encodedPreviewContent(object, "https://example.com") }}
+                  {{ encodedPreviewContent(object, "未配置编码值") }}
                 </div>
               </div>
             </template>
@@ -160,7 +160,7 @@
                 </div>
                 <div class="paper-canvas__table-body">
                   <div
-                    v-for="row in tableRows(object)"
+                    v-for="row in renderedTableRows(object)"
                     :key="row.__rowKey"
                     class="paper-canvas__table-row"
                     :style="tableGridStyle(object)"
@@ -173,7 +173,7 @@
                       {{ tableCellDisplayValue(row, column, object, "body") }}
                     </span>
                   </div>
-                  <div v-if="tableShowsOmission(object)" class="paper-canvas__table-omission">...</div>
+                  <div v-if="renderedTableShowsOmission(object)" class="paper-canvas__table-omission">...</div>
                 </div>
                 <div
                   v-for="row in tableFooterRows(object)"
@@ -644,7 +644,7 @@ function textPreviewContent(object) {
     return String(content);
   }
 
-  return "文本内容";
+  return "未配置文本";
 }
 
 function imagePlaceholderCaption(object) {
@@ -658,7 +658,7 @@ function imagePlaceholderCaption(object) {
     return String(object.props.placeholder);
   }
 
-  return "未设置图片";
+  return "未绑定图片";
 }
 
 function encodedPreviewContent(object, fallback) {
@@ -844,6 +844,51 @@ function tableDataSource(object) {
   return [];
 }
 
+function tableDesignRowCount(object) {
+  const value = Number(object?.props?.designRowCount);
+  return Number.isFinite(value) && value > 0 ? Math.max(1, Math.round(value)) : 0;
+}
+
+function tablePreviewRowCount(object, rows) {
+  const explicitCount = tableDesignRowCount(object);
+
+  if (explicitCount > 0) {
+    return explicitCount;
+  }
+
+  if (rows.length > 0) {
+    return rows.length;
+  }
+
+  return 5;
+}
+
+function tablePreviewLimit(object, totalRowCount) {
+  if (object?.props?.designOmitRows === false) {
+    return totalRowCount;
+  }
+
+  return Math.min(totalRowCount, 5);
+}
+
+function createTableBindingPlaceholderRows(object, columns, rowCount) {
+  return Array.from({ length: rowCount }, (_, rowIndex) =>
+    columns.reduce((result, column) => {
+      result[column.key] = tableBindingPlaceholder(object.props?.dataVariable, column.key, rowIndex);
+      return result;
+    }, {})
+  );
+}
+
+function createEmptyTableRows(columns, rowCount) {
+  return Array.from({ length: rowCount }, () =>
+    columns.reduce((result, column) => {
+      result[column.key] = "";
+      return result;
+    }, {})
+  );
+}
+
 function tableSummaryMetrics(object) {
   const rows = tableDataSource(object);
 
@@ -952,13 +997,7 @@ function tableRows(object) {
           }, {})
         )
       : null;
-  const previewRows = rows.length
-    ? rows
-    : [
-        { id: 1, name: "商品 1", qty: 1, price: 100, total: 100 },
-        { id: 2, name: "商品 2", qty: 2, price: 110, total: 220 },
-        { id: 3, name: "商品 3", qty: 3, price: 120, total: 360 },
-      ];
+  const previewRows = rows;
 
   return (bindingPreviewRows || previewRows).slice(0, previewLimit).map((row, index) => ({
     ...row,
@@ -972,6 +1011,36 @@ function tableShowsOmission(object) {
   }
 
   return tableDataSource(object).length > tableRows(object).length;
+}
+
+function renderedTableRows(object) {
+  const rows = tableDataSource(object);
+  const columns = tableColumns(object);
+  const totalRowCount = tablePreviewRowCount(object, rows);
+  const previewLimit = tablePreviewLimit(object, totalRowCount);
+  let previewRows = rows.slice(0, previewLimit);
+
+  if (!previewRows.length && columns.length) {
+    previewRows = object.props?.dataVariable
+      ? createTableBindingPlaceholderRows(object, columns, previewLimit)
+      : createEmptyTableRows(columns, previewLimit);
+  }
+
+  return previewRows.map((row, index) => ({
+    ...row,
+    __rowKey: `${object.id}-${index}`,
+  }));
+}
+
+function renderedTableShowsOmission(object) {
+  if (object?.props?.designOmitRows === false) {
+    return false;
+  }
+
+  const rows = tableDataSource(object);
+  const totalRowCount = rows.length || tablePreviewRowCount(object, rows);
+
+  return totalRowCount > renderedTableRows(object).length;
 }
 
 function tableFooterRows(object) {
@@ -1009,6 +1078,8 @@ function tableFooterRows(object) {
       },
     ];
   }
+
+  return [];
 
   const fallback = {};
 
@@ -1179,8 +1250,8 @@ function multiLabelPreviewLines(item, fallbackIndex, object) {
       };
     }
     return {
-      primary: `标签 ${fallbackIndex + 1}`,
-      secondary: "示例数据",
+      primary: "未绑定标签",
+      secondary: "",
       tertiary: "",
     };
   }
@@ -1220,14 +1291,14 @@ function multiLabelPreviewLines(item, fallbackIndex, object) {
       .map(([key, value]) => `${key}: ${value}`);
 
     return {
-      primary: entries[0] || `标签 ${fallbackIndex + 1}`,
+      primary: entries[0] || "未配置标签",
       secondary: entries[1] || "",
       tertiary: entries[2] || "",
     };
   }
 
   return {
-    primary: `标签 ${fallbackIndex + 1}`,
+    primary: "未配置标签",
     secondary: String(item),
     tertiary: "",
   };
@@ -1315,7 +1386,7 @@ function barcodeValueStyle(object) {
 }
 
 function barcodeBarsStyle(object) {
-  const source = `${object.props?.format || "CODE128"}:${encodedPreviewContent(object, "123456789")}`;
+  const source = `${object.props?.format || "CODE128"}:${encodedPreviewContent(object, "未配置编码值")}`;
   const seed = hashPreviewSeed(source);
   const foreground = previewForegroundColor(object);
   const segments = [];
@@ -1392,7 +1463,7 @@ function isQrFinderDark(size, row, column) {
 
 function qrCodeCells(object) {
   const size = qrCodeSize(object);
-  const seed = hashPreviewSeed(`${encodedPreviewContent(object, "https://example.com")}:${object.props?.eccLevel || "M"}`);
+  const seed = hashPreviewSeed(`${encodedPreviewContent(object, "未配置编码值")}:${object.props?.eccLevel || "M"}`);
   const cells = [];
 
   for (let row = 0; row < size; row += 1) {

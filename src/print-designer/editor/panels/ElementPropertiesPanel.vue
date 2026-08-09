@@ -151,6 +151,15 @@
                 />
               </label>
               <label class="element-properties-panel__field">
+                <span>设计行数</span>
+                <el-input-number
+                  :model-value="tableDesignRowCountValue()"
+                  :min="1"
+                  controls-position="right"
+                  @change="setTablePropValue('designRowCount', Math.max(1, numberValue($event) || 1))"
+                />
+              </label>
+              <label class="element-properties-panel__field">
                 <span>列定义变量</span>
                 <el-input
                   :model-value="tableStringPropValue('columnsVariable')"
@@ -1948,6 +1957,17 @@ function tableStyleValue(key, fallback = "") {
 function tableNumberPropValue(key, fallback = 0) {
   const value = Number(tablePropValue(key, fallback));
   return Number.isFinite(value) ? value : fallback;
+}
+
+function tableDesignRowCountValue() {
+  const explicitValue = Number(selectedObject.value?.props?.designRowCount);
+
+  if (Number.isFinite(explicitValue) && explicitValue > 0) {
+    return explicitValue;
+  }
+
+  const sampleRows = selectedObject.value?.props?.sampleData;
+  return Array.isArray(sampleRows) && sampleRows.length ? sampleRows.length : 5;
 }
 
 function tableStringPropValue(key, fallback = "") {

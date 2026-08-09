@@ -101,16 +101,25 @@
         </div>
       </div>
     </div>
+
+    <CreateTableDialog
+      :visible="tableDialogVisible"
+      @confirm="confirmTableInsert"
+      @cancel="cancelTableInsert"
+    />
   </main>
 </template>
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
+import { ElementType } from "../../core/constants.js";
 import { createElement } from "../../core/elementFactory.js";
+import { buildTableInsertOverrides } from "../../core/tableInsertBuilder.js";
 import { createAddObjectCommand } from "../commands/documentCommands.js";
 import { executeEditorCommand } from "../commands/executeCommand";
 import { createAddGuideCommand, createMoveGuideCommand, createRemoveGuideCommand } from "../commands/guideCommands";
+import CreateTableDialog from "../components/CreateTableDialog.vue";
 import { useEditorDragStore } from "../stores/dragStore";
 import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorHistoryStore } from "../stores/historyStore";
@@ -148,6 +157,8 @@ const viewportRef = ref(null);
 const canvasViewportRef = ref(null);
 const paperOffsetLeft = ref(0);
 const paperOffsetTop = ref(0);
+const pendingTableInsert = ref(null);
+const tableDialogVisible = ref(false);
 let viewportResizeObserver = null;
 
 const scaledPaperWidth = computed(() => Math.round(pageWidthPx.value * zoom.value));
@@ -434,6 +445,19 @@ function onViewportDrop(event) {
   }
 
   const pageId = currentPage.value?.id || "page-1";
+
+  if (payload.type === ElementType.TABLE) {
+    pendingTableInsert.value = {
+      pageId,
+      x: roundMm(point.documentX),
+      y: roundMm(point.documentY),
+    };
+    tableDialogVisible.value = true;
+    dragStore.clearPaletteDrag();
+    viewportStore.setPointerCoordinate(point.documentX, point.documentY, true);
+    return;
+  }
+
   const nextObject = createElement(payload.type, {
     pageId,
   });
@@ -446,6 +470,37 @@ function onViewportDrop(event) {
   selectionStore.focusedPageId = pageId;
   selectionStore.hoverObjectId = null;
   dragStore.clearPaletteDrag();
+  viewportStore.setPointerCoordinate(nextObject.x, nextObject.y, true);
+}
+
+function cancelTableInsert() {
+  pendingTableInsert.value = null;
+  tableDialogVisible.value = false;
+  viewportStore.clearCoordinateReadout();
+}
+
+function confirmTableInsert(config) {
+  const pendingInsert = pendingTableInsert.value;
+
+  if (!pendingInsert) {
+    cancelTableInsert();
+    return;
+  }
+
+  const nextObject = createElement(ElementType.TABLE, {
+    pageId: pendingInsert.pageId,
+    ...buildTableInsertOverrides(config),
+  });
+
+  nextObject.x = clampInsertPosition(pendingInsert.x, nextObject.width, pageWidthMm.value);
+  nextObject.y = clampInsertPosition(pendingInsert.y, nextObject.height, pageHeightMm.value);
+
+  executeEditorCommand(historyStore, createAddObjectCommand(documentStore, nextObject));
+  selectionStore.select(nextObject.id);
+  selectionStore.focusedPageId = pendingInsert.pageId;
+  selectionStore.hoverObjectId = null;
+  tableDialogVisible.value = false;
+  pendingTableInsert.value = null;
   viewportStore.setPointerCoordinate(nextObject.x, nextObject.y, true);
 }
 
@@ -657,6 +712,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   dragStore.clearPaletteDrag();
+  pendingTableInsert.value = null;
   stopGuideDrag();
   viewportResizeObserver?.disconnect();
   window.removeEventListener("resize", updateViewportMetrics);
