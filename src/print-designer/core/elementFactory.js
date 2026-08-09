@@ -39,11 +39,18 @@ function normalizeElementSize(element) {
     return element;
   }
 
-  return {
+  const normalized = {
     ...element,
     width: normalizeSizeValue(element.width, rule.minWidth, rule.minWidth, rule.maxWidth),
     height: normalizeSizeValue(element.height, rule.minHeight, rule.minHeight, rule.maxHeight),
   };
+
+  if (element.type === "circle") {
+    const size = Math.min(normalized.width, normalized.height);
+    return { ...normalized, width: size, height: size };
+  }
+
+  return normalized;
 }
 
 function baseElement(type = "") {
@@ -63,7 +70,6 @@ function baseElement(type = "") {
     printable: true,
     rotation: 0,
     zIndex: 0,
-    opacity: 1,
     repeatPerPage: false,
     style: {
       fontFamily: "",

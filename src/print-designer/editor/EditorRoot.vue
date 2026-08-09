@@ -4,6 +4,9 @@
       <HeaderBar
         @new-template="onNewTemplate"
         @open-template="onOpenTemplate"
+        @import-template="onImportTemplate"
+        @export-template="onExportTemplate"
+        @open-presets="onOpenPresets"
         @save-template="onSaveTemplate"
         @preview="onPreview"
         @print="onPrint"
@@ -26,6 +29,18 @@
       :loading="templateLibraryLoading"
       @refresh="refreshTemplateLibrary"
       @select="openTemplate"
+    />
+    <StarterTemplateDialog
+      v-model:visible="starterCatalogVisible"
+      :templates="starterTemplates"
+      @create="onCreateStarter"
+    />
+    <ElementPresetDialog
+      v-model:visible="presetLibraryVisible"
+      :presets="savedPresets"
+      @insert="onInsertPreset"
+      @rename="onRenamePreset"
+      @remove="onRemovePreset"
     />
     <RuntimePreviewDialog
       v-model:visible="previewVisible"
@@ -50,9 +65,15 @@ import { useEditorShellStore } from "./stores/shellStore";
 import { useEditorViewportStore } from "./stores/viewportStore";
 import WorkspaceRoot from "./workspace/WorkspaceRoot.vue";
 import { createLocalTemplateRepository } from "../template/templateRepository.js";
+import { createLocalElementPresetRepository, instantiateElementPreset } from "../template/elementPresetRepository.js";
+import { instantiateStarterTemplate, listStarterTemplates } from "../template/templateCatalog.js";
+import { downloadTemplateInterchange, parseTemplateInterchange } from "../template/templateInterchange.js";
 import { createPublishReadyTemplatePayload, serializeTemplateDocument } from "../template/templateDocument.js";
 import TemplateLibraryDialog from "../template/TemplateLibraryDialog.vue";
+import StarterTemplateDialog from "../template/StarterTemplateDialog.vue";
+import ElementPresetDialog from "../template/ElementPresetDialog.vue";
 import { useEditorHistoryStore } from "./stores/historyStore";
+import { useEditorSelectionStore } from "./stores/selectionStore";
 
 const RuntimePreviewDialog = defineAsyncComponent(() => import("../runtime/RuntimePreviewDialog.vue"));
 
@@ -62,10 +83,16 @@ const viewportStore = useEditorViewportStore();
 const documentStore = useEditorDocumentStore();
 const previewStore = useEditorPreviewStore();
 const historyStore = useEditorHistoryStore();
+const selectionStore = useEditorSelectionStore();
 const repository = createLocalTemplateRepository();
+const presetRepository = createLocalElementPresetRepository();
 const templateLibraryVisible = ref(false);
 const templateLibraryLoading = ref(false);
 const savedTemplates = ref([]);
+const starterCatalogVisible = ref(false);
+const starterTemplates = listStarterTemplates();
+const presetLibraryVisible = ref(false);
+const savedPresets = ref([]);
 const previewVisible = ref(false);
 const previewDocument = ref(null);
 
@@ -78,6 +105,10 @@ function currentTemplateResult() {
 }
 
 async function onNewTemplate() {
+  starterCatalogVisible.value = true;
+}
+
+async function onCreateStarter(starterId) {
   if (documentStore.dirty) {
     try {
       await ElMessageBox.confirm("未保存的修改将丢失，是否继续新建？", "新建模板", { type: "warning" });
@@ -86,10 +117,16 @@ async function onNewTemplate() {
     }
   }
 
-  documentStore.createNewTemplate();
+  try {
+    documentStore.loadTemplateDocument(instantiateStarterTemplate(starterId), { markAsDirty: true });
+  } catch (error) {
+    ElMessage.error(error?.message || "无法创建起始模板");
+    return;
+  }
   historyStore.reset();
   previewStore.setRuntimeData({});
-  ElMessage.success("已创建空白模板");
+  starterCatalogVisible.value = false;
+  ElMessage.success("已创建新的可编辑模板");
 }
 
 async function refreshTemplateLibrary() {
@@ -106,6 +143,104 @@ async function refreshTemplateLibrary() {
 async function onOpenTemplate() {
   await refreshTemplateLibrary();
   templateLibraryVisible.value = true;
+}
+
+function onImportTemplate() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json,.json";
+  input.addEventListener("change", async () => {
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+    const imported = parseTemplateInterchange(await file.text());
+    if (!imported.document) {
+      ElMessage.error(imported.issues?.[0]?.message || "模板导入失败");
+      return;
+    }
+    if (documentStore.dirty) {
+      try {
+        await ElMessageBox.confirm("未保存的修改将丢失，是否继续导入？", "导入模板", { type: "warning" });
+      } catch {
+        return;
+      }
+    }
+    documentStore.loadTemplateDocument(imported.document, { markAsDirty: true });
+    historyStore.reset();
+    previewStore.setRuntimeData({});
+    ElMessage.success(imported.issues.length ? "模板已导入，已应用兼容迁移" : "模板已导入");
+  }, { once: true });
+  input.click();
+}
+
+function onExportTemplate() {
+  const result = currentTemplateResult();
+  if (!result.valid) {
+    ElMessage.error(result.issues[0]?.message || "模板校验失败");
+    return;
+  }
+  const exported = downloadTemplateInterchange(result.document, `${result.document.meta.name || "print-template"}.json`);
+  if (!exported.valid) {
+    ElMessage.error(exported.issues[0]?.message || "模板导出失败");
+    return;
+  }
+  ElMessage.success("模板 JSON 已导出");
+}
+
+async function refreshPresetLibrary() {
+  try {
+    savedPresets.value = await presetRepository.list();
+  } catch (error) {
+    ElMessage.error(error?.message || "无法读取元素预设");
+  }
+}
+
+async function onOpenPresets() {
+  await refreshPresetLibrary();
+  presetLibraryVisible.value = true;
+}
+
+async function onInsertPreset(id) {
+  try {
+    const preset = await presetRepository.get(id);
+    if (!preset) {
+      ElMessage.error("元素预设不存在或已删除");
+      return;
+    }
+    const pageId = documentStore.currentPage?.id || "page-1";
+    const nextObject = instantiateElementPreset(preset, { pageId, x: 10, y: 10, zIndex: documentStore.layers.length });
+    documentStore.addObject(nextObject);
+    selectionStore.select(nextObject.id);
+    presetLibraryVisible.value = false;
+    ElMessage.success("已插入元素预设");
+  } catch (error) {
+    ElMessage.error(error?.message || "插入元素预设失败");
+  }
+}
+
+async function onRenamePreset(preset) {
+  try {
+    const { value } = await ElMessageBox.prompt("输入新的预设名称", "重命名元素预设", { inputValue: preset.name, inputPattern: /\S/, inputErrorMessage: "请输入名称" });
+    await presetRepository.rename(preset.id, value);
+    await refreshPresetLibrary();
+  } catch (error) {
+    if (error !== "cancel" && error !== "close") {
+      ElMessage.error(error?.message || "重命名元素预设失败");
+    }
+  }
+}
+
+async function onRemovePreset(preset) {
+  try {
+    await ElMessageBox.confirm(`删除预设“${preset.name}”后不可恢复，是否继续？`, "删除元素预设", { type: "warning" });
+    await presetRepository.delete(preset.id);
+    await refreshPresetLibrary();
+  } catch (error) {
+    if (error !== "cancel" && error !== "close") {
+      ElMessage.error(error?.message || "删除元素预设失败");
+    }
+  }
 }
 
 async function openTemplate(id) {

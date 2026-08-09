@@ -54,6 +54,7 @@
             'is-selected': selectedIds.includes(object.id),
             'is-hovered': hoverObjectId === object.id,
             'is-dragging': interactionState?.objectId === object.id,
+            'is-auto-height': isAutoHeightTextObject(object),
           }"
           :style="objectFrameStyle(object)"
           @pointerenter="hoverObjectId = object.id"
@@ -82,7 +83,7 @@
                   :src="object.props.src"
                   alt=""
                   class="paper-canvas__image-content"
-                  :style="{ objectFit: object.style?.objectFit || 'contain' }"
+                  :style="{ objectFit: object.style?.objectFit || 'contain', objectPosition: imageObjectPosition(object.style) }"
                 />
                 <div v-else class="paper-canvas__image-placeholder">
                 <span>图片</span>
@@ -283,6 +284,7 @@ import { useEditorSelectionStore } from "../../editor/stores/selectionStore";
 import { useEditorViewportStore } from "../../editor/stores/viewportStore";
 import { createGridDefinition } from "../../editor/workspace/workspaceGrid.js";
 import { buildAxisSnapReferences, resolveObjectSnap } from "../../editor/workspace/workspaceSnapping.js";
+import { formatTableValue, imageObjectPosition, machineCodeOptions, resolveRelativeRecordPath } from "../../runtime/propertySemantics.js";
 
 const props = defineProps({
   pixelsPerUnit: {
@@ -318,8 +320,10 @@ const {
   pageHeightMm,
   pageWidthPx,
   pageHeightPx,
-  marginXMm,
-  marginYMm,
+  marginTopMm,
+  marginRightMm,
+  marginBottomMm,
+  marginLeftMm,
   pageBackground,
   pageCornerVisible,
   headerLineVisible,
@@ -546,7 +550,7 @@ const paperStyle = computed(() => ({
 }));
 
 const safeAreaStyle = computed(() => ({
-  inset: `${mmToCssPx(marginYMm.value)}px ${mmToCssPx(marginXMm.value)}px`,
+  inset: `${mmToCssPx(marginTopMm.value)}px ${mmToCssPx(marginRightMm.value)}px ${mmToCssPx(marginBottomMm.value)}px ${mmToCssPx(marginLeftMm.value)}px`,
 }));
 
 const headerLineStyle = computed(() => ({
@@ -578,11 +582,14 @@ function elementLabel(type) {
 }
 
 function objectFrameStyle(object) {
+  const autoHeight = isAutoHeightTextObject(object);
+
   return {
     left: `${mmToCssPx(object.x)}px`,
     top: `${mmToCssPx(object.y)}px`,
     width: `${mmToCssPx(object.width)}px`,
-    height: `${mmToCssPx(object.height)}px`,
+    height: autoHeight ? "auto" : `${mmToCssPx(object.height)}px`,
+    minHeight: autoHeight ? `${mmToCssPx(object.height)}px` : undefined,
     opacity: object.opacity ?? 1,
   };
 }
@@ -623,7 +630,7 @@ function textContentStyle(object) {
     writingMode: object.props?.writingMode || "horizontal-tb",
     alignItems: alignItemsMap[verticalAlign] || "flex-start",
     justifyContent: justifyContentMap[textAlign] || "flex-start",
-    overflow: "hidden",
+    overflow: object.props?.autoHeight ? "visible" : "hidden",
   };
 }
 
@@ -702,12 +709,20 @@ function shapeStyle(object) {
 function tableColumns(object) {
   if (Array.isArray(object.props?.columns)) {
     return object.props.columns.map((column, index) => ({
-      key:
+       key:
         typeof column?.key === "string" && column.key.trim()
           ? column.key
           : typeof column?.field === "string" && column.field.trim()
-            ? column.field
-            : `field${index + 1}`,
+             ? column.field
+             : `field${index + 1}`,
+      valuePath:
+        typeof column?.valuePath === "string" && column.valuePath.trim()
+          ? column.valuePath
+          : typeof column?.key === "string" && column.key.trim()
+            ? column.key
+            : typeof column?.field === "string" && column.field.trim()
+              ? column.field
+              : `field${index + 1}`,
       title:
         typeof column?.title === "string" && column.title.trim()
           ? column.title
@@ -721,6 +736,7 @@ function tableColumns(object) {
           : column?.align === "justify"
             ? "left"
             : "left",
+      formatter: column?.formatter,
     }));
   }
 
@@ -845,7 +861,7 @@ function tableDataSource(object) {
 }
 
 function tableDesignRowCount(object) {
-  const value = Number(object?.props?.designRowCount);
+  const value = Number(object?.editorHints?.rowCount);
   return Number.isFinite(value) && value > 0 ? Math.max(1, Math.round(value)) : 0;
 }
 
@@ -864,7 +880,7 @@ function tablePreviewRowCount(object, rows) {
 }
 
 function tablePreviewLimit(object, totalRowCount) {
-  if (object?.props?.designOmitRows === false) {
+  if (object?.editorHints?.omitRows === false) {
     return totalRowCount;
   }
 
@@ -874,7 +890,7 @@ function tablePreviewLimit(object, totalRowCount) {
 function createTableBindingPlaceholderRows(object, columns, rowCount) {
   return Array.from({ length: rowCount }, (_, rowIndex) =>
     columns.reduce((result, column) => {
-      result[column.key] = tableBindingPlaceholder(object.props?.dataVariable, column.key, rowIndex);
+      result[column.key] = tableBindingPlaceholder(object.props?.dataVariable, column.valuePath || column.key, rowIndex);
       return result;
     }, {})
   );
@@ -975,24 +991,25 @@ function tableResolveCellValue(value, object) {
 }
 
 function tableCellDisplayValue(row, column, object, section = "body") {
-  const value = row?.[column.key];
+  const result = resolveRelativeRecordPath(row, column.valuePath || column.key);
+  const value = result.found ? result.value : row?.[column.key];
   const resolved = tableResolveCellValue(value, object);
 
   if (resolved === "" && section === "body") {
     return "";
   }
 
-  return resolved;
+  return formatTableValue(resolved, column?.formatter);
 }
 
 function tableRows(object) {
   const rows = tableDataSource(object);
-  const previewLimit = object?.props?.designOmitRows === false ? 8 : 5;
+  const previewLimit = tablePreviewLimit(object, tablePreviewRowCount(object, rows));
   const bindingPreviewRows =
     !rows.length && object.props?.dataVariable
       ? Array.from({ length: previewLimit }, (_, rowIndex) =>
           tableColumns(object).reduce((result, column) => {
-            result[column.key] = tableBindingPlaceholder(object.props.dataVariable, column.key, rowIndex);
+            result[column.key] = tableBindingPlaceholder(object.props.dataVariable, column.valuePath || column.key, rowIndex);
             return result;
           }, {})
         )
@@ -1006,7 +1023,7 @@ function tableRows(object) {
 }
 
 function tableShowsOmission(object) {
-  if (object?.props?.designOmitRows === false) {
+  if (object?.editorHints?.omitRows === false) {
     return false;
   }
 
@@ -1033,7 +1050,7 @@ function renderedTableRows(object) {
 }
 
 function renderedTableShowsOmission(object) {
-  if (object?.props?.designOmitRows === false) {
+  if (object?.editorHints?.omitRows === false) {
     return false;
   }
 
@@ -1118,13 +1135,6 @@ function tableBindingTokens(object) {
     });
   }
 
-  if (object.props?.columnsVariable) {
-    tokens.push({
-      key: "columns",
-      label: `列: {{${object.props.columnsVariable}}}`,
-    });
-  }
-
   if (object.props?.footerDataVariable) {
     tokens.push({
       key: "footer",
@@ -1203,7 +1213,7 @@ function multiLabelJustifyContent(verticalAlign) {
 function multiLabelCellStyle(object, cell) {
   const style = object?.style || {};
   const fontSize = Math.max(8, Number(style.fontSize) || 10);
-  const paddingMm = Math.max(0, Number(style.padding) || 0);
+  const paddingMm = Math.max(0, Number(object?.props?.cellPadding ?? style.padding) || 0);
   const borderWidth = Math.max(0, Number(style.borderWidth) || 0);
   const hasVisibleBorder = borderWidth > 0;
   const color = previewForegroundColor(object);
@@ -1244,9 +1254,9 @@ function multiLabelPreviewLines(item, fallbackIndex, object) {
     if (object?.props?.dataVariable) {
       const base = `${object.props.dataVariable}[${fallbackIndex}]`;
       return {
-        primary: `{{${base}.title}}`,
-        secondary: `{{${base}.code}}`,
-        tertiary: `{{${base}.detail}}`,
+        primary: `{{${base}.${object?.props?.primaryPath || "title"}}}`,
+        secondary: object?.props?.secondaryPath ? `{{${base}.${object.props.secondaryPath}}}` : "",
+        tertiary: object?.props?.tertiaryPath ? `{{${base}.${object.props.tertiaryPath}}}` : "",
       };
     }
     return {
@@ -1265,6 +1275,16 @@ function multiLabelPreviewLines(item, fallbackIndex, object) {
   }
 
   if (typeof item === "object") {
+    const mapped = (path) => {
+      const result = resolveRelativeRecordPath(item, path);
+      return result.found && result.value != null ? String(result.value) : path ? `{{${path}}}` : "";
+    };
+    return {
+      primary: mapped(object?.props?.primaryPath),
+      secondary: mapped(object?.props?.secondaryPath),
+      tertiary: mapped(object?.props?.tertiaryPath),
+    };
+
     const preferred = [
       item.title,
       item.name,
@@ -1369,19 +1389,25 @@ function hashPreviewSeed(value) {
 }
 
 function barcodePreviewStyle(object) {
+  const options = machineCodeOptions(object.props);
+
   return {
     ...previewPanelStyle(object, "#ffffff"),
+    padding: `${mmToCssPx(options.margin)}px`,
   };
 }
 
 function barcodeValueStyle(object) {
+  const options = machineCodeOptions(object.props);
+
   return {
     color: previewForegroundColor(object),
     fontFamily: object.style?.fontFamily || "sans-serif",
-    fontSize: `${Math.max(8, Number(object.style?.fontSize) || 11)}px`,
+    fontSize: `${options.textFontSize}px`,
     fontWeight: object.style?.fontWeight || "normal",
     letterSpacing: `${Number.isFinite(Number(object.style?.letterSpacing)) ? Number(object.style?.letterSpacing) : 1}px`,
     textAlign: object.style?.textAlign || "center",
+    marginTop: `${options.textMargin}px`,
   };
 }
 
@@ -1488,8 +1514,11 @@ function qrCodeCells(object) {
 }
 
 function qrCodePreviewStyle(object) {
+  const options = machineCodeOptions(object.props);
+
   return {
     ...previewPanelStyle(object, "#ffffff"),
+    padding: `${mmToCssPx(options.margin)}px`,
   };
 }
 
@@ -1606,6 +1635,16 @@ function startObjectDrag(object, event) {
   const point = getPointerPointMm(event);
 
   if (!point) {
+    return;
+  }
+
+  if (event.shiftKey || event.ctrlKey || event.metaKey) {
+    const nextIds = selectedIds.value.includes(object.id)
+      ? selectedIds.value.filter((id) => id !== object.id)
+      : [...selectedIds.value, object.id];
+    selectionStore.select(nextIds);
+    selectionStore.hoverObjectId = object.id;
+    selectionStore.activeHandle = null;
     return;
   }
 
@@ -2063,6 +2102,13 @@ onBeforeUnmount(() => {
   background: transparent;
 }
 
+.paper-canvas__object-node.is-auto-height .paper-canvas__object-content {
+  position: relative;
+  inset: auto;
+  min-height: 100%;
+  overflow: visible;
+}
+
 .paper-canvas__binding-badge {
   position: absolute;
   top: 4px;
@@ -2283,6 +2329,12 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   justify-content: flex-start;
   overflow: hidden;
+}
+
+.paper-canvas__object-node.is-auto-height .paper-canvas__text-content {
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
 }
 
 .paper-canvas__page-number-content {

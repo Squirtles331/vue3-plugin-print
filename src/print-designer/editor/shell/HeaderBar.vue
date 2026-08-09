@@ -53,6 +53,9 @@
       <section class="header-bar__tool-group">
         <button class="header-bar__chip" type="button" @click="$emit('new-template')">新建</button>
         <button class="header-bar__chip" type="button" @click="$emit('open-template')">打开</button>
+        <button class="header-bar__chip" type="button" @click="$emit('import-template')">导入</button>
+        <button class="header-bar__chip" type="button" @click="$emit('export-template')">导出</button>
+        <button class="header-bar__chip" type="button" @click="$emit('open-presets')">预设</button>
         <button class="header-bar__chip" type="button" @click="$emit('preview')">预览</button>
         <button class="header-bar__chip" type="button" @click="$emit('print')">打印</button>
         <button class="header-bar__chip is-primary" type="button" @click="$emit('save-template')">保存</button>
@@ -60,6 +63,7 @@
     </div>
 
     <TextFormatToolbar />
+    <LayoutToolbar />
   </header>
 </template>
 
@@ -67,11 +71,12 @@
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import TextFormatToolbar from "./TextFormatToolbar.vue";
+import LayoutToolbar from "./LayoutToolbar.vue";
 import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorHistoryStore } from "../stores/historyStore";
 import { useEditorShellStore } from "../stores/shellStore";
 
-defineEmits(["new-template", "open-template", "save-template", "preview", "print", "export-pdf"]);
+defineEmits(["new-template", "open-template", "import-template", "export-template", "open-presets", "save-template", "preview", "print", "export-pdf"]);
 
 const historyStore = useEditorHistoryStore();
 const shellStore = useEditorShellStore();

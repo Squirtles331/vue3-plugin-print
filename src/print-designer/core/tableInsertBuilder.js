@@ -22,6 +22,7 @@ export function createTableInsertColumns(count = DEFAULT_TABLE_INSERT_COLUMN_COU
 
   return Array.from({ length: columnCount }, (_, index) => ({
     key: `field${index + 1}`,
+    valuePath: `field${index + 1}`,
     title: `列 ${index + 1}`,
     width: 100,
     align: "left",
@@ -67,8 +68,10 @@ export function buildTableInsertOverrides({
       footerData: [],
       showHeader: true,
       showFooter: false,
-      designOmitRows: false,
-      designRowCount: normalizedRowCount,
+    },
+    editorHints: {
+      omitRows: false,
+      rowCount: normalizedRowCount,
     },
   };
 }

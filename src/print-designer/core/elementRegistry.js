@@ -49,14 +49,15 @@ export const ELEMENT_DEFINITIONS = {
   },
   [ElementType.IMAGE]: {
     label: "图片",
-    createDefaults: () => ({ width: 36, height: 24, content: "", props: { src: "", placeholder: "", keepAspectRatio: true }, style: { objectFit: "contain" } }),
+    createDefaults: () => ({ width: 36, height: 24, content: "", props: { src: "", placeholder: "", keepAspectRatio: true }, style: { objectFit: "contain", objectPosition: "50% 50%" } }),
     renderer: "image", inspectorSchema: IMAGE_INSPECTOR_SCHEMA, interactionPolicy: "box",
   },
   [ElementType.TABLE]: {
     label: "表格",
     createDefaults: () => ({
       width: 180, height: 100,
-      props: { columns: defaultTableColumns(), sampleData: [], footerData: [], columnsVariable: "", dataVariable: "", footerDataVariable: "", customScriptVariable: "", autoPaginate: true, tfootRepeat: true, showHeader: true, showFooter: false, designOmitRows: true, designRowCount: 10, headerHeight: 10, rowHeight: 8, footerHeight: 10, embeddedCellTextPosition: "overlap", embeddedCellTextLayer: "below", repeatPerPage: false, customScript: "" },
+      props: { columns: defaultTableColumns(), sampleData: [], footerData: [], dataVariable: "", footerDataVariable: "", transform: {}, autoPaginate: true, tfootRepeat: true, showHeader: true, showFooter: false, headerHeight: 10, rowHeight: 8, footerHeight: 10, repeatPerPage: false },
+      editorHints: { omitRows: true, rowCount: 10 },
       style: { ...tableStyle },
     }),
     renderer: "table", inspectorSchema: TABLE_INSPECTOR_SCHEMA, interactionPolicy: "box",
@@ -68,12 +69,12 @@ export const ELEMENT_DEFINITIONS = {
   },
   [ElementType.BARCODE]: {
     label: "条码",
-    createDefaults: () => ({ width: 45, height: 16, content: "", props: { format: BARCODE_FORMATS[0], displayValue: true } }),
+    createDefaults: () => ({ width: 45, height: 16, content: "", props: { format: BARCODE_FORMATS[0], displayValue: true, margin: 0, textMargin: 2, textFontSize: 10 } }),
     renderer: "barcode", inspectorSchema: BARCODE_INSPECTOR_SCHEMA, interactionPolicy: "box",
   },
   [ElementType.QRCODE]: {
     label: "二维码",
-    createDefaults: () => ({ width: 22, height: 22, content: "", props: { eccLevel: QRCODE_ECC_LEVELS[1] } }),
+    createDefaults: () => ({ width: 22, height: 22, content: "", props: { eccLevel: QRCODE_ECC_LEVELS[1], margin: 0 } }),
     renderer: "qrcode", inspectorSchema: QRCODE_INSPECTOR_SCHEMA, interactionPolicy: "box",
   },
   [ElementType.LINE]: {
@@ -93,7 +94,7 @@ export const ELEMENT_DEFINITIONS = {
   },
   [ElementType.MULTI_LABEL]: {
     label: "多标签",
-    createDefaults: () => ({ width: 90, height: 50, props: { rows: 5, cols: 3, gapX: 12, gapY: 12, direction: "row", dataVariable: "", sampleData: [] }, style: { borderWidth: 1, borderColor: "#94a3b8", color: "#334155", backgroundColor: "#ffffff", fontSize: 12, padding: 1 } }),
+    createDefaults: () => ({ width: 90, height: 50, props: { rows: 5, cols: 3, gapX: 12, gapY: 12, direction: "row", dataVariable: "", sampleData: [], primaryPath: "title", secondaryPath: "code", tertiaryPath: "", cellPadding: 2 }, style: { borderWidth: 1, borderColor: "#94a3b8", color: "#334155", backgroundColor: "#ffffff", fontSize: 12, padding: 1 } }),
     renderer: "multiLabel", inspectorSchema: MULTI_LABEL_INSPECTOR_SCHEMA, interactionPolicy: "box",
   },
 };

@@ -7,22 +7,25 @@ import {
   Postcard,
   Tickets,
 } from "@element-plus/icons-vue";
+import { markRaw } from "vue";
 import { ELEMENT_PALETTE } from "../core/elementFactory";
 
+const asRawIcon = (component) => markRaw(component);
+
 const iconMap = {
-  text: Tickets,
-  image: Picture,
-  table: Grid,
-  barcode: Postcard,
-  qrcode: Grid,
-  line: Collection,
-  rect: Collection,
-  circle: Collection,
-  pageNumber: Document,
-  multiLabel: CopyDocument,
+  text: asRawIcon(Tickets),
+  image: asRawIcon(Picture),
+  table: asRawIcon(Grid),
+  barcode: asRawIcon(Postcard),
+  qrcode: asRawIcon(Grid),
+  line: asRawIcon(Collection),
+  rect: asRawIcon(Collection),
+  circle: asRawIcon(Collection),
+  pageNumber: asRawIcon(Document),
+  multiLabel: asRawIcon(CopyDocument),
 };
 
 export const paletteItems = ELEMENT_PALETTE.map((item) => ({
   ...item,
-  icon: iconMap[item.type] || Collection,
+  icon: iconMap[item.type] || asRawIcon(Collection),
 }));

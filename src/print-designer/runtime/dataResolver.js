@@ -53,14 +53,7 @@ function resolveElementValue(element, runtimeData) {
   };
 }
 
-function resolveTableColumns(props, runtimeData) {
-  if (props.columnsVariable) {
-    const result = resolveDataPath(runtimeData, props.columnsVariable);
-    if (result.found && Array.isArray(result.value)) {
-      return result.value;
-    }
-  }
-
+function resolveTableColumns(props) {
   return Array.isArray(props.columns) ? props.columns : [];
 }
 
@@ -84,7 +77,7 @@ function resolveCollection(props, variableKey, dataKey, runtimeData) {
 
 export function applyConstrainedTableTransform(rows, transform) {
   const source = Array.isArray(rows) ? [...rows] : [];
-  if (!transform) {
+  if (!transform || (typeof transform === "object" && !Array.isArray(transform) && Object.keys(transform).length === 0)) {
     return { rows: source, issues: [] };
   }
 
@@ -127,7 +120,7 @@ function resolveTable(element, runtimeData) {
   }
 
   return {
-    columns: resolveTableColumns(props, runtimeData),
+    columns: resolveTableColumns(props),
     rows: transformed.rows,
     footerRows: footer.value,
     dataStatus: data.status,

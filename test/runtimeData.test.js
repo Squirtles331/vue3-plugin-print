@@ -55,6 +55,18 @@ test("only executes declarative table transforms and reports invalid transforms"
   assert.equal(invalid.issues[0].severity, "error");
 });
 
+test("runtime data cannot replace authored table columns or presentation", () => {
+  const document = {
+    schemaVersion: 1,
+    pages: [{ id: "page-1", elements: [{ id: "items", type: "table", x: 0, y: 0, width: 80, height: 32, props: { columns: [{ key: "sku", valuePath: "product.sku", title: "SKU", width: 48 }], columnsVariable: "runtimeColumns", dataVariable: "items" }, style: { color: "#123456" } }] }],
+  };
+  const resolved = resolveRuntimeTemplate(document, { runtimeColumns: [{ key: "unsafe", title: "Unsafe", width: 1 }], items: [{ product: { sku: "A-1" } }] });
+  const table = resolved.document.pages[0].elements[0];
+
+  assert.deepEqual(table.runtime.table.columns, [{ key: "sku", valuePath: "product.sku", title: "SKU", width: 48 }]);
+  assert.equal(table.style.color, "#123456");
+});
+
 test("paginates table rows deterministically and exposes page totals", () => {
   const document = createBlankTemplateDocument({
     pages: [{ id: "page-1", title: "Page 1", elements: [{ id: "items", type: "table", x: 0, y: 0, width: 80, height: 32, props: { columns: [{ key: "name" }], headerHeight: 8, rowHeight: 8, autoPaginate: true }, runtime: { table: { rows: [{ name: "1" }, { name: "2" }, { name: "3" }, { name: "4" }], footerRows: [] } }, style: {} }] }],
@@ -65,4 +77,15 @@ test("paginates table rows deterministically and exposes page totals", () => {
   assert.equal(result.pages[0].elements[0].runtime.table.rows.length, 3);
   assert.equal(result.pages[1].elements[0].runtime.table.rows.length, 1);
   assert.equal(result.pages[1].runtime.pageNumber, 2);
+});
+
+test("table footer repeat is deterministic across generated pages", () => {
+  const document = createBlankTemplateDocument({
+    pages: [{ id: "page-1", title: "Page 1", elements: [{ id: "items", type: "table", x: 0, y: 0, width: 80, height: 32, props: { columns: [{ key: "name" }], headerHeight: 8, rowHeight: 8, footerHeight: 4, showFooter: true, autoPaginate: true, tfootRepeat: false }, runtime: { table: { rows: [{ name: "1" }, { name: "2" }, { name: "3" }, { name: "4" }], footerRows: [{ name: "Total" }] } }, style: {} }] }],
+  });
+  const result = paginateRuntimeDocument(document);
+
+  assert.equal(result.pages.length, 2);
+  assert.equal(result.pages[0].elements[0].runtime.table.footerRows.length, 1);
+  assert.equal(result.pages[1].elements[0].runtime.table.footerRows.length, 0);
 });

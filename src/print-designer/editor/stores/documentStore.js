@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
+import { computed, ref, shallowRef } from "vue";
 import { paletteItems } from "../../mock/palette";
 import { pageCards } from "../../mock/pages";
 import { createTemplateModel } from "../documentModel.js";
@@ -34,7 +34,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
   const documentName = ref(initialDocument.meta.name);
   const saveStatus = ref("未保存");
   const unit = ref("mm");
-  const palette = ref([...paletteItems]);
+  const palette = shallowRef(paletteItems);
   const pages = ref([...pageCards]);
   const variables = ref([]);
   const objectsById = ref(createInitialObjects());
@@ -43,14 +43,17 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
   const currentPaperPresetKey = ref(DEFAULT_PAPER_KEY);
   const pageWidthMm = ref(DEFAULT_PAPER_PRESET?.widthMm || 210);
   const pageHeightMm = ref(DEFAULT_PAPER_PRESET?.heightMm || 297);
-  const marginXMm = ref(8);
-  const marginYMm = ref(8);
+  const marginTopMm = ref(8);
+  const marginRightMm = ref(8);
+  const marginBottomMm = ref(8);
+  const marginLeftMm = ref(8);
   const pageBackground = ref("#ffffff");
   const pageCornerVisible = ref(true);
   const headerLineVisible = ref(false);
   const footerLineVisible = ref(false);
   const headerOffsetMm = ref(26.5);
   const footerOffsetMm = ref(26.5);
+  const printMarksVisible = ref(false);
 
   const totalPages = computed(() => pages.value.length);
   const currentPage = computed(() => pages.value.find((page) => page.isCurrent) || pages.value[0] || null);
@@ -86,6 +89,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
   const pageWidthPx = computed(() => mmToRoundedCssPx(pageWidthMm.value));
   const pageHeightPx = computed(() => mmToRoundedCssPx(pageHeightMm.value));
   const pageOrientation = computed(() => (pageWidthMm.value > pageHeightMm.value ? "横向" : "纵向"));
+  const currentPageTitle = computed(() => currentPage.value?.title || "Page 1");
   const templateModel = computed(() =>
     createTemplateModel({
       documentName: documentName.value,
@@ -93,14 +97,17 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
       currentPaperPresetKey: currentPaperPresetKey.value,
       pageWidthMm: pageWidthMm.value,
       pageHeightMm: pageHeightMm.value,
-      marginXMm: marginXMm.value,
-      marginYMm: marginYMm.value,
+      marginTopMm: marginTopMm.value,
+      marginRightMm: marginRightMm.value,
+      marginBottomMm: marginBottomMm.value,
+      marginLeftMm: marginLeftMm.value,
       pageBackground: pageBackground.value,
       pageCornerVisible: pageCornerVisible.value,
       headerLineVisible: headerLineVisible.value,
       footerLineVisible: footerLineVisible.value,
       headerOffsetMm: headerOffsetMm.value,
       footerOffsetMm: footerOffsetMm.value,
+      printMarksVisible: printMarksVisible.value,
       pages: pages.value,
       pageObjectMap: pageObjectMap.value,
       objectsById: objectsById.value,
@@ -134,14 +141,17 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     currentPaperPresetKey.value = document.pageSettings.paper.preset || DEFAULT_PAPER_KEY;
     pageWidthMm.value = document.pageSettings.paper.widthMm;
     pageHeightMm.value = document.pageSettings.paper.heightMm;
-    marginXMm.value = document.pageSettings.margin.left;
-    marginYMm.value = document.pageSettings.margin.top;
+    marginTopMm.value = document.pageSettings.margin.top;
+    marginRightMm.value = document.pageSettings.margin.right;
+    marginBottomMm.value = document.pageSettings.margin.bottom;
+    marginLeftMm.value = document.pageSettings.margin.left;
     pageBackground.value = document.pageSettings.background || "#ffffff";
     pageCornerVisible.value = document.pageSettings.cornerMarks?.visible !== false;
     headerLineVisible.value = document.pageSettings.headerLine?.visible === true;
     footerLineVisible.value = document.pageSettings.footerLine?.visible === true;
     headerOffsetMm.value = Number(document.pageSettings.headerLine?.offsetMm) || 26.5;
     footerOffsetMm.value = Number(document.pageSettings.footerLine?.offsetMm) || 26.5;
+    printMarksVisible.value = document.pageSettings.printMarks?.visible === true;
 
     const nextObjects = {};
     const nextPageObjectMap = {};
@@ -197,7 +207,43 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     markDirty();
   }
 
+  function addObjects(objects = []) {
+    const nextObjects = { ...objectsById.value };
+    const nextPageObjectMap = Object.fromEntries(
+      Object.entries(pageObjectMap.value).map(([pageId, ids]) => [pageId, [...ids]])
+    );
+    let added = 0;
+
+    objects.forEach((object) => {
+      if (!object?.id || nextObjects[object.id]) {
+        return;
+      }
+
+      const pageId = object.pageId || currentPage.value?.id || "page-1";
+      const ids = nextPageObjectMap[pageId] || [];
+      nextObjects[object.id] = {
+        ...object,
+        pageId,
+        zIndex: ids.length,
+      };
+      nextPageObjectMap[pageId] = [...ids, object.id];
+      added += 1;
+    });
+
+    if (!added) {
+      return false;
+    }
+
+    objectsById.value = nextObjects;
+    pageObjectMap.value = nextPageObjectMap;
+    markDirty();
+    return true;
+  }
+
   function removeObject(objectId) {
+    if (objectsById.value[objectId]?.locked) {
+      return false;
+    }
     const nextObjects = { ...objectsById.value };
     delete nextObjects[objectId];
     objectsById.value = nextObjects;
@@ -205,13 +251,32 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
       Object.entries(pageObjectMap.value).map(([pageId, ids]) => [pageId, ids.filter((id) => id !== objectId)])
     );
     markDirty();
+    return true;
+  }
+
+  function removeObjects(objectIds = []) {
+    const removableIds = [...new Set(objectIds)].filter((id) => objectsById.value[id] && !objectsById.value[id].locked);
+
+    if (!removableIds.length) {
+      return false;
+    }
+
+    const removable = new Set(removableIds);
+    const nextObjects = { ...objectsById.value };
+    removableIds.forEach((id) => delete nextObjects[id]);
+    objectsById.value = nextObjects;
+    pageObjectMap.value = Object.fromEntries(
+      Object.entries(pageObjectMap.value).map(([pageId, ids]) => [pageId, ids.filter((id) => !removable.has(id))])
+    );
+    markDirty();
+    return true;
   }
 
   function reorderObject(objectId, action) {
     const object = objectsById.value[objectId];
 
-    if (!object) {
-      return;
+    if (!object || object.locked) {
+      return false;
     }
 
     const pageId = object.pageId || currentPage.value?.id || "page-1";
@@ -219,7 +284,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     const currentIndex = objectIds.indexOf(objectId);
 
     if (currentIndex === -1) {
-      return;
+      return false;
     }
 
     const nextIds = [...objectIds];
@@ -256,13 +321,19 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     });
     objectsById.value = nextObjectsById;
     markDirty();
+    return true;
   }
 
   function updateObjectProps(objectId, patch) {
     const object = objectsById.value[objectId];
 
     if (!object) {
-      return;
+      return false;
+    }
+    const patchKeys = Object.keys(patch || {});
+    const unlockOnly = patchKeys.length === 1 && patchKeys[0] === "locked" && patch.locked === false;
+    if (object.locked && !unlockOnly) {
+      return false;
     }
 
     objectsById.value = {
@@ -273,6 +344,57 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
       },
     };
     markDirty();
+    return true;
+  }
+
+  function applyObjectPatches(patches = []) {
+    const nextObjects = { ...objectsById.value };
+    let changed = false;
+
+    patches.forEach(({ id, patch }) => {
+      const object = nextObjects[id];
+      if (!object || object.locked || !patch || !Object.keys(patch).length) {
+        return;
+      }
+      nextObjects[id] = {
+        ...object,
+        ...patch,
+      };
+      changed = true;
+    });
+
+    if (!changed) {
+      return false;
+    }
+
+    objectsById.value = nextObjects;
+    markDirty();
+    return true;
+  }
+
+  function setPageObjectOrder(pageId, objectIds = []) {
+    const currentIds = pageObjectMap.value[pageId] || [];
+    const currentSet = new Set(currentIds);
+    const nextIds = [...objectIds];
+
+    if (nextIds.length !== currentIds.length || new Set(nextIds).size !== nextIds.length || nextIds.some((id) => !currentSet.has(id))) {
+      return false;
+    }
+
+    const nextObjects = { ...objectsById.value };
+    nextIds.forEach((id, index) => {
+      const object = nextObjects[id];
+      if (object && !object.locked) {
+        nextObjects[id] = { ...object, zIndex: index };
+      }
+    });
+    objectsById.value = nextObjects;
+    pageObjectMap.value = {
+      ...pageObjectMap.value,
+      [pageId]: nextIds,
+    };
+    markDirty();
+    return true;
   }
 
   function setPaperPreset(presetKey) {
@@ -310,6 +432,26 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     markDirty();
   }
 
+  function setMargins(patch = {}) {
+    const values = {
+      top: patch.top ?? marginTopMm.value,
+      right: patch.right ?? marginRightMm.value,
+      bottom: patch.bottom ?? marginBottomMm.value,
+      left: patch.left ?? marginLeftMm.value,
+    };
+    const normalized = Object.fromEntries(
+      Object.entries(values).map(([key, value]) => [key, Number.isFinite(Number(value)) ? Math.max(0, +Number(value).toFixed(1)) : null])
+    );
+    if (Object.values(normalized).some((value) => value == null)) {
+      return;
+    }
+    marginTopMm.value = normalized.top;
+    marginRightMm.value = normalized.right;
+    marginBottomMm.value = normalized.bottom;
+    marginLeftMm.value = normalized.left;
+    markDirty();
+  }
+
   function setMarginX(value) {
     const nextValue = Number(value);
 
@@ -317,8 +459,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
       return;
     }
 
-    marginXMm.value = Math.max(0, +nextValue.toFixed(1));
-    markDirty();
+    setMargins({ left: nextValue, right: nextValue });
   }
 
   function setMarginY(value) {
@@ -328,13 +469,41 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
       return;
     }
 
-    marginYMm.value = Math.max(0, +nextValue.toFixed(1));
-    markDirty();
+    setMargins({ top: nextValue, bottom: nextValue });
   }
 
   function setUnit(nextUnit) {
     unit.value = nextUnit;
     markDirty();
+  }
+
+  function setDocumentName(value) {
+    const name = String(value ?? "").trim();
+    if (!name) {
+      return;
+    }
+    documentName.value = name.slice(0, 160);
+    markDirty();
+  }
+
+  function setCurrentPageTitle(value) {
+    const title = String(value ?? "").trim();
+    if (!title || !currentPage.value) {
+      return;
+    }
+    pages.value = pages.value.map((page) => (page.id === currentPage.value.id ? { ...page, title: title.slice(0, 160) } : page));
+    markDirty();
+  }
+
+  function setOrientation(orientation) {
+    if (!['portrait', 'landscape'].includes(orientation)) {
+      return;
+    }
+    const isLandscape = pageWidthMm.value > pageHeightMm.value;
+    if ((orientation === 'landscape') === isLandscape) {
+      return;
+    }
+    setPageDimensions(pageHeightMm.value, pageWidthMm.value);
   }
 
   function setPageBackground(color) {
@@ -354,6 +523,11 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
 
   function toggleFooterLine(forceVisible) {
     footerLineVisible.value = typeof forceVisible === "boolean" ? forceVisible : !footerLineVisible.value;
+    markDirty();
+  }
+
+  function togglePrintMarks(forceVisible) {
+    printMarksVisible.value = typeof forceVisible === "boolean" ? forceVisible : !printMarksVisible.value;
     markDirty();
   }
 
@@ -398,17 +572,21 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     pageWidthPx,
     pageHeightPx,
     pageOrientation,
-    marginXMm,
-    marginYMm,
+    marginTopMm,
+    marginRightMm,
+    marginBottomMm,
+    marginLeftMm,
     pageBackground,
     pageCornerVisible,
     headerLineVisible,
     footerLineVisible,
     headerOffsetMm,
     footerOffsetMm,
+    printMarksVisible,
     totalPages,
     currentPage,
     currentPageNumber,
+    currentPageTitle,
     layers,
     templateModel,
     markDirty,
@@ -416,18 +594,27 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     loadTemplateDocument,
     createNewTemplate,
     addObject,
+    addObjects,
     removeObject,
+    removeObjects,
     reorderObject,
     updateObjectProps,
+    applyObjectPatches,
+    setPageObjectOrder,
     setPaperPreset,
     setPageDimensions,
+    setOrientation,
+    setMargins,
     setMarginX,
     setMarginY,
     setUnit,
+    setDocumentName,
+    setCurrentPageTitle,
     setPageBackground,
     togglePageCorner,
     toggleHeaderLine,
     toggleFooterLine,
+    togglePrintMarks,
     setHeaderOffset,
     setFooterOffset,
   };

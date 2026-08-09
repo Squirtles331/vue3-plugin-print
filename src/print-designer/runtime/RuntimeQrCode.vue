@@ -13,12 +13,16 @@ const props = defineProps({
   value: { type: String, default: "" },
   status: { type: String, default: "empty" },
   eccLevel: { type: String, default: "M" },
+  foreground: { type: String, default: "#111827" },
+  background: { type: String, default: "#ffffff" },
+  margin: { type: Number, default: 0 },
 });
 
 const dataUrl = ref("");
 const error = ref("");
 const hasValue = computed(() => !!props.value && !["empty", "missing"].includes(props.status));
 const placeholder = computed(() => (props.status === "missing" ? props.value : "Unbound QR code"));
+function machineColor(value, fallback) { return typeof value === "string" && /^#[\da-f]{3,8}$/i.test(value) ? value : fallback; }
 
 async function render() {
   dataUrl.value = "";
@@ -28,13 +32,13 @@ async function render() {
   }
 
   try {
-    dataUrl.value = await QRCode.toDataURL(props.value, { errorCorrectionLevel: props.eccLevel, margin: 0, width: 320 });
+    dataUrl.value = await QRCode.toDataURL(props.value, { errorCorrectionLevel: props.eccLevel, margin: Math.max(0, Math.min(40, Number(props.margin) || 0)), width: 320, color: { dark: machineColor(props.foreground, "#111827"), light: machineColor(props.background, "#ffffff") } });
   } catch {
     error.value = "Invalid QR code value";
   }
 }
 
-watch(() => [props.value, props.status, props.eccLevel], render, { immediate: true });
+watch(() => [props.value, props.status, props.eccLevel, props.foreground, props.background, props.margin], render, { immediate: true });
 </script>
 
 <style scoped>

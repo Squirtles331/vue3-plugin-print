@@ -417,7 +417,6 @@ export const TABLE_INSPECTOR_SCHEMA = createCommonInspectorSchema(
   [
     ...GEOMETRY_FIELDS,
     createField("dataVariable", "数据变量", FIELD_SOURCE.PROPS, FIELD_CONTROL.INPUT),
-    createField("columnsVariable", "列变量", FIELD_SOURCE.PROPS, FIELD_CONTROL.INPUT),
     createField("footerDataVariable", "页脚变量", FIELD_SOURCE.PROPS, FIELD_CONTROL.INPUT),
     createField("columns", "列配置", FIELD_SOURCE.PROPS, FIELD_CONTROL.CODE, {
       valueType: "json",
@@ -439,8 +438,9 @@ export const TABLE_INSPECTOR_SCHEMA = createCommonInspectorSchema(
       valueType: "json",
       rows: 6,
     }),
-    createField("customScript", "脚本", FIELD_SOURCE.PROPS, FIELD_CONTROL.CODE, {
-      rows: 10,
+    createField("transform", "数据转换", FIELD_SOURCE.PROPS, FIELD_CONTROL.CODE, {
+      valueType: "json",
+      rows: 8,
     }),
   ]
 );
@@ -717,3 +717,13 @@ insertSchemaFieldAfter(
 removeSchemaField(BARCODE_INSPECTOR_SCHEMA, INSPECTOR_TABS.ADVANCED, "advanced", FIELD_SOURCE.PROPS, "displayValue");
 removeSchemaField(TABLE_INSPECTOR_SCHEMA, INSPECTOR_TABS.ADVANCED, "advanced", FIELD_SOURCE.PROPS, "showHeader");
 removeSchemaField(TABLE_INSPECTOR_SCHEMA, INSPECTOR_TABS.ADVANCED, "advanced", FIELD_SOURCE.PROPS, "showFooter");
+
+insertSchemaFieldAfter(IMAGE_INSPECTOR_SCHEMA, INSPECTOR_TABS.STYLE, "style", "objectFit", createField("objectPosition", "图片定位", FIELD_SOURCE.STYLE, FIELD_CONTROL.INPUT));
+insertSchemaFieldAfter(BARCODE_INSPECTOR_SCHEMA, INSPECTOR_TABS.PROPERTY, "property", "displayValue", createField("margin", "留白", FIELD_SOURCE.PROPS, FIELD_CONTROL.NUMBER, { min: 0, max: 40, step: 0.5 }));
+insertSchemaFieldAfter(BARCODE_INSPECTOR_SCHEMA, INSPECTOR_TABS.PROPERTY, "property", "margin", createField("textMargin", "文字间距", FIELD_SOURCE.PROPS, FIELD_CONTROL.NUMBER, { min: 0, max: 40, step: 0.5 }));
+insertSchemaFieldAfter(BARCODE_INSPECTOR_SCHEMA, INSPECTOR_TABS.PROPERTY, "property", "textMargin", createField("textFontSize", "文字字号", FIELD_SOURCE.PROPS, FIELD_CONTROL.NUMBER, { min: 6, max: 72, step: 1 }));
+insertSchemaFieldAfter(QRCODE_INSPECTOR_SCHEMA, INSPECTOR_TABS.PROPERTY, "property", "eccLevel", createField("margin", "留白", FIELD_SOURCE.PROPS, FIELD_CONTROL.NUMBER, { min: 0, max: 40, step: 0.5 }));
+insertSchemaFieldAfter(MULTI_LABEL_INSPECTOR_SCHEMA, INSPECTOR_TABS.PROPERTY, "property", "dataVariable", createField("primaryPath", "主字段路径", FIELD_SOURCE.PROPS, FIELD_CONTROL.INPUT));
+insertSchemaFieldAfter(MULTI_LABEL_INSPECTOR_SCHEMA, INSPECTOR_TABS.PROPERTY, "property", "primaryPath", createField("secondaryPath", "副字段路径", FIELD_SOURCE.PROPS, FIELD_CONTROL.INPUT));
+insertSchemaFieldAfter(MULTI_LABEL_INSPECTOR_SCHEMA, INSPECTOR_TABS.PROPERTY, "property", "secondaryPath", createField("tertiaryPath", "第三字段路径", FIELD_SOURCE.PROPS, FIELD_CONTROL.INPUT));
+insertSchemaFieldAfter(MULTI_LABEL_INSPECTOR_SCHEMA, INSPECTOR_TABS.PROPERTY, "property", "tertiaryPath", createField("cellPadding", "单元格内边距", FIELD_SOURCE.PROPS, FIELD_CONTROL.NUMBER, { min: 0, max: 40, step: 0.5 }));

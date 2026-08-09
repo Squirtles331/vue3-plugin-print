@@ -160,14 +160,6 @@
                 />
               </label>
               <label class="element-properties-panel__field">
-                <span>列定义变量</span>
-                <el-input
-                  :model-value="tableStringPropValue('columnsVariable')"
-                  placeholder="@columnsVariable"
-                  @input="setTablePropValue('columnsVariable', $event)"
-                />
-              </label>
-              <label class="element-properties-panel__field">
                 <span>数据变量</span>
                 <el-input
                   :model-value="tableStringPropValue('dataVariable')"
@@ -183,14 +175,7 @@
                   @input="setTablePropValue('footerDataVariable', $event)"
                 />
               </label>
-              <label class="element-properties-panel__field">
-                <span>自定义脚本变量</span>
-                <el-input
-                  :model-value="tableStringPropValue('customScriptVariable')"
-                  placeholder="@customScriptVariable"
-                  @input="setTablePropValue('customScriptVariable', $event)"
-                />
-              </label>
+              <p class="element-properties-panel__field-help">任意 JavaScript 已禁用。可使用下方受限的 JSON 数据转换配置。</p>
 
               <div class="element-properties-panel__code-card">
                 <div class="element-properties-panel__code-card-head">
@@ -245,19 +230,19 @@
 
               <div class="element-properties-panel__code-card">
                 <div class="element-properties-panel__code-card-head">
-                  <span>自定义脚本</span>
+                  <span>数据转换</span>
                   <div class="element-properties-panel__code-card-actions">
-                    <strong>JAVASCRIPT</strong>
+                    <strong>JSON</strong>
                     <button
                       type="button"
                       class="element-properties-panel__mini-button"
-                      @click="openTableEditor('customScript', '自定义脚本', 'javascript')"
+                      @click="openTableEditor('transform', '数据转换', 'json')"
                     >
                       打开编辑器
                     </button>
                   </div>
                 </div>
-                <pre class="element-properties-panel__code-preview">{{ tableEditorPreview("customScript") }}</pre>
+                <pre class="element-properties-panel__code-preview">{{ tableEditorPreview("transform") }}</pre>
               </div>
 
               <label class="element-properties-panel__field element-properties-panel__field--switch">
@@ -352,24 +337,6 @@
                   @change="setTableStyleValue('textAlign', $event)"
                 >
                   <el-option v-for="option in TABLE_TEXT_ALIGN_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
-                </el-select>
-              </label>
-              <label class="element-properties-panel__field">
-                <span>文本位置（绑定元素）</span>
-                <el-select
-                  :model-value="tableStringPropValue('embeddedCellTextPosition', 'overlap')"
-                  @change="setTablePropValue('embeddedCellTextPosition', $event)"
-                >
-                  <el-option v-for="option in TABLE_TEXT_POSITION_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
-                </el-select>
-              </label>
-              <label class="element-properties-panel__field">
-                <span>文本层级（绑定元素）</span>
-                <el-select
-                  :model-value="tableStringPropValue('embeddedCellTextLayer', 'below')"
-                  @change="setTablePropValue('embeddedCellTextLayer', $event)"
-                >
-                  <el-option v-for="option in TABLE_TEXT_LAYER_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
                 </el-select>
               </label>
             </div>
@@ -763,6 +730,15 @@
                       </label>
 
                       <label class="element-properties-panel__field">
+                        <span>数据路径</span>
+                        <el-input
+                          :model-value="column.valuePath"
+                          placeholder="lineItem.amount"
+                          @input="updateTableColumn(field, index, 'valuePath', $event)"
+                        />
+                      </label>
+
+                      <label class="element-properties-panel__field">
                         <span>宽度权重</span>
                         <el-input-number
                           :model-value="column.width"
@@ -785,6 +761,35 @@
                             :value="option.value"
                           />
                         </el-select>
+                      </label>
+
+                      <label class="element-properties-panel__field">
+                        <span>格式化</span>
+                        <el-select
+                          :model-value="column.formatter?.type || ''"
+                          @change="updateTableColumnFormatter(field, index, 'type', $event)"
+                        >
+                          <el-option v-for="option in TABLE_FORMATTER_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
+                        </el-select>
+                      </label>
+
+                      <label v-if="column.formatter?.type === 'number' || column.formatter?.type === 'currency'" class="element-properties-panel__field">
+                        <span>小数位</span>
+                        <el-input-number
+                          :model-value="Number(column.formatter?.decimals) || 0"
+                          :min="0"
+                          :max="8"
+                          controls-position="right"
+                          @change="updateTableColumnFormatter(field, index, 'decimals', Math.max(0, Math.min(8, numberValue($event) || 0)))"
+                        />
+                      </label>
+
+                      <label v-if="column.formatter?.type === 'currency'" class="element-properties-panel__field">
+                        <span>货币符号</span>
+                        <el-input
+                          :model-value="column.formatter?.symbol || ''"
+                          @input="updateTableColumnFormatter(field, index, 'symbol', $event)"
+                        />
                       </label>
                     </div>
                   </div>
@@ -1012,6 +1017,7 @@
                   </button>
                 </div>
               </template>
+              <small v-if="fieldError(field)" class="element-properties-panel__field-error">{{ fieldError(field) }}</small>
             </div>
           </section>
         </div>
@@ -1039,17 +1045,20 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import InspectorEmpty from "../../components/inspector/InspectorEmpty.vue";
 import TableCodeEditorDialog from "../components/TableCodeEditorDialog.vue";
 import { FIELD_CONTROL, INSPECTOR_TABS, TAB_LABELS, SECTION_LAYOUT } from "../../core/elementInspectorSchemas";
 import { getElementDefinition } from "../../core/elementFactory";
+import { getElementPropertyCapabilities, validateElementProperty } from "../../core/propertyCapabilities.js";
 import { MM_TO_CSS_PX } from "../measurement.js";
 import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorSelectionStore } from "../stores/selectionStore";
+import { createLocalElementPresetRepository } from "../../template/elementPresetRepository.js";
 
 const documentStore = useEditorDocumentStore();
 const selectionStore = useEditorSelectionStore();
+const presetRepository = createLocalElementPresetRepository();
 
 const { objectsById } = storeToRefs(documentStore);
 const { selectedIds } = storeToRefs(selectionStore);
@@ -1065,13 +1074,11 @@ const TABLE_TEXT_ALIGN_OPTIONS = [
   { label: "居中", value: "center" },
   { label: "右对齐", value: "right" },
 ];
-const TABLE_TEXT_POSITION_OPTIONS = [
-  { label: "重叠", value: "overlap" },
-  { label: "单独占位", value: "separate" },
-];
-const TABLE_TEXT_LAYER_OPTIONS = [
-  { label: "文本在下层", value: "below" },
-  { label: "文本在上层", value: "above" },
+const TABLE_FORMATTER_OPTIONS = [
+  { label: "不格式化", value: "" },
+  { label: "数字", value: "number" },
+  { label: "货币", value: "currency" },
+  { label: "日期", value: "date" },
 ];
 const TABLE_BORDER_STYLE_OPTIONS = [
   { label: "实线", value: "solid" },
@@ -1113,12 +1120,14 @@ const selectedDefinition = computed(() => {
 const selectedSchema = computed(() => selectedDefinition.value?.inspectorSchema || null);
 const tabs = computed(() => selectedSchema.value?.tabs || []);
 const activeTabSchema = computed(() => tabs.value.find((tab) => tab.key === activeTab.value) || null);
-const activeSections = computed(() => normalizeSections(activeTabSchema.value?.sections || []));
+const propertyCapabilities = computed(() => getElementPropertyCapabilities(selectedObject.value?.type).fields);
+const activeSections = computed(() => enrichSections(normalizeSections(activeTabSchema.value?.sections || []), propertyCapabilities.value));
+const fieldErrors = ref({});
 const tableEditorDrafts = ref({
   columns: "",
   sampleData: "",
   footerData: "",
-  customScript: "",
+  transform: "",
 });
 const activeTableEditor = ref({
   visible: false,
@@ -1169,12 +1178,19 @@ watch(
 );
 
 watch(
+  () => selectedObject.value?.id,
+  () => {
+    fieldErrors.value = {};
+  }
+);
+
+watch(
   () => [
     selectedObject.value?.id || "",
     selectedObject.value?.props?.columns,
     selectedObject.value?.props?.sampleData,
     selectedObject.value?.props?.footerData,
-    selectedObject.value?.props?.customScript,
+    selectedObject.value?.props?.transform,
   ],
   () => {
     if (!isTableObject.value) {
@@ -1182,7 +1198,7 @@ watch(
         columns: "",
         sampleData: "",
         footerData: "",
-        customScript: "",
+        transform: "",
       };
       return;
     }
@@ -1191,7 +1207,7 @@ watch(
       columns: tableJsonPropValue("columns"),
       sampleData: tableJsonPropValue("sampleData"),
       footerData: tableJsonPropValue("footerData"),
-      customScript: tableCodePropValue("customScript"),
+      transform: tableJsonPropValue("transform"),
     };
   },
   { immediate: true, deep: true }
@@ -1237,6 +1253,18 @@ function normalizeSections(sections) {
   return regroupSections(sections.map(normalizeSection));
 }
 
+function enrichSections(sections, capabilities) {
+  return sections.map((section) => ({
+    ...section,
+    fields: section.fields.map((field) => {
+      const capability = capabilities.find((item) => item.source === field.source && item.key === field.key);
+      return capability
+        ? { ...field, min: field.min ?? capability.min, max: field.max ?? capability.max, capability }
+        : field;
+    }),
+  }));
+}
+
 function isStructuredField(field) {
   return STRUCTURED_FIELD_CONTROLS.has(field?.control);
 }
@@ -1254,24 +1282,14 @@ function fieldIdentifier(field) {
   return `${field.source}:${field.key}`;
 }
 
-const GLOBAL_HIDDEN_RUNTIME_FIELDS = new Set(["root:visible"]);
+const GLOBAL_HIDDEN_RUNTIME_FIELDS = new Set();
 const HIDDEN_RUNTIME_FIELDS = {
-  "text:property": new Set(["root:name", "root:rotation", "props:sampleValue", "root:locked"]),
-  "text:style": new Set([
-    "props:textPreset",
-    "props:whiteSpace",
-    "style:fontStyle",
-    "style:lineHeight",
-    "style:letterSpacing",
-    "style:textDecoration",
-    "style:borderRadius",
-    "style:opacity",
-    "style:padding",
-  ]),
+  "text:property": new Set(["props:sampleValue"]),
+  "text:style": new Set(["props:textPreset"]),
   "text:advanced": new Set(["root:zIndex"]),
-  "image:property": new Set(["root:name", "root:rotation", "props:placeholder", "props:keepAspectRatio", "root:locked"]),
-  "image:style": new Set(["style:borderRadius", "style:padding"]),
-  "image:advanced": new Set(["root:zIndex", "root:locked", "root:printable", "root:repeatPerPage"]),
+  "image:property": new Set(),
+  "image:style": new Set(),
+  "image:advanced": new Set(),
 };
 
 function isHiddenField(field) {
@@ -1367,6 +1385,7 @@ function runtimeSectionDefinitions(type, tab) {
         createRuntimeSection("behavior", "数据 & 行为", SECTION_LAYOUT.GRID_2, [
           "root:repeatPerPage",
           "props:autoHeight",
+          "props:whiteSpace",
           "root:printable",
         ]),
       ];
@@ -1380,6 +1399,10 @@ function runtimeSectionDefinitions(type, tab) {
           "style:verticalAlign",
           "style:fontFamily",
           "style:fontWeight",
+          "style:fontStyle",
+          "style:textDecoration",
+          "style:lineHeight",
+          "style:letterSpacing",
         ]),
         createRuntimeSection("border", "边框", SECTION_LAYOUT.GRID_2, [
           "style:borderStyle",
@@ -1421,6 +1444,7 @@ function runtimeSectionDefinitions(type, tab) {
         createRuntimeSection("appearance", "外观", SECTION_LAYOUT.STACK, [
           "style:backgroundColor",
           "style:objectFit",
+          "style:objectPosition",
           "style:opacity",
         ]),
       ];
@@ -1439,6 +1463,9 @@ function runtimeSectionDefinitions(type, tab) {
           "root:content",
           "props:format",
           "props:displayValue",
+          "props:margin",
+          "props:textMargin",
+          "props:textFontSize",
         ]),
       ];
     case "barcode:style":
@@ -1472,7 +1499,7 @@ function runtimeSectionDefinitions(type, tab) {
         createGeometryRuntimeSection(),
         createLayerRuntimeSection(),
         createRuntimeSection("binding", "数据绑定", SECTION_LAYOUT.STACK, ["root:variable"]),
-        createRuntimeSection("content", "内容", SECTION_LAYOUT.STACK, ["root:content", "props:eccLevel"]),
+        createRuntimeSection("content", "内容", SECTION_LAYOUT.STACK, ["root:content", "props:eccLevel", "props:margin"]),
       ];
     case "qrcode:style":
       return [
@@ -1580,7 +1607,6 @@ function runtimeSectionDefinitions(type, tab) {
         createLayerRuntimeSection(),
         createRuntimeSection("bindings", "数据绑定", SECTION_LAYOUT.STACK, [
           "props:dataVariable",
-          "props:columnsVariable",
           "props:footerDataVariable",
         ]),
         createRuntimeSection("structure", "结构", SECTION_LAYOUT.GRID_2, ["props:showHeader", "props:showFooter"]),
@@ -1619,7 +1645,7 @@ function runtimeSectionDefinitions(type, tab) {
         ]),
         createBehaviorRuntimeSection(),
         createRuntimeSection("footer", "页脚", SECTION_LAYOUT.STACK, ["props:footerData"]),
-        createRuntimeSection("script", "脚本", SECTION_LAYOUT.STACK, ["props:customScript"]),
+        createRuntimeSection("transform", "数据转换", SECTION_LAYOUT.STACK, ["props:transform"]),
         createActionsRuntimeSection(),
         createDangerRuntimeSection(),
       ];
@@ -1634,6 +1660,12 @@ function runtimeSectionDefinitions(type, tab) {
           "props:gapX",
           "props:gapY",
           "props:direction",
+          "props:cellPadding",
+        ]),
+        createRuntimeSection("mapping", "字段映射", SECTION_LAYOUT.STACK, [
+          "props:primaryPath",
+          "props:secondaryPath",
+          "props:tertiaryPath",
         ]),
         createRuntimeSection("preview", "预览数据", SECTION_LAYOUT.STACK, ["props:sampleData"]),
       ];
@@ -1715,6 +1747,10 @@ function getFieldValue(field) {
 
   if (field.source === "props") {
     return selectedObject.value.props?.[field.key];
+  }
+
+  if (field.source === "editorHints") {
+    return selectedObject.value.editorHints?.[field.key];
   }
 
   return undefined;
@@ -1892,7 +1928,7 @@ function updateTableEditorDraft(key, value) {
 }
 
 function openTableEditor(key, title, language) {
-  const currentValue = key === "customScript" ? tableCodePropValue(key) : tableJsonPropValue(key);
+  const currentValue = tableJsonPropValue(key);
   updateTableEditorDraft(key, currentValue);
   activeTableEditor.value = {
     visible: true,
@@ -1906,7 +1942,7 @@ function closeTableEditor(resetDraft = true) {
   const key = activeTableEditor.value.key;
 
   if (resetDraft && key) {
-    updateTableEditorDraft(key, key === "customScript" ? tableCodePropValue(key) : tableJsonPropValue(key));
+    updateTableEditorDraft(key, tableJsonPropValue(key));
   }
 
   activeTableEditor.value = {
@@ -1924,11 +1960,7 @@ function saveActiveTableEditor() {
     return;
   }
 
-  if (language === "javascript") {
-    commitTableCodeEditor(key);
-  } else {
-    commitTableJsonEditor(key, title);
-  }
+  commitTableJsonEditor(key, title);
 
   closeTableEditor(false);
 }
@@ -1937,7 +1969,7 @@ function tableEditorPreview(key) {
   const source = tableEditorDraft(key).trim();
 
   if (!source) {
-    return key === "customScript" ? "// 暂无脚本" : "[]";
+    return key === "transform" ? "{}" : "[]";
   }
 
   const lines = source.split(/\r?\n/).slice(0, 6);
@@ -1945,6 +1977,12 @@ function tableEditorPreview(key) {
 }
 
 function tablePropValue(key, fallback = "") {
+  if (key === "designOmitRows") {
+    return selectedObject.value?.editorHints?.omitRows ?? fallback;
+  }
+  if (key === "designRowCount") {
+    return selectedObject.value?.editorHints?.rowCount ?? fallback;
+  }
   const value = selectedObject.value?.props?.[key];
   return value == null ? fallback : value;
 }
@@ -1960,7 +1998,7 @@ function tableNumberPropValue(key, fallback = 0) {
 }
 
 function tableDesignRowCountValue() {
-  const explicitValue = Number(selectedObject.value?.props?.designRowCount);
+  const explicitValue = Number(selectedObject.value?.editorHints?.rowCount);
 
   if (Number.isFinite(explicitValue) && explicitValue > 0) {
     return explicitValue;
@@ -1981,6 +2019,14 @@ function tableStringStyleValue(key, fallback = "") {
 }
 
 function setTablePropValue(key, value) {
+  if (key === "designOmitRows") {
+    setFieldValue({ source: "editorHints", key: "omitRows" }, value);
+    return;
+  }
+  if (key === "designRowCount") {
+    setFieldValue({ source: "editorHints", key: "rowCount" }, value);
+    return;
+  }
   setFieldValue({ source: "props", key }, value);
 }
 
@@ -1994,12 +2040,16 @@ function tableJsonPropValue(key) {
       tableColumnsValue(tableColumnsField).map((column) => {
         const result = {
           field: column.key,
+          valuePath: column.valuePath || column.key,
           header: column.title,
           width: column.width,
         };
 
         if (column.align && column.align !== "left") {
           result.align = column.align;
+        }
+        if (column.formatter && typeof column.formatter === "object") {
+          result.formatter = column.formatter;
         }
 
         return result;
@@ -2117,7 +2167,9 @@ function reorderSelectedObject(action) {
     return;
   }
 
-  documentStore.reorderObject(selectedObject.value.id, action);
+  if (!documentStore.reorderObject(selectedObject.value.id, action)) {
+    ElMessage.warning("当前元素已锁定，无法调整层级。");
+  }
 }
 
 async function copySelectedObjectId() {
@@ -2246,7 +2298,14 @@ function setTableObjectProps(patch) {
     return;
   }
 
-  documentStore.updateObjectProps(selectedObject.value.id, {
+  for (const [key, value] of Object.entries(patch || {})) {
+    const field = { source: "props", key };
+    if (!validateFieldChange(field, value)) {
+      return;
+    }
+  }
+  const field = { source: "props", key: Object.keys(patch || {})[0] || "columns" };
+  updateSelectedObject(field, {
     props: {
       ...(selectedObject.value.props || {}),
       ...patch,
@@ -2263,7 +2322,15 @@ function normalizeTableColumn(column, index) {
         ? column.key
         : typeof column?.field === "string" && column.field.trim()
           ? column.field
-          : `field${index + 1}`,
+           : `field${index + 1}`,
+    valuePath:
+      typeof column?.valuePath === "string" && column.valuePath.trim()
+        ? column.valuePath
+        : typeof column?.key === "string" && column.key.trim()
+          ? column.key
+          : typeof column?.field === "string" && column.field.trim()
+            ? column.field
+            : `field${index + 1}`,
     title:
       typeof column?.title === "string" && column.title.trim()
         ? column.title
@@ -2272,6 +2339,7 @@ function normalizeTableColumn(column, index) {
           : `列 ${index + 1}`,
     width: Number.isFinite(width) ? width : 100,
     align: column?.align === "center" || column?.align === "right" ? column.align : "left",
+    ...(column?.formatter && typeof column.formatter === "object" ? { formatter: column.formatter } : {}),
   };
 }
 
@@ -2368,6 +2436,7 @@ function addTableColumn(field) {
     ...columns,
     {
       key: nextKey,
+      valuePath: nextKey,
       title: `列 ${columns.length + 1}`,
       width: 100,
       align: "left",
@@ -2428,6 +2497,30 @@ function updateTableColumn(field, index, prop, value) {
     return;
   }
 
+  setTableColumns(field, nextColumns);
+}
+
+function updateTableColumnFormatter(field, index, key, value) {
+  const columns = tableColumnsValue(field);
+  const currentColumn = columns[index];
+
+  if (!currentColumn) {
+    return;
+  }
+
+  const currentFormatter = currentColumn.formatter && typeof currentColumn.formatter === "object" ? currentColumn.formatter : {};
+  const nextFormatter = { ...currentFormatter, [key]: value };
+  const nextColumn = { ...currentColumn };
+
+  if (key === "type" && !value) {
+    delete nextColumn.formatter;
+  } else {
+    nextColumn.formatter = nextFormatter;
+  }
+
+  const nextColumns = columns.map((column, columnIndex) =>
+    columnIndex === index ? normalizeTableColumn(nextColumn, columnIndex) : column
+  );
   setTableColumns(field, nextColumns);
 }
 
@@ -2735,12 +2828,50 @@ function normalizeFieldValue(field, value) {
   }
 }
 
+function fieldErrorKey(field) {
+  return `${field.source}:${field.key}`;
+}
+
+function fieldError(field) {
+  return fieldErrors.value[fieldErrorKey(field)] || "";
+}
+
+function setFieldError(field, message = "") {
+  const key = fieldErrorKey(field);
+  const next = { ...fieldErrors.value };
+  if (message) {
+    next[key] = message;
+  } else {
+    delete next[key];
+  }
+  fieldErrors.value = next;
+}
+
+function validateFieldChange(field, value) {
+  const message = validateElementProperty(selectedObject.value?.type, field.source, field.key, value);
+  setFieldError(field, message || "");
+  return !message;
+}
+
+function updateSelectedObject(field, patch) {
+  const updated = documentStore.updateObjectProps(selectedObject.value.id, patch);
+  if (!updated) {
+    setFieldError(field, "当前元素已锁定，请先解除锁定后再编辑。");
+    ElMessage.warning("当前元素已锁定，请先解除锁定后再编辑。");
+  }
+  return updated;
+}
+
 function setRootValue(key, value) {
   if (!selectedObject.value) {
     return;
   }
 
-  documentStore.updateObjectProps(selectedObject.value.id, buildRootUpdatePayload(selectedObject.value, key, value));
+  const field = { source: "root", key };
+  if (!validateFieldChange(field, value)) {
+    return;
+  }
+  updateSelectedObject(field, buildRootUpdatePayload(selectedObject.value, key, value));
 }
 
 function setFieldValue(field, value) {
@@ -2755,16 +2886,17 @@ function setFieldValue(field, value) {
     return;
   }
 
+  if (!validateFieldChange(field, normalizedValue)) {
+    return;
+  }
+
   if (field.source === "root") {
-    documentStore.updateObjectProps(
-      objectId,
-      buildRootUpdatePayload(selectedObject.value, field.key, normalizedValue)
-    );
+    updateSelectedObject(field, buildRootUpdatePayload(selectedObject.value, field.key, normalizedValue));
     return;
   }
 
   if (field.source === "style") {
-    documentStore.updateObjectProps(objectId, {
+    updateSelectedObject(field, {
       style: {
         ...(selectedObject.value.style || {}),
         [field.key]: normalizedValue,
@@ -2787,22 +2919,32 @@ function setFieldValue(field, value) {
         nextProps.sampleData = normalizeMultiLabelSampleData(normalizedValue);
       }
 
-      documentStore.updateObjectProps(objectId, {
+      updateSelectedObject(field, {
         props: nextProps,
       });
       return;
     }
 
-    documentStore.updateObjectProps(objectId, {
+    updateSelectedObject(field, {
       props: {
         ...(selectedObject.value.props || {}),
+        [field.key]: normalizedValue,
+      },
+    });
+    return;
+  }
+
+  if (field.source === "editorHints") {
+    updateSelectedObject(field, {
+      editorHints: {
+        ...(selectedObject.value.editorHints || {}),
         [field.key]: normalizedValue,
       },
     });
   }
 }
 
-function runFieldAction(action) {
+async function runFieldAction(action) {
   if (!selectedObject.value) {
     return;
   }
@@ -2817,11 +2959,26 @@ function runFieldAction(action) {
       documentStore.reorderObject(objectId, action);
       break;
     case "deleteElement":
-      documentStore.removeObject(objectId);
-      selectionStore.clearSelection();
+      if (documentStore.removeObject(objectId)) {
+        selectionStore.clearSelection();
+      } else {
+        ElMessage.warning("当前元素已锁定，无法删除。");
+      }
       break;
     case "saveAsTemplate":
-      ElMessage.info("Save as template will be added in a later iteration.");
+      try {
+        const { value } = await ElMessageBox.prompt("输入元素预设名称", "保存为元素预设", {
+          inputValue: selectedObject.value.name || "元素预设",
+          inputPattern: /\S/,
+          inputErrorMessage: "请输入预设名称",
+        });
+        await presetRepository.create({ name: value, element: selectedObject.value });
+        ElMessage.success("元素预设已保存，可从顶部“预设”打开并插入。");
+      } catch (error) {
+        if (error !== "cancel" && error !== "close") {
+          ElMessage.error(error?.message || "保存元素预设失败");
+        }
+      }
       break;
     default:
       break;
@@ -2949,6 +3106,12 @@ function runFieldAction(action) {
 .element-properties-panel__fallback p {
   font-size: 12px;
   color: #374151;
+}
+
+.element-properties-panel__field-error {
+  color: #dc2626;
+  font-size: 11px;
+  line-height: 1.4;
 }
 
 .element-properties-panel__field.is-readonly span {
