@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
+import { reactive } from "vue";
 import { applyConstrainedTableTransform, resolveDataPath, resolveRuntimeTemplate } from "../src/print-designer/runtime/dataResolver.js";
 import { paginateRuntimeDocument } from "../src/print-designer/runtime/pagination.js";
 import { createBlankTemplateDocument } from "../src/print-designer/template/templateDocument.js";
@@ -21,6 +22,22 @@ test("resolves bound elements and does not substitute sample rows for a missing 
   assert.equal(resolved.document.pages[0].elements[0].runtime.value.value, "Ada");
   assert.equal(resolved.document.pages[0].elements[1].runtime.table.dataStatus, "missing");
   assert.deepEqual(resolved.document.pages[0].elements[1].runtime.table.rows, []);
+});
+
+test("resolves a reactive template without mutating the source document", () => {
+  const source = createBlankTemplateDocument({
+    pages: [{
+      id: "page-1",
+      title: "Page 1",
+      elements: [{ id: "title", type: "text", x: 0, y: 0, width: 20, height: 8, variable: "customer.name", props: {}, style: {} }],
+    }],
+  });
+
+  const resolved = resolveRuntimeTemplate(reactive(source), { customer: { name: "Ada" } });
+
+  assert.equal(resolved.document.pages[0].elements[0].runtime.value.value, "Ada");
+  assert.equal(Object.hasOwn(source.pages[0].elements[0], "runtime"), false);
+  assert.notEqual(resolved.document, source);
 });
 
 test("preserves explicit legacy preview rows when no runtime binding is configured", () => {

@@ -57,7 +57,7 @@
 <script setup>
 import { ElMessage, ElMessageBox } from "element-plus";
 import { storeToRefs } from "pinia";
-import { defineAsyncComponent, onBeforeUnmount, onMounted, ref } from "vue";
+import { defineAsyncComponent, onBeforeUnmount, onMounted, ref, shallowRef } from "vue";
 import FloatingPanelsLayer from "./shell/FloatingPanelsLayer.vue";
 import HeaderBar from "./shell/HeaderBar.vue";
 import StatusBar from "./shell/StatusBar.vue";
@@ -96,7 +96,7 @@ const starterTemplates = listStarterTemplates();
 const presetLibraryVisible = ref(false);
 const savedPresets = ref([]);
 const previewVisible = ref(false);
-const previewDocument = ref(null);
+const previewDocument = shallowRef(null);
 
 const { statusbarVisible } = storeToRefs(shellStore);
 const { templateModel, templateId } = storeToRefs(documentStore);

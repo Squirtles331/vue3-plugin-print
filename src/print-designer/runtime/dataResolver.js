@@ -1,9 +1,13 @@
+import { toRaw } from "vue";
+
 function clone(value) {
+  const rawValue = toRaw(value);
+
   if (typeof structuredClone === "function") {
-    return structuredClone(value);
+    return structuredClone(rawValue);
   }
 
-  return JSON.parse(JSON.stringify(value));
+  return JSON.parse(JSON.stringify(rawValue));
 }
 
 function normalizePath(path) {
