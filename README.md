@@ -1,8 +1,19 @@
 # Print Template Studio
 
-一个独立实现的 Vue 3 可视化打印模板设计器。它面向业务单据、标签和表单场景：在浏览器中设计模板，使用 JSON 绑定业务数据，并通过浏览器原生打印流程输出。
+<p align="center">浏览器原生打印 · JSON 数据绑定 · 独立 Vue 3 实现</p>
 
-> v0.1 以桌面端 Chrome 和 Edge 为支持目标。在线演示将在 GitHub Pages 启用后发布到 <https://songtonngxue.github.io/vue3-plugin-print/>。
+一个面向业务单据、标签和表单的可视化打印模板设计器：在浏览器中设计模板，使用 JSON 绑定业务数据，并通过浏览器原生打印流程输出。
+
+<p align="center">
+  <a href="https://songtonngxue.github.io/vue3-plugin-print/">演示站（部署后可用）</a> ·
+  <a href="#快速开始">快速开始</a> ·
+  <a href="#使用流程">使用流程</a> ·
+  <a href="#浏览器打印说明">打印说明</a> ·
+  <a href="#本版本不包含">首发边界</a> ·
+  <a href="#参与贡献与安全">参与贡献</a>
+</p>
+
+> **v0.1 范围：** 独立应用交付，支持最新桌面版 Chrome 和 Edge 的浏览器原生打印；不提供 npm 组件包、PDF/图片导出、静默打印或云打印。
 
 ## 已支持的能力
 
