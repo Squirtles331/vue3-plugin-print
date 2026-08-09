@@ -1,30 +1,17 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
-import { layerCards } from "../../mock/layers";
 import { paletteItems } from "../../mock/palette";
 import { pageCards } from "../../mock/pages";
-import { variableTokens } from "../../mock/variables";
-import { createElement } from "../../core/elementFactory";
 import { createTemplateModel } from "../documentModel.js";
 import { mmToRoundedCssPx } from "../measurement.js";
 import { CUSTOM_PAPER_SIZE_KEY, getPaperPreset } from "../paperSizePresets";
+import { createBlankTemplateDocument, migrateTemplateDocument } from "../../template/templateDocument.js";
 
 const DEFAULT_PAPER_KEY = "A4";
 const DEFAULT_PAPER_PRESET = getPaperPreset(DEFAULT_PAPER_KEY);
 
 function createInitialObjects() {
-  return Object.fromEntries(
-    layerCards.map((layer, index) => [
-      layer.id,
-      createElement(layer.type, {
-        id: layer.id,
-        name: layer.name,
-        pageId: "page-1",
-        x: 24 + index * 18,
-        y: 24 + index * 34,
-      }),
-    ])
-  );
+  return {};
 }
 
 function updateCurrentPageMeta(pages, size, orientation) {
@@ -42,12 +29,14 @@ function updateCurrentPageMeta(pages, size, orientation) {
 }
 
 export const useEditorDocumentStore = defineStore("printDesignerDocument", () => {
-  const documentName = ref("未命名模板");
-  const saveStatus = ref("已保存");
+  const initialDocument = createBlankTemplateDocument();
+  const templateId = ref(initialDocument.id);
+  const documentName = ref(initialDocument.meta.name);
+  const saveStatus = ref("未保存");
   const unit = ref("mm");
   const palette = ref([...paletteItems]);
   const pages = ref([...pageCards]);
-  const variables = ref([...variableTokens]);
+  const variables = ref([]);
   const objectsById = ref(createInitialObjects());
   const pageObjectMap = ref({
     "page-1": layerCards.map((layer) => layer.id),
@@ -132,6 +121,67 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
   function markSaved() {
     dirty.value = false;
     saveStatus.value = "已保存";
+  }
+
+  function loadTemplateDocument(source, { markAsDirty = false } = {}) {
+    const { document, issues } = migrateTemplateDocument(source);
+
+    if (!document) {
+      return { document: null, issues };
+    }
+
+    templateId.value = document.id;
+    documentName.value = document.meta.name;
+    unit.value = document.meta.unit || "mm";
+    currentPaperPresetKey.value = document.pageSettings.paper.preset || DEFAULT_PAPER_KEY;
+    pageWidthMm.value = document.pageSettings.paper.widthMm;
+    pageHeightMm.value = document.pageSettings.paper.heightMm;
+    marginXMm.value = document.pageSettings.margin.left;
+    marginYMm.value = document.pageSettings.margin.top;
+    pageBackground.value = document.pageSettings.background || "#ffffff";
+    pageCornerVisible.value = document.pageSettings.cornerMarks?.visible !== false;
+    headerLineVisible.value = document.pageSettings.headerLine?.visible === true;
+    footerLineVisible.value = document.pageSettings.footerLine?.visible === true;
+    headerOffsetMm.value = Number(document.pageSettings.headerLine?.offsetMm) || 26.5;
+    footerOffsetMm.value = Number(document.pageSettings.footerLine?.offsetMm) || 26.5;
+
+    const nextObjects = {};
+    const nextPageObjectMap = {};
+    pages.value = document.pages.map((page, index) => {
+      const { elements = [], ...pageData } = page;
+      const pageId = pageData.id || `page-${index + 1}`;
+      nextPageObjectMap[pageId] = elements.map((element, elementIndex) => {
+        const object = {
+          ...element,
+          id: element.id || `${pageId}-element-${elementIndex + 1}`,
+          pageId,
+          zIndex: Number.isFinite(Number(element.zIndex)) ? Number(element.zIndex) : elementIndex,
+        };
+        nextObjects[object.id] = object;
+        return object.id;
+      });
+
+      return {
+        ...pageData,
+        id: pageId,
+        isCurrent: index === 0,
+      };
+    });
+    objectsById.value = nextObjects;
+    pageObjectMap.value = nextPageObjectMap;
+    variables.value = [];
+
+    if (markAsDirty) {
+      markDirty();
+    } else {
+      markSaved();
+    }
+
+    return { document, issues };
+  }
+
+  function createNewTemplate(overrides = {}) {
+    return loadTemplateDocument(createBlankTemplateDocument(overrides), { markAsDirty: true });
   }
 
   function addObject(object) {
@@ -333,6 +383,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
 
   return {
     documentName,
+    templateId,
     saveStatus,
     unit,
     palette,
@@ -364,6 +415,8 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     templateModel,
     markDirty,
     markSaved,
+    loadTemplateDocument,
+    createNewTemplate,
     addObject,
     removeObject,
     reorderObject,

@@ -1,11 +1,26 @@
 <template>
   <div class="print-designer-page">
-    <EditorRoot />
+    <EditorRoot ref="editorRootRef" />
   </div>
 </template>
 
 <script setup>
+import { ref } from "vue";
 import EditorRoot from "./editor/EditorRoot.vue";
+
+const editorRootRef = ref(null);
+
+defineExpose({
+  setRuntimeData(data) {
+    editorRootRef.value?.setRuntimeData(data);
+  },
+  getTemplateDocument() {
+    return editorRootRef.value?.getTemplateDocument();
+  },
+  loadTemplateDocument(document) {
+    return editorRootRef.value?.loadTemplateDocument(document);
+  },
+});
 </script>
 
 <style scoped lang="scss">

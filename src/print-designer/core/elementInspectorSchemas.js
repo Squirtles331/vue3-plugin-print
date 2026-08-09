@@ -269,7 +269,6 @@ export const TEXT_INSPECTOR_SCHEMA = {
         createField("name", "元素名称", FIELD_SOURCE.ROOT, FIELD_CONTROL.INPUT),
         createField("content", "文本内容", FIELD_SOURCE.ROOT, FIELD_CONTROL.TEXTAREA),
         createField("variable", "变量绑定", FIELD_SOURCE.ROOT, FIELD_CONTROL.INPUT),
-        createField("sampleValue", "示例值", FIELD_SOURCE.PROPS, FIELD_CONTROL.INPUT),
       ]),
       createSection("behavior", "数据 & 行为", SECTION_LAYOUT.GRID_2, [
         ...BEHAVIOR_FIELDS,
@@ -424,7 +423,7 @@ export const TABLE_INSPECTOR_SCHEMA = createCommonInspectorSchema(
       valueType: "json",
       rows: 10,
     }),
-    createField("sampleData", "示例数据", FIELD_SOURCE.PROPS, FIELD_CONTROL.CODE, {
+    createField("sampleData", "预览数据", FIELD_SOURCE.PROPS, FIELD_CONTROL.CODE, {
       valueType: "json",
       rows: 10,
     }),
@@ -709,7 +708,7 @@ insertSchemaFieldAfter(
   INSPECTOR_TABS.PROPERTY,
   "property",
   "dataVariable",
-  createField("sampleData", "示例数据", FIELD_SOURCE.PROPS, FIELD_CONTROL.MULTI_LABEL_ITEMS, {
+  createField("sampleData", "预览数据", FIELD_SOURCE.PROPS, FIELD_CONTROL.MULTI_LABEL_ITEMS, {
     valueType: "json",
     rows: 8,
   })

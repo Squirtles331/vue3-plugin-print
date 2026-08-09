@@ -51,6 +51,8 @@
       <div class="header-bar__spacer"></div>
 
       <section class="header-bar__tool-group">
+        <button class="header-bar__chip" type="button" @click="$emit('new-template')">新建</button>
+        <button class="header-bar__chip" type="button" @click="$emit('open-template')">打开</button>
         <button class="header-bar__chip" type="button" @click="$emit('preview')">预览</button>
         <button class="header-bar__chip" type="button" @click="$emit('print')">打印</button>
         <button class="header-bar__chip is-primary" type="button" @click="$emit('save-template')">保存</button>

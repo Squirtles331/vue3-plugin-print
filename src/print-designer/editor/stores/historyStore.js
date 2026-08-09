@@ -59,6 +59,12 @@ export const useEditorHistoryStore = defineStore("printDesignerHistory", () => {
     lastCommandName.value = `Redo ${command.label || command.id || "command"}`;
   }
 
+  function reset() {
+    undoStack.value = [];
+    redoStack.value = [];
+    lastCommandName.value = "No commands yet";
+  }
+
   return {
     undoStack,
     redoStack,
@@ -70,5 +76,6 @@ export const useEditorHistoryStore = defineStore("printDesignerHistory", () => {
     execute,
     undo,
     redo,
+    reset,
   };
 });

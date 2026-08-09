@@ -938,7 +938,7 @@
                   class="element-properties-panel__multi-label-data"
                 >
                   <div class="element-properties-panel__table-columns-hint">
-                    示例标签数据会按当前 rows × cols 自动补齐，画布会直接使用这里的内容做预览。
+                    可选预览数据不会自动生成；未提供数据时，画布仅显示标签网格结构。
                   </div>
 
                   <div class="element-properties-panel__multi-label-grid">
@@ -1585,7 +1585,7 @@ function runtimeSectionDefinitions(type, tab) {
         ]),
         createRuntimeSection("structure", "结构", SECTION_LAYOUT.GRID_2, ["props:showHeader", "props:showFooter"]),
         createRuntimeSection("columns", "列配置", SECTION_LAYOUT.STACK, ["props:columns"]),
-        createRuntimeSection("preview", "示例数据", SECTION_LAYOUT.STACK, ["props:sampleData"]),
+        createRuntimeSection("preview", "预览数据", SECTION_LAYOUT.STACK, ["props:sampleData"]),
       ];
     case "table:style":
       return [
@@ -1635,7 +1635,7 @@ function runtimeSectionDefinitions(type, tab) {
           "props:gapY",
           "props:direction",
         ]),
-        createRuntimeSection("preview", "示例数据", SECTION_LAYOUT.STACK, ["props:sampleData"]),
+        createRuntimeSection("preview", "预览数据", SECTION_LAYOUT.STACK, ["props:sampleData"]),
       ];
     case "multiLabel:style":
       return [
@@ -2658,7 +2658,7 @@ function normalizeMultiLabelSampleItem(item, index) {
   const source = item && typeof item === "object" ? item : {};
 
   return {
-    title: source.title == null || source.title === "" ? `标签 ${index + 1}` : String(source.title),
+    title: source.title == null ? "" : String(source.title),
     code: source.code == null ? "" : String(source.code),
     detail: source.detail == null ? "" : String(source.detail),
   };
@@ -2668,7 +2668,7 @@ function normalizeMultiLabelSampleData(data, total = multiLabelCellCount()) {
   const source = Array.isArray(data) ? data : [];
   const count = Math.max(1, total || 1);
 
-  return Array.from({ length: count }, (_, index) => normalizeMultiLabelSampleItem(source[index], index));
+  return source.slice(0, count).map((item, index) => normalizeMultiLabelSampleItem(item, index));
 }
 
 function multiLabelSampleDataValue(field) {

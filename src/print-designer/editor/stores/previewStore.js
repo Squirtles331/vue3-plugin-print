@@ -8,6 +8,7 @@ export const useEditorPreviewStore = defineStore("printDesignerPreview", () => {
   const computedState = ref({});
   const pagination = ref({});
   const renderCache = ref({});
+  const runtimeData = ref({});
 
   const previewStateModel = computed(() =>
     createPreviewStateModel({
@@ -25,6 +26,10 @@ export const useEditorPreviewStore = defineStore("printDesignerPreview", () => {
     computedState,
     pagination,
     renderCache,
+    runtimeData,
+    setRuntimeData(value) {
+      runtimeData.value = value && typeof value === "object" && !Array.isArray(value) ? { ...value } : {};
+    },
     previewStateModel,
   };
 });

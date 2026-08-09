@@ -19,14 +19,28 @@
 
       <StatusBar v-if="statusbarVisible" />
     </div>
+
+    <TemplateLibraryDialog
+      v-model:visible="templateLibraryVisible"
+      :templates="savedTemplates"
+      :loading="templateLibraryLoading"
+      @refresh="refreshTemplateLibrary"
+      @select="openTemplate"
+    />
+    <RuntimePreviewDialog
+      v-model:visible="previewVisible"
+      :document="previewDocument"
+      :initial-data="runtimeData"
+      @update:runtime-data="previewStore.setRuntimeData"
+      @print-error="onPrintError"
+    />
   </div>
 </template>
 
 <script setup>
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import { storeToRefs } from "pinia";
 import { onBeforeUnmount, onMounted, ref } from "vue";
-import { createPrintDesignerDocument } from "./documentModel.js";
 import FloatingPanelsLayer from "./shell/FloatingPanelsLayer.vue";
 import HeaderBar from "./shell/HeaderBar.vue";
 import StatusBar from "./shell/StatusBar.vue";
@@ -35,48 +49,139 @@ import { useEditorPreviewStore } from "./stores/previewStore";
 import { useEditorShellStore } from "./stores/shellStore";
 import { useEditorViewportStore } from "./stores/viewportStore";
 import WorkspaceRoot from "./workspace/WorkspaceRoot.vue";
+import { createLocalTemplateRepository } from "../template/templateRepository.js";
+import { serializeTemplateDocument } from "../template/templateDocument.js";
+import TemplateLibraryDialog from "../template/TemplateLibraryDialog.vue";
+import RuntimePreviewDialog from "../runtime/RuntimePreviewDialog.vue";
+import { printRuntimeDocument } from "../runtime/print.js";
+import { useEditorHistoryStore } from "./stores/historyStore";
 
 const editorRootRef = ref(null);
 const shellStore = useEditorShellStore();
 const viewportStore = useEditorViewportStore();
 const documentStore = useEditorDocumentStore();
 const previewStore = useEditorPreviewStore();
+const historyStore = useEditorHistoryStore();
+const repository = createLocalTemplateRepository();
+const templateLibraryVisible = ref(false);
+const templateLibraryLoading = ref(false);
+const savedTemplates = ref([]);
+const previewVisible = ref(false);
+const previewDocument = ref(null);
 
 const { statusbarVisible } = storeToRefs(shellStore);
-const { templateModel } = storeToRefs(documentStore);
-const { viewStateModel } = storeToRefs(viewportStore);
-const { previewStateModel } = storeToRefs(previewStore);
+const { templateModel, templateId } = storeToRefs(documentStore);
+const { runtimeData } = storeToRefs(previewStore);
 
-function onNewTemplate() {
-  ElMessage.info("新建模板流程会在后续业务接入时补齐。");
+function currentTemplateResult() {
+  return serializeTemplateDocument(templateModel.value, { id: templateId.value });
 }
 
-function onOpenTemplate() {
-  ElMessage.info("打开模板流程会在后续业务接入时补齐。");
+async function onNewTemplate() {
+  if (documentStore.dirty) {
+    try {
+      await ElMessageBox.confirm("未保存的修改将丢失，是否继续新建？", "新建模板", { type: "warning" });
+    } catch {
+      return;
+    }
+  }
+
+  documentStore.createNewTemplate();
+  historyStore.reset();
+  previewStore.setRuntimeData({});
+  ElMessage.success("已创建空白模板");
 }
 
-function onSaveTemplate() {
-  documentStore.markSaved();
-  ElMessage.success("当前设计器框架已保存状态，后续会继续接入正式保存流程。");
+async function refreshTemplateLibrary() {
+  templateLibraryLoading.value = true;
+  try {
+    savedTemplates.value = await repository.list();
+  } catch (error) {
+    ElMessage.error(error.message || "无法读取模板列表");
+  } finally {
+    templateLibraryLoading.value = false;
+  }
+}
+
+async function onOpenTemplate() {
+  await refreshTemplateLibrary();
+  templateLibraryVisible.value = true;
+}
+
+async function openTemplate(id) {
+  try {
+    const document = await repository.get(id);
+    if (!document) {
+      ElMessage.error("模板不存在或已被删除");
+      return;
+    }
+    const result = documentStore.loadTemplateDocument(document);
+    if (!result.document) {
+      ElMessage.error(result.issues?.[0]?.message || "模板无法加载");
+      return;
+    }
+    historyStore.reset();
+    templateLibraryVisible.value = false;
+    ElMessage.success("模板已打开");
+  } catch (error) {
+    ElMessage.error(error.message || "打开模板失败");
+  }
+}
+
+async function onSaveTemplate() {
+  const result = currentTemplateResult();
+  if (!result.valid) {
+    ElMessage.error(result.issues[0]?.message || "模板校验失败");
+    return;
+  }
+
+  try {
+    const saved = await repository.save(result.document);
+    documentStore.loadTemplateDocument(saved);
+    await refreshTemplateLibrary();
+    ElMessage.success("模板已保存到本地仓储");
+  } catch (error) {
+    ElMessage.error(error.message || "保存模板失败");
+  }
 }
 
 function onPreview() {
-  const previewDocument = createPrintDesignerDocument({
-    template: templateModel.value,
-    viewState: viewStateModel.value,
-    previewState: previewStateModel.value,
-  });
-
-  console.debug("[print-designer] preview-document", previewDocument);
-  ElMessage.info("预览流程会在打印元素渲染完成后继续补齐。");
+  const result = currentTemplateResult();
+  if (!result.valid) {
+    ElMessage.error(result.issues[0]?.message || "模板校验失败");
+    return;
+  }
+  previewDocument.value = result.document;
+  previewVisible.value = true;
 }
 
-function onPrint() {
-  ElMessage.info("打印流程会在后续业务接入时补齐。");
+async function onPrint() {
+  const result = currentTemplateResult();
+  if (!result.valid) {
+    ElMessage.error(result.issues[0]?.message || "模板校验失败");
+    return;
+  }
+  try {
+    await printRuntimeDocument({ document: result.document, runtimeData: runtimeData.value });
+  } catch (error) {
+    onPrintError(error);
+  }
+}
+
+function onPrintError(error) {
+  ElMessage.error(error?.message || "打印输出失败");
 }
 
 function onExportPdf() {
-  ElMessage.info("PDF 导出流程会在后续业务接入时补齐。");
+  ElMessage.info("PDF 导出不在当前首发范围内。");
+}
+
+function setRuntimeData(data) {
+  previewStore.setRuntimeData(data);
+}
+
+function getTemplateDocument() {
+  return currentTemplateResult();
 }
 
 function onWindowWheel(event) {
@@ -113,6 +218,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("wheel", onWindowWheel);
 });
+
+defineExpose({ setRuntimeData, getTemplateDocument, loadTemplateDocument: documentStore.loadTemplateDocument });
 </script>
 
 <style scoped lang="scss">
