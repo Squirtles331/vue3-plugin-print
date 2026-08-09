@@ -1,0 +1,23 @@
+.print-template-studio,
+.print-template-studio *,
+.print-template-studio *::before,
+.print-template-studio *::after {
+  box-sizing: border-box;
+}
+
+.print-template-studio {
+  color: #1f2328;
+  font-family:
+    "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial,
+    sans-serif;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.print-template-studio button,
+.print-template-studio input,
+.print-template-studio select,
+.print-template-studio textarea {
+  font: inherit;
+}

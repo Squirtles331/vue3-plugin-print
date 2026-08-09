@@ -48,7 +48,7 @@
       v-model:visible="previewVisible"
       :document="previewDocument"
       :initial-data="runtimeData"
-      @update:runtime-data="previewStore.setRuntimeData"
+      @update:runtime-data="setRuntimeData"
       @print-error="onPrintError"
     />
   </div>
@@ -57,7 +57,7 @@
 <script setup>
 import { ElMessage, ElMessageBox } from "element-plus";
 import { storeToRefs } from "pinia";
-import { defineAsyncComponent, onBeforeUnmount, onMounted, ref, shallowRef } from "vue";
+import { defineAsyncComponent, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
 import FloatingPanelsLayer from "./shell/FloatingPanelsLayer.vue";
 import HeaderBar from "./shell/HeaderBar.vue";
 import StatusBar from "./shell/StatusBar.vue";
@@ -79,6 +79,12 @@ import { useEditorSelectionStore } from "./stores/selectionStore";
 
 const RuntimePreviewDialog = defineAsyncComponent(() => import("../runtime/RuntimePreviewDialog.vue"));
 
+const props = defineProps({
+  repository: { type: Object, default: null },
+  presetRepository: { type: Object, default: null },
+});
+const emit = defineEmits(["template-change", "update:runtimeData", "error"]);
+
 const editorRootRef = ref(null);
 const shellStore = useEditorShellStore();
 const viewportStore = useEditorViewportStore();
@@ -86,8 +92,8 @@ const documentStore = useEditorDocumentStore();
 const previewStore = useEditorPreviewStore();
 const historyStore = useEditorHistoryStore();
 const selectionStore = useEditorSelectionStore();
-const repository = createLocalTemplateRepository();
-const presetRepository = createLocalElementPresetRepository();
+const repository = props.repository || createLocalTemplateRepository();
+const presetRepository = props.presetRepository || createLocalElementPresetRepository();
 const templateLibraryVisible = ref(false);
 const templateLibraryLoading = ref(false);
 const savedTemplates = ref([]);
@@ -102,9 +108,22 @@ const { statusbarVisible } = storeToRefs(shellStore);
 const { templateModel, templateId } = storeToRefs(documentStore);
 const { runtimeData } = storeToRefs(previewStore);
 
+function reportError(scope, error, fallback) {
+  const message = error?.message || fallback;
+  ElMessage.error(message);
+  emit("error", { scope, error, message });
+}
+
 function currentTemplateResult() {
   return serializeTemplateDocument(templateModel.value, { id: templateId.value });
 }
+
+watch(templateModel, () => {
+  const result = currentTemplateResult();
+  if (result.valid) {
+    emit("template-change", result.document);
+  }
+}, { flush: "post" });
 
 async function onNewTemplate() {
   starterCatalogVisible.value = true;
@@ -136,7 +155,7 @@ async function refreshTemplateLibrary() {
   try {
     savedTemplates.value = await repository.list();
   } catch (error) {
-    ElMessage.error(error.message || "无法读取模板列表");
+    reportError("repository.list", error, "无法读取模板列表");
   } finally {
     templateLibraryLoading.value = false;
   }
@@ -153,17 +172,21 @@ async function onDeleteTemplate(id) {
     await refreshTemplateLibrary();
     ElMessage[removed ? "success" : "warning"](removed ? "Saved template deleted from this browser" : "Saved template no longer exists");
   } catch (error) {
-    ElMessage.error(error?.message || "Unable to delete the saved template");
+    reportError("repository.delete", error, "Unable to delete the saved template");
   }
 }
 
 async function onClearTemplateLibrary() {
+  if (typeof repository.clear !== "function") {
+    reportError("repository.clear", null, "This template repository does not support clearing all templates.");
+    return;
+  }
   try {
     await repository.clear();
     await refreshTemplateLibrary();
     ElMessage.success("Saved templates cleared from this browser");
   } catch (error) {
-    ElMessage.error(error?.message || "Unable to clear saved templates");
+    reportError("repository.clear", error, "Unable to clear saved templates");
   }
 }
 
@@ -298,7 +321,7 @@ async function onSaveTemplate() {
     await refreshTemplateLibrary();
     ElMessage.success("模板已保存到本地仓储");
   } catch (error) {
-    ElMessage.error(error.message || "保存模板失败");
+    reportError("repository.save", error, "保存模板失败");
   }
 }
 
@@ -327,7 +350,7 @@ async function onPrint() {
 }
 
 function onPrintError(error) {
-  ElMessage.error(error?.message || "打印输出失败");
+  reportError("print", error, "打印输出失败");
 }
 
 function onExportPdf() {
@@ -336,6 +359,16 @@ function onExportPdf() {
 
 function setRuntimeData(data) {
   previewStore.setRuntimeData(data);
+  emit("update:runtimeData", previewStore.runtimeData);
+}
+
+function loadTemplateDocument(document) {
+  const result = documentStore.loadTemplateDocument(document);
+  if (result.document) {
+    historyStore.reset();
+    selectionStore.clearSelection();
+  }
+  return result;
 }
 
 function getTemplateDocument() {
@@ -382,7 +415,7 @@ onBeforeUnmount(() => {
   window.removeEventListener("wheel", onWindowWheel);
 });
 
-defineExpose({ setRuntimeData, getTemplateDocument, getPublishReadyTemplatePayload, loadTemplateDocument: documentStore.loadTemplateDocument });
+defineExpose({ setRuntimeData, getTemplateDocument, getPublishReadyTemplatePayload, loadTemplateDocument, print: onPrint });
 </script>
 
 <style scoped lang="scss">

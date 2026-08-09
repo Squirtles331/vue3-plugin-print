@@ -9,7 +9,10 @@ const commands = [
   ["test"],
   ["run", "test:performance"],
   ["run", "test:pages-build"],
-  ["run", "build"],
+  ["run", "build:demo"],
+  ["run", "build:library"],
+  ["run", "test:package"],
+  ["run", "test:consumer"],
   ["audit", "--omit=dev", "--audit-level=high", "--registry=https://registry.npmjs.org"],
 ];
 

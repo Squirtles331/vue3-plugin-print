@@ -1,19 +1,19 @@
 # Print Template Studio
 
-<p align="center">浏览器原生打印 · JSON 数据绑定 · 独立 Vue 3 实现</p>
+<p align="center">Vue 3 可嵌入打印设计器 · JSON 数据绑定 · 浏览器原生打印</p>
 
-一个面向业务单据、标签和表单的可视化打印模板设计器：在浏览器中设计模板，使用 JSON 绑定业务数据，并通过浏览器原生打印流程输出。
+`@squirtles331/vue3-plugin-print` 是一个独立实现的 Vue 3 可视化打印模板设计器。业务项目安装后即可嵌入完整编辑器，保存 `TemplateDocument v1` 模板、绑定业务 JSON，并使用浏览器原生打印流程输出。
+
+> **首发范围：** 支持最新桌面版 Chrome 与 Edge；不提供 PDF/图片导出、静默/云打印、Vue 2 或 Web Component。
 
 <p align="center">
-  <a href="https://songtonngxue.github.io/vue3-plugin-print/">演示站（部署后可用）</a> ·
-  <a href="#快速开始">快速开始</a> ·
-  <a href="#使用流程">使用流程</a> ·
-  <a href="#浏览器打印说明">打印说明</a> ·
-  <a href="#本版本不包含">首发边界</a> ·
-  <a href="#参与贡献与安全">参与贡献</a>
+  <a href="https://squirtles331.github.io/vue3-plugin-print/">在线演示</a> ·
+  <a href="#安装与注册">安装</a> ·
+  <a href="#组件使用">组件使用</a> ·
+  <a href="#仓储与多实例">仓储与多实例</a> ·
+  <a href="#浏览器打印">浏览器打印</a> ·
+  <a href="#参与贡献">参与贡献</a>
 </p>
-
-> **v0.1 范围：** 独立应用交付，支持最新桌面版 Chrome 和 Edge 的浏览器原生打印；不提供 npm 组件包、PDF/图片导出、静默打印或云打印。
 
 ## 已支持的能力
 
@@ -21,102 +21,129 @@
 - 元素：文本、图片、表格、条码、二维码、页码、直线、矩形、圆形和多标签。
 - 设计：拖拽、缩放、层级、锁定、对齐/分布、撤销/重做、元素预设和起始模板。
 - 数据：一个 JSON 对象驱动文本、图片、条码、二维码、表格和标签网格；支持 `customer.name`、`items[0].sku` 等路径。
-- 模板：`TemplateDocument v1` 校验与迁移、本地保存、重新打开、删除/清空浏览器本地模板、JSON 导入导出。
-- 输出：预览与浏览器打印共用运行时渲染和分页结果；打印内容在隔离 iframe 中生成，不包含选框、辅助线或编辑器面板。
+- 模板：`TemplateDocument v1` 校验与迁移、本地保存、导入/导出与可替换仓储。
+- 输出：预览与浏览器打印共用运行时渲染和分页结果；打印 iframe 不包含选择框、辅助线或编辑器控件。
 
-## 快速开始
+## 安装与注册
 
-需要 Node.js 20 或更高版本。
+宿主项目需要 Vue `^3.5`。Pinia、Element Plus、图标、条码与二维码依赖由本包安装。
+
+```bash
+npm install @squirtles331/vue3-plugin-print
+```
+
+在入口注册插件并引入样式：
+
+```js
+import { createApp } from "vue";
+import App from "./App.vue";
+import PrintTemplateStudioPlugin from "@squirtles331/vue3-plugin-print";
+import "@squirtles331/vue3-plugin-print/style.css";
+
+createApp(App).use(PrintTemplateStudioPlugin).mount("#app");
+```
+
+插件会注册 `PrintTemplateStudio`、Element Plus 和设计器使用的图标。包仅能在浏览器中挂载；Nuxt/SSR 项目请置于客户端组件内。
+
+## 组件使用
+
+```vue
+<script setup>
+import { ref } from "vue";
+
+const template = ref();
+const runtimeData = ref({
+  order: { number: "SO-20260810" },
+  customer: { name: "示例客户" },
+  items: [{ sku: "A-100", name: "标签纸", quantity: 2 }],
+});
+const designer = ref();
+
+function handleError({ scope, error, message }) {
+  console.error(scope, message, error);
+}
+</script>
+
+<template>
+  <PrintTemplateStudio
+    ref="designer"
+    v-model:template="template"
+    v-model:runtime-data="runtimeData"
+    storage-key="sales-order-template"
+    :height="760"
+    @error="handleError"
+  />
+</template>
+```
+
+| 接口 | 说明 |
+| --- | --- |
+| `v-model:template` | 接收并输出规范化后的 `TemplateDocument v1`。 |
+| `v-model:runtime-data` | 预览和打印使用的 JSON 数据；预览面板修改后会回写。 |
+| `repository` | 可选模板仓储，覆盖默认浏览器本地存储。 |
+| `storage-key` | 默认本地仓储的命名空间；同页多实例必须使用不同值。 |
+| `height` | 编辑器高度，默认 `720px`，宽度自动填满宿主容器。 |
+| `template-change` / `error` | 模板变化与仓储/打印失败事件。 |
+
+组件 ref 提供 `loadTemplateDocument(document)`、`getTemplateDocument()`、`getPublishReadyTemplatePayload()`、`setRuntimeData(data)` 和 `print(data?)`。
+
+## 仓储与多实例
+
+未提供 `repository` 时，模板和元素预设保存到当前浏览器的本地存储。单个设计器可以省略 `storage-key`；同一页面多个持久化实例必须使用不同键，避免模板库和预设库互相可见。
+
+```js
+import { createRestTemplateRepository } from "@squirtles331/vue3-plugin-print";
+
+const repository = createRestTemplateRepository({
+  baseUrl: "https://api.example.com/print",
+  getHeaders: () => ({ Authorization: `Bearer ${token}` }),
+});
+```
+
+REST 仓储使用 `GET /templates`、`GET /templates/:id`、`PUT /templates/:id` 与 `DELETE /templates/:id`。`clear()` 是本地仓储专用的可选能力；未实现时，界面会保留可编辑状态并报告错误。
+
+也可导入 `createLocalTemplateRepository`、`validateTemplateDocument`、`migrateTemplateDocument`、`serializeTemplateDocument` 和 `createPublishReadyTemplatePayload`，用于业务系统的模板管理流程。
+
+## 浏览器打印
+
+- 在预览中先检查变量缺失、图片、条码、二维码与长表格分页。
+- 原生打印对话框中使用 100%/实际大小，并关闭浏览器页眉页脚。
+- 图片 URL 必须可由浏览器访问；无效图片会显示占位或错误状态。
+- 打印机不可打印边距和实际尺寸仍需在目标设备上校准。
+
+## 本地开发与发布
 
 ```bash
 npm ci
-npm run dev
+npm run dev             # 启动 GitHub Pages 演示应用
+npm run build:demo      # 构建演示站到 demo-dist/
+npm run build:library   # 构建 npm 包到 dist/
+npm run verify          # 完整校验
 ```
 
-打开 <http://localhost:5173>。生产构建与本地预览：
-
-```bash
-npm run build
-npm run preview
-```
-
-完整发布验证：
-
-```bash
-npm run verify
-```
-
-该命令会执行 lint、单元测试、分页性能检查、GitHub Pages 路径构建、生产构建和生产依赖审计。
-
-## 使用流程
-
-1. 点击“新建”，从订单摘要、发货单、标签页或空白页起始模板开始。
-2. 插入元素并在属性面板完成页面、样式、绑定和表格/标签网格配置。
-3. 在数据面板或预览面板提供业务 JSON。
-4. 保存到当前浏览器；模板库支持重新打开、删除和清空本浏览器的模板。也可以导出 JSON 文件并在另一台设备导入。
-5. 预览确认后使用“打印”，在浏览器原生对话框中选择打印机和份数。
-
-### 运行时 JSON 示例
-
-```json
-{
-  "order": { "number": "SO-20260809", "createdAt": "2026-08-09" },
-  "customer": { "name": "示例客户", "logoUrl": "https://example.invalid/logo.png" },
-  "items": [
-    { "sku": "A-100", "name": "标签纸", "quantity": 2, "price": 16.5 },
-    { "sku": "B-200", "name": "包装盒", "quantity": 1, "price": 8 }
-  ]
-}
-```
-
-文本、图片、条码和二维码可绑定 `order.number` 或 `customer.logoUrl`；表格的 `dataVariable` 可填写 `items`。缺失路径会明确显示缺失状态，不会自动回填演示业务数据。
-
-### 模板数据
-
-持久化和运行时输入是 `TemplateDocument v1`。它包含 `schemaVersion`、模板元数据、页面设置和页面元素；缩放、选择、历史记录及预览缓存等编辑器状态不会被保存。导出文件使用 `print-template-studio/template` 的版本化 JSON 封套，导入时会进行大小限制、校验和迁移。
-
-如需在自己的 Vue 容器中使用源码组件，可通过组件暴露的 `setRuntimeData(data)`、`getTemplateDocument()`、`getPublishReadyTemplatePayload()` 和 `loadTemplateDocument(document)` 与编辑器交互。v0.1 不是 npm 组件包或 Web Component。
-
-## 浏览器打印说明
-
-- 支持范围：最新桌面版 Chrome 与 Edge。
-- 打印前在预览中检查绑定错误、表格分页、条码和二维码。
-- 在原生打印对话框中使用 100%/实际尺寸，并关闭浏览器额外页眉页脚；不同打印机的不可打印边距仍需用实机校准。
-- 图片 URL 必须允许浏览器访问；不可用图片会显示占位/错误状态。
-
-详细的发布前实机验收清单见 [浏览器打印验收](docs/browser-print-acceptance.md)。
-
-## 本地存储与隐私
-
-v0.1 不包含账号、服务器或云同步。保存的模板和元素预设仅存在当前浏览器的本地存储中；清除浏览器站点数据或点击“清空本地模板库”后无法恢复。请通过 JSON 导出保留重要模板。
-
-## 本版本不包含
-
-- PDF 或图片导出
-- 静默打印、云打印、打印客户端及打印队列
-- 打印机、DPI、单双面等设备级参数控制
-- 服务端渲染、账户同步、协作和权限模型
-- npm 组件包、Web Component、移动端适配和多语言界面
-
-这些能力会在后续独立变更中评估，不会作为 v0.1 的隐含承诺。
+维护者在 npm 为 `@squirtles331/vue3-plugin-print` 配置 Trusted Publisher 后，推送与 `package.json` 版本一致的 `vX.Y.Z` 标签即可通过 GitHub Actions 发布公开包并生成 provenance。
 
 ## 开源与来源边界
 
-本仓库以 [MIT](LICENSE) 发布。它只允许在独立实现、独立文案、独立模板和独立资产的范围内使用该许可。参考同类产品的通用能力类别不等同于复制其源码、品牌、素材或模板；发布 `v0.1.0` 前仍需完成 [来源复核清单](docs/release-checklist.md)。第三方依赖见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+本仓库以 [MIT](LICENSE) 发布，仅覆盖仓库中可独立授权的代码、文案、模板与资产。能力类别参考不等于复制其他项目的代码、品牌、素材或模板。第三方依赖见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
-## 参与贡献与安全
+## 参与贡献
 
-欢迎提交 bug、改进建议和文档修订。请先阅读 [贡献指南](CONTRIBUTING.md) 与 [安全策略](SECURITY.md)，并使用仓库模板提交 Issue 或 Pull Request。
+提交 Issue 或 Pull Request 前，请阅读 [贡献指南](CONTRIBUTING.md)、[安全策略](SECURITY.md) 和 [发布检查清单](docs/release-checklist.md)。
 
 ---
 
 ## English quick start
 
-Print Template Studio is a standalone Vue 3 visual print-template designer for browser-native printing. It supports template authoring, versioned JSON import/export, local browser persistence, runtime JSON bindings, preview, and printing in current desktop Chrome and Edge.
-
 ```bash
-npm ci
-npm run dev
+npm install @squirtles331/vue3-plugin-print
 ```
 
-Templates are stored only in the current browser. Export important templates as JSON before clearing site data. v0.1 deliberately excludes PDF/image export, silent/cloud printing, server rendering, collaboration, and package/Web Component distribution. Run `npm run verify` before contributing a release candidate.
+```js
+import PrintTemplateStudioPlugin from "@squirtles331/vue3-plugin-print";
+import "@squirtles331/vue3-plugin-print/style.css";
+
+app.use(PrintTemplateStudioPlugin);
+```
+
+Render `<PrintTemplateStudio v-model:template="template" v-model:runtime-data="runtimeData" />`. The package targets Vue 3.5+ and current desktop Chrome/Edge browser printing. PDF/image export, silent/cloud printing, Vue 2, Web Components, and server rendering are outside the first release scope.

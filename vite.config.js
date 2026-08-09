@@ -3,6 +3,12 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 
 export function resolveDeploymentBase(environment = process.env) {
+  const configuredBase = environment.VITE_BASE_URL;
+  if (typeof configuredBase === "string" && configuredBase.trim()) {
+    const normalizedBase = configuredBase.trim().replace(/^\/+|\/+$/g, "");
+    return normalizedBase ? `/${normalizedBase}/` : "/";
+  }
+
   const repository = environment.GITHUB_REPOSITORY;
   if (environment.GITHUB_ACTIONS !== "true" || typeof repository !== "string") {
     return "/";
@@ -25,7 +31,7 @@ export default defineConfig({
     port: 5173,
   },
   build: {
-    outDir: "dist",
+    outDir: "demo-dist",
     emptyOutDir: true,
     rollupOptions: {
       output: {

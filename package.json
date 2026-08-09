@@ -1,9 +1,8 @@
 {
-  "name": "vue3-plugin-print",
-  "private": true,
+  "name": "@squirtles331/vue3-plugin-print",
   "version": "0.1.0",
   "type": "module",
-  "description": "A standalone Vue 3 visual print-template designer for browser-native printing.",
+  "description": "An embeddable Vue 3 visual print-template designer for browser-native printing.",
   "license": "MIT",
   "keywords": [
     "vue",
@@ -18,23 +17,48 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/songtonngxue/vue3-plugin-print.git"
+    "url": "git+https://github.com/Squirtles331/vue3-plugin-print.git"
   },
   "bugs": {
-    "url": "https://github.com/songtonngxue/vue3-plugin-print/issues"
+    "url": "https://github.com/Squirtles331/vue3-plugin-print/issues"
   },
-  "homepage": "https://songtonngxue.github.io/vue3-plugin-print/",
+  "homepage": "https://squirtles331.github.io/vue3-plugin-print/",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run build:library",
+    "build:library": "vite build --config vite.lib.config.js && node scripts/copy-library-types.mjs",
+    "build:demo": "vite build",
     "preview": "vite preview",
-    "lint": "eslint \"src/**/*.{js,vue}\" \"test/**/*.js\" \"scripts/**/*.mjs\" \"vite.config.js\"",
+    "lint": "eslint \"src/**/*.{js,vue}\" \"test/**/*.js\" \"scripts/**/*.mjs\" \"vite.config.js\" \"vite.lib.config.js\"",
     "test": "vitest run",
     "test:performance": "vitest run test/performance.test.js",
     "test:pages-build": "node scripts/verify-github-pages-build.mjs",
+    "test:package": "node scripts/verify-package-artifact.mjs",
+    "test:consumer": "node scripts/verify-packed-consumer.mjs",
     "verify": "node scripts/verify-release.mjs"
   },
   "dependencies": {
@@ -48,7 +72,9 @@
     "element-plus": "^2.9.6",
     "jsbarcode": "^3.11.6",
     "pinia": "^3.0.3",
-    "qrcode": "^1.5.4",
+    "qrcode": "^1.5.4"
+  },
+  "peerDependencies": {
     "vue": "^3.5.13"
   },
   "devDependencies": {
@@ -61,6 +87,7 @@
     "jsdom": "^29.1.1",
     "sass": "^1.85.1",
     "vite": "^6.4.3",
+    "vue": "^3.5.13",
     "vitest": "^3.2.4"
   }
 }
