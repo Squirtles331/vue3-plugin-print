@@ -40,7 +40,7 @@
 <script setup>
 import { ElMessage, ElMessageBox } from "element-plus";
 import { storeToRefs } from "pinia";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { defineAsyncComponent, onBeforeUnmount, onMounted, ref } from "vue";
 import FloatingPanelsLayer from "./shell/FloatingPanelsLayer.vue";
 import HeaderBar from "./shell/HeaderBar.vue";
 import StatusBar from "./shell/StatusBar.vue";
@@ -50,11 +50,11 @@ import { useEditorShellStore } from "./stores/shellStore";
 import { useEditorViewportStore } from "./stores/viewportStore";
 import WorkspaceRoot from "./workspace/WorkspaceRoot.vue";
 import { createLocalTemplateRepository } from "../template/templateRepository.js";
-import { serializeTemplateDocument } from "../template/templateDocument.js";
+import { createPublishReadyTemplatePayload, serializeTemplateDocument } from "../template/templateDocument.js";
 import TemplateLibraryDialog from "../template/TemplateLibraryDialog.vue";
-import RuntimePreviewDialog from "../runtime/RuntimePreviewDialog.vue";
-import { printRuntimeDocument } from "../runtime/print.js";
 import { useEditorHistoryStore } from "./stores/historyStore";
+
+const RuntimePreviewDialog = defineAsyncComponent(() => import("../runtime/RuntimePreviewDialog.vue"));
 
 const editorRootRef = ref(null);
 const shellStore = useEditorShellStore();
@@ -162,6 +162,7 @@ async function onPrint() {
     return;
   }
   try {
+    const { printRuntimeDocument } = await import("../runtime/print.js");
     await printRuntimeDocument({ document: result.document, runtimeData: runtimeData.value });
   } catch (error) {
     onPrintError(error);
@@ -182,6 +183,11 @@ function setRuntimeData(data) {
 
 function getTemplateDocument() {
   return currentTemplateResult();
+}
+
+function getPublishReadyTemplatePayload() {
+  const result = currentTemplateResult();
+  return result.valid ? createPublishReadyTemplatePayload(result.document) : { ...result, payload: null };
 }
 
 function onWindowWheel(event) {
@@ -219,7 +225,7 @@ onBeforeUnmount(() => {
   window.removeEventListener("wheel", onWindowWheel);
 });
 
-defineExpose({ setRuntimeData, getTemplateDocument, loadTemplateDocument: documentStore.loadTemplateDocument });
+defineExpose({ setRuntimeData, getTemplateDocument, getPublishReadyTemplatePayload, loadTemplateDocument: documentStore.loadTemplateDocument });
 </script>
 
 <style scoped lang="scss">

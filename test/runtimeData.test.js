@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
-import { resolveDataPath, resolveRuntimeTemplate } from "../src/print-designer/runtime/dataResolver.js";
+import { applyConstrainedTableTransform, resolveDataPath, resolveRuntimeTemplate } from "../src/print-designer/runtime/dataResolver.js";
 import { paginateRuntimeDocument } from "../src/print-designer/runtime/pagination.js";
 import { createBlankTemplateDocument } from "../src/print-designer/template/templateDocument.js";
 
@@ -44,6 +44,15 @@ test("keeps empty labels structural and leaves unbound machine-readable values e
 
   assert.equal(resolved.document.pages[0].elements[0].runtime.value.status, "empty");
   assert.deepEqual(resolved.document.pages[0].elements[1].runtime.multiLabel.rows, []);
+});
+
+test("only executes declarative table transforms and reports invalid transforms", () => {
+  const sorted = applyConstrainedTableTransform([{ value: "b" }, { value: "a" }], { type: "sort", by: "value" });
+  const invalid = applyConstrainedTableTransform([], { type: "javascript" });
+
+  assert.deepEqual(sorted.rows.map((row) => row.value), ["a", "b"]);
+  assert.equal(sorted.issues.length, 0);
+  assert.equal(invalid.issues[0].severity, "error");
 });
 
 test("paginates table rows deterministically and exposes page totals", () => {

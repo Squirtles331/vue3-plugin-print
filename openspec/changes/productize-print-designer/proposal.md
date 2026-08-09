@@ -4,6 +4,10 @@ The current repository already provides a capable print-template editor, but it 
 
 This change turns the existing editor core into a usable print-design product by defining the missing runtime, persistence, and data-binding contracts. Doing this now creates a stable base for implementation work instead of continuing to extend the editor without a production path.
 
+## First-release scope amendment
+
+The commercial first release includes runtime preview and browser printing only. PDF export, silent printing, and cloud delivery are explicitly deferred to a later change; the runtime contract remains independent of its output target so those additions can reuse it.
+
 ## What Changes
 
 - Introduce a template lifecycle that covers create, load, save, version metadata, validation state, and publish-ready template payloads.

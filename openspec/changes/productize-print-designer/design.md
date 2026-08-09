@@ -1,5 +1,9 @@
 ## Context
 
+### First-release scope amendment
+
+This implementation delivers the template contract, runtime preview, and browser print. PDF export, silent printing, and cloud delivery are deferred by the approved commercial first-release plan. Future output targets must consume the same normalized runtime contract.
+
 The repository already contains a strong editing shell: page settings, drag-and-resize interactions, inspector schemas, template serialization, and several printable element types. The current gap is not the editor chrome itself, but the absence of a production runtime around it.
 
 Today, the system can assemble a template-shaped document model, but key product flows remain placeholders:

@@ -16,5 +16,20 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/element-plus") || id.includes("node_modules/@element-plus")) {
+            return "element-plus";
+          }
+          if (id.includes("node_modules/@codemirror") || id.includes("node_modules/codemirror")) {
+            return "editor-code";
+          }
+          if (id.includes("node_modules/vue/") || id.includes("node_modules/pinia/")) {
+            return "framework";
+          }
+        },
+      },
+    },
   },
 });

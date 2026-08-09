@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 import { createElement } from "../src/print-designer/core/elementFactory.js";
-import { createBlankTemplateDocument, serializeTemplateDocument, validateTemplateDocument } from "../src/print-designer/template/templateDocument.js";
+import { createBlankTemplateDocument, createPublishReadyTemplatePayload, serializeTemplateDocument, validateTemplateDocument } from "../src/print-designer/template/templateDocument.js";
 import { createLocalTemplateRepository } from "../src/print-designer/template/templateRepository.js";
 
 test("new elements start without business demo data", () => {
@@ -41,4 +41,11 @@ test("local repository persists normalized templates", async () => {
   assert.equal((await repository.list()).length, 1);
   assert.deepEqual(await repository.get(saved.id), saved);
   assert.equal(validateTemplateDocument(saved).valid, true);
+});
+
+test("publish-ready payload only exposes runtime template fields", () => {
+  const result = createPublishReadyTemplatePayload(createBlankTemplateDocument());
+
+  assert.equal(result.valid, true);
+  assert.deepEqual(Object.keys(result.payload).sort(), ["id", "meta", "pageSettings", "pages", "schemaVersion"]);
 });

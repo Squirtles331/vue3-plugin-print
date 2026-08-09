@@ -12,7 +12,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:performance": "vitest run test/performance.test.js"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.5",

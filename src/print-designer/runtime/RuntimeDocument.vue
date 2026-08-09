@@ -54,11 +54,11 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, defineAsyncComponent } from "vue";
 import { paginateRuntimeDocument } from "./pagination.js";
 import { resolveRuntimeTemplate } from "./dataResolver.js";
-import RuntimeBarcode from "./RuntimeBarcode.vue";
-import RuntimeQrCode from "./RuntimeQrCode.vue";
+const RuntimeBarcode = defineAsyncComponent(() => import("./RuntimeBarcode.vue"));
+const RuntimeQrCode = defineAsyncComponent(() => import("./RuntimeQrCode.vue"));
 
 const props = defineProps({ document: { type: Object, required: true }, runtimeData: { type: Object, default: () => ({}) }, mode: { type: String, default: "preview" } });
 const resolved = computed(() => resolveRuntimeTemplate(props.document, props.runtimeData));

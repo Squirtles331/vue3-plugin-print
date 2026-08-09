@@ -136,7 +136,16 @@ export function migrateTemplateDocument(source) {
 
   return {
     document: normalizeSource(source),
-    issues: version === TEMPLATE_SCHEMA_VERSION ? [] : [],
+    issues:
+      version === TEMPLATE_SCHEMA_VERSION
+        ? []
+        : [
+            {
+              path: "schemaVersion",
+              message: "A legacy template was normalized to schema version 1.",
+              severity: "warning",
+            },
+          ],
   };
 }
 
@@ -192,4 +201,28 @@ export function serializeTemplateDocument(template, metadata = {}) {
   });
 
   return validateTemplateDocument(document);
+}
+
+export function createPublishReadyTemplatePayload(template) {
+  const result = serializeTemplateDocument(template);
+  if (!result.valid) {
+    return { ...result, payload: null };
+  }
+
+  const { schemaVersion, id, meta, pageSettings, pages } = result.document;
+  return {
+    ...result,
+    payload: {
+      schemaVersion,
+      id,
+      meta: {
+        name: meta.name,
+        unit: meta.unit,
+        createdAt: meta.createdAt,
+        updatedAt: meta.updatedAt,
+      },
+      pageSettings,
+      pages,
+    },
+  };
 }

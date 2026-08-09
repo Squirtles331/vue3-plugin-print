@@ -17,6 +17,9 @@ defineExpose({
   getTemplateDocument() {
     return editorRootRef.value?.getTemplateDocument();
   },
+  getPublishReadyTemplatePayload() {
+    return editorRootRef.value?.getPublishReadyTemplatePayload();
+  },
   loadTemplateDocument(document) {
     return editorRootRef.value?.loadTemplateDocument(document);
   },

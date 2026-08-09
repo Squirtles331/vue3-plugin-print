@@ -38,9 +38,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
   const pages = ref([...pageCards]);
   const variables = ref([]);
   const objectsById = ref(createInitialObjects());
-  const pageObjectMap = ref({
-    "page-1": layerCards.map((layer) => layer.id),
-  });
+  const pageObjectMap = ref(Object.fromEntries(pages.value.map((page) => [page.id, []])));
   const dirty = ref(false);
   const currentPaperPresetKey = ref(DEFAULT_PAPER_KEY);
   const pageWidthMm = ref(DEFAULT_PAPER_PRESET?.widthMm || 210);

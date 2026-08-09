@@ -1,15 +1,11 @@
 ## ADDED Requirements
 
-### Requirement: Preview, print, and PDF SHALL use one runtime rendering contract
-The system SHALL render templates for preview, browser print, and PDF export from the same runtime template interpretation so page layout, visibility, and pagination rules remain consistent across outputs.
+### Requirement: Preview and browser print SHALL use one runtime rendering contract
+The system SHALL render templates for preview and browser print from the same runtime template interpretation so page layout, visibility, and pagination rules remain consistent across outputs. PDF export is deferred from this release and MUST consume this same contract when introduced.
 
 #### Scenario: Preview and print parity
 - **WHEN** a template is rendered in preview and then rendered for print
 - **THEN** the same pages, elements, and pagination results MUST be produced except for output-target specific container styling
-
-#### Scenario: Preview and PDF parity
-- **WHEN** a template is exported to PDF
-- **THEN** the PDF output MUST reflect the same runtime layout decisions used in preview
 
 ### Requirement: Runtime output SHALL use printable element renderers
 The system SHALL render barcodes, QR codes, tables, page numbers, and other printable elements using runtime renderers suitable for actual output rather than design-only placeholder shapes.
