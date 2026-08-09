@@ -1,12 +1,12 @@
 <template>
-  <el-dialog :model-value="visible" title="Runtime preview" width="min(1200px, 94vw)" top="4vh" @update:model-value="emit('update:visible', $event)">
+  <el-dialog :model-value="visible" title="运行时预览" width="min(1200px, 94vw)" top="4vh" @update:model-value="emit('update:visible', $event)">
     <div class="runtime-preview">
       <aside class="runtime-preview__controls">
-        <h3>Runtime JSON</h3>
-        <p>Provide one JSON object. Variables and table bindings resolve from its dot paths.</p>
+        <h3>运行时 JSON</h3>
+        <p>请输入一个 JSON 对象。变量和表格绑定会按点路径解析。</p>
         <el-input v-model="runtimeDataText" type="textarea" :rows="16" spellcheck="false" />
         <p v-if="parseError" class="runtime-preview__error">{{ parseError }}</p>
-        <el-button type="primary" :disabled="!!parseError || !documentValid" @click="print">Browser print</el-button>
+        <el-button type="primary" :disabled="!!parseError || !documentValid" @click="print">浏览器打印</el-button>
         <ul v-if="validationIssues.length" class="runtime-preview__error-list"><li v-for="issue in validationIssues" :key="`${issue.path}-${issue.message}`">{{ issue.message }}</li></ul>
       </aside>
       <div class="runtime-preview__canvas"><RuntimeDocument v-if="documentValid && !parseError" :document="document" :runtime-data="runtimeData" /></div>
