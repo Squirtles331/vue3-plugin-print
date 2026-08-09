@@ -1016,8 +1016,8 @@
                     {{ button.label }}
                   </button>
                 </div>
+                <small v-if="fieldError(field)" class="element-properties-panel__field-error">{{ fieldError(field) }}</small>
               </template>
-              <small v-if="fieldError(field)" class="element-properties-panel__field-error">{{ fieldError(field) }}</small>
             </div>
           </section>
         </div>
@@ -1055,6 +1055,7 @@ import { MM_TO_CSS_PX } from "../measurement.js";
 import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorSelectionStore } from "../stores/selectionStore";
 import { createLocalElementPresetRepository } from "../../template/elementPresetRepository.js";
+import { fieldErrorKey, getFieldError } from "./fieldErrorState.js";
 
 const documentStore = useEditorDocumentStore();
 const selectionStore = useEditorSelectionStore();
@@ -2828,16 +2829,17 @@ function normalizeFieldValue(field, value) {
   }
 }
 
-function fieldErrorKey(field) {
-  return `${field.source}:${field.key}`;
-}
-
 function fieldError(field) {
-  return fieldErrors.value[fieldErrorKey(field)] || "";
+  return getFieldError(fieldErrors.value, field);
 }
 
 function setFieldError(field, message = "") {
   const key = fieldErrorKey(field);
+
+  if (!key) {
+    return;
+  }
+
   const next = { ...fieldErrors.value };
   if (message) {
     next[key] = message;
@@ -2848,6 +2850,10 @@ function setFieldError(field, message = "") {
 }
 
 function validateFieldChange(field, value) {
+  if (!field) {
+    return false;
+  }
+
   const message = validateElementProperty(selectedObject.value?.type, field.source, field.key, value);
   setFieldError(field, message || "");
   return !message;
