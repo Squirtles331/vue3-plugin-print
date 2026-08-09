@@ -29,6 +29,8 @@
       :loading="templateLibraryLoading"
       @refresh="refreshTemplateLibrary"
       @select="openTemplate"
+      @remove="onDeleteTemplate"
+      @clear="onClearTemplateLibrary"
     />
     <StarterTemplateDialog
       v-model:visible="starterCatalogVisible"
@@ -143,6 +145,26 @@ async function refreshTemplateLibrary() {
 async function onOpenTemplate() {
   await refreshTemplateLibrary();
   templateLibraryVisible.value = true;
+}
+
+async function onDeleteTemplate(id) {
+  try {
+    const removed = await repository.delete(id);
+    await refreshTemplateLibrary();
+    ElMessage[removed ? "success" : "warning"](removed ? "Saved template deleted from this browser" : "Saved template no longer exists");
+  } catch (error) {
+    ElMessage.error(error?.message || "Unable to delete the saved template");
+  }
+}
+
+async function onClearTemplateLibrary() {
+  try {
+    await repository.clear();
+    await refreshTemplateLibrary();
+    ElMessage.success("Saved templates cleared from this browser");
+  } catch (error) {
+    ElMessage.error(error?.message || "Unable to clear saved templates");
+  }
 }
 
 function onImportTemplate() {

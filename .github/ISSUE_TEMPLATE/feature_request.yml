@@ -1,0 +1,31 @@
+name: Feature request
+description: Suggest a scoped improvement for a future release.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Describe the workflow and current limitation before proposing a solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed outcome
+      description: Explain the user-facing result, examples, and relevant print/browser constraints.
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Likely scope
+      options:
+        - v0.1 stabilization
+        - Future editor capability
+        - Future printing or export capability
+        - Documentation
+    validations:
+      required: true

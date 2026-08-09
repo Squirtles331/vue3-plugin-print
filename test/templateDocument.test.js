@@ -46,6 +46,23 @@ test("local repository persists normalized templates", async () => {
   assert.equal(validateTemplateDocument(saved).valid, true);
 });
 
+test("local repository deletes saved templates and clears only its own collection", async () => {
+  const memory = new Map();
+  const storage = { getItem: (key) => memory.get(key) || null, setItem: (key, value) => memory.set(key, value) };
+  const repository = createLocalTemplateRepository({ storage, key: "release-test-templates" });
+  const first = await repository.save(createBlankTemplateDocument({ meta: { name: "First" } }));
+  const second = await repository.save(createBlankTemplateDocument({ meta: { name: "Second" } }));
+  storage.setItem("unrelated-preference", "preserve-me");
+
+  assert.equal(await repository.delete(first.id), true);
+  assert.equal(await repository.delete(first.id), false);
+  assert.deepEqual((await repository.list()).map((template) => template.id), [second.id]);
+
+  await repository.clear();
+  assert.deepEqual(await repository.list(), []);
+  assert.equal(storage.getItem("unrelated-preference"), "preserve-me");
+});
+
 test("publish-ready payload only exposes runtime template fields", () => {
   const result = createPublishReadyTemplatePayload(createBlankTemplateDocument());
 

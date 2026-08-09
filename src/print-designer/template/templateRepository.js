@@ -73,6 +73,21 @@ export function createLocalTemplateRepository({ storage = getBrowserStorage(), k
       writeCollection(storage, key, collection);
       return clone(result.document);
     },
+
+    async delete(id) {
+      const collection = readCollection(storage, key);
+      if (!Object.prototype.hasOwnProperty.call(collection, id)) {
+        return false;
+      }
+
+      delete collection[id];
+      writeCollection(storage, key, collection);
+      return true;
+    },
+
+    async clear() {
+      writeCollection(storage, key, {});
+    },
   };
 }
 
@@ -121,6 +136,10 @@ export function createRestTemplateRepository({ baseUrl, fetchImpl = globalThis.f
         method: "PUT",
         body: JSON.stringify(result.document),
       });
+    },
+    async delete(id) {
+      await request(`/templates/${encodeURIComponent(id)}`, { method: "DELETE" });
+      return true;
     },
   };
 }

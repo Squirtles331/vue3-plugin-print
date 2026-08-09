@@ -1,0 +1,33 @@
+name: Bug report
+description: Report a reproducible problem in the designer, preview, or browser printing flow.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Please remove business data, credentials, and protected screenshots before submitting.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior and the expected result.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Start from …
+        2. Insert or configure …
+        3. Observe …
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include version, browser, OS, paper/printer settings if printing is involved, and anonymized JSON/template data.
+    validations:
+      required: true

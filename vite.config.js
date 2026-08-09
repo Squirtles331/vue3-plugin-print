@@ -2,7 +2,18 @@ import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 
+export function resolveDeploymentBase(environment = process.env) {
+  const repository = environment.GITHUB_REPOSITORY;
+  if (environment.GITHUB_ACTIONS !== "true" || typeof repository !== "string") {
+    return "/";
+  }
+
+  const [, repositoryName] = repository.split("/");
+  return repositoryName ? `/${repositoryName}/` : "/";
+}
+
 export default defineConfig({
+  base: resolveDeploymentBase(),
   plugins: [vue()],
   resolve: {
     alias: {

@@ -1098,31 +1098,6 @@ function tableFooterRows(object) {
 
   return [];
 
-  const fallback = {};
-
-  columns.forEach((column, index) => {
-    if (index === 0) {
-      fallback[column.key] = "总计";
-      return;
-    }
-
-    const values = tableDataSource(object)
-      .map((row) => Number(row[column.key]))
-      .filter((value) => Number.isFinite(value));
-
-    fallback[column.key] = values.length
-      ? column.key === "price" || column.key === "total"
-        ? values.reduce((sum, value) => sum + value, 0).toFixed(2)
-        : values.reduce((sum, value) => sum + value, 0)
-      : "";
-  });
-
-  return [
-    {
-      ...fallback,
-      __rowKey: `${object.id}-footer-0`,
-    },
-  ];
 }
 
 function tableBindingTokens(object) {
@@ -1285,36 +1260,6 @@ function multiLabelPreviewLines(item, fallbackIndex, object) {
       tertiary: mapped(object?.props?.tertiaryPath),
     };
 
-    const preferred = [
-      item.title,
-      item.name,
-      item.label,
-      item.code,
-      item.value,
-      item.text,
-      item.detail,
-      item.desc,
-    ]
-      .filter((value) => value != null && value !== "")
-      .map((value) => String(value));
-
-    if (preferred.length) {
-      return {
-        primary: preferred[0],
-        secondary: preferred[1] || "",
-        tertiary: preferred[2] || "",
-      };
-    }
-
-    const entries = Object.entries(item)
-      .slice(0, 3)
-      .map(([key, value]) => `${key}: ${value}`);
-
-    return {
-      primary: entries[0] || "未配置标签",
-      secondary: entries[1] || "",
-      tertiary: entries[2] || "",
-    };
   }
 
   return {
@@ -1754,14 +1699,10 @@ function clampResizeEdges(startRect, handle, deltaX, deltaY) {
 
     if (handle.includes("w")) {
       left = right - nextWidth;
-    } else if (handle.includes("e")) {
-      right = left + nextWidth;
     }
 
     if (handle.includes("n")) {
       top = bottom - nextHeight;
-    } else if (handle.includes("s")) {
-      bottom = top + nextHeight;
     }
 
     return {
