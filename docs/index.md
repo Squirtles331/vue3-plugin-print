@@ -6,7 +6,7 @@ hero:
   text: 一个基于 Vue 3 的可视化打印模板组件库
   tagline: 提供高效模板设计、预览和打印能力，帮助业务系统快速落地。
   image:
-    src: /logo.svg
+    src: /home-hero.svg
     alt: 打印模板工作台
   actions:
     - theme: brand

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-label="打印模板工作台">
+  <defs>
+    <linearGradient id="bg" x1="64" y1="48" x2="256" y2="272" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0f766e"/>
+      <stop offset="1" stop-color="#14b8a6"/>
+    </linearGradient>
+    <linearGradient id="sheet" x1="112" y1="96" x2="208" y2="224" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#eefcf9"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#0f766e" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+  <rect width="320" height="320" fill="none"/>
+  <rect x="60" y="52" width="200" height="216" rx="42" fill="url(#bg)" filter="url(#shadow)"/>
+  <path d="M138 88h58l24 24v80c0 6.627-5.373 12-12 12h-70c-6.627 0-12-5.373-12-12v-92c0-6.627 5.373-12 12-12Z" fill="url(#sheet)"/>
+  <path d="M196 88v24h24" fill="none" stroke="#0f766e" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="148" y="122" width="34" height="8" rx="4" fill="#14b8a6"/>
+  <rect x="148" y="142" width="46" height="8" rx="4" fill="#14b8a6" opacity="0.8"/>
+  <rect x="148" y="162" width="42" height="8" rx="4" fill="#14b8a6" opacity="0.62"/>
+  <rect x="148" y="182" width="28" height="8" rx="4" fill="#14b8a6" opacity="0.45"/>
+  <path d="M116 202h88" stroke="#d1faf5" stroke-width="10" stroke-linecap="round"/>
+  <path d="M116 218h76" stroke="#d1faf5" stroke-width="10" stroke-linecap="round"/>
+</svg>
