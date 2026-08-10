@@ -121,7 +121,7 @@ npm run build:library   # 构建 npm 包到 dist/
 npm run verify          # 完整校验
 ```
 
-维护者在 npm 为 `@squirtles331/vue3-plugin-print` 配置 Trusted Publisher 后，推送与 `package.json` 版本一致的 `vX.Y.Z` 标签即可通过 GitHub Actions 发布公开包并生成 provenance。
+维护者在 GitHub 仓库 Secrets 中配置 `NPM_TOKEN` 后，推送与 `package.json` 版本一致的 `vX.Y.Z` 标签即可通过 GitHub Actions 发布公开包。
 
 ## 开源与来源边界
 
