@@ -21,14 +21,22 @@ export function resolveDeploymentBase(environment = process.env) {
 export default defineConfig({
   base: resolveDeploymentBase(),
   plugins: [vue()],
-  resolve: {
-    alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
+  test: {
+    css: false,
+    server: {
+      deps: {
+        inline: [/element-plus/],
+      },
     },
   },
   server: {
     host: "0.0.0.0",
     port: 5173,
+  },
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
   },
   build: {
     outDir: "demo-dist",
