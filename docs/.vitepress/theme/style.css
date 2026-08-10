@@ -39,7 +39,7 @@
 }
 
 .VPHomeFeatures .items {
-  gap: 16px;
+  justify-content: center;
 }
 
 .VPFeature {
