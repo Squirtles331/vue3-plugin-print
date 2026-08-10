@@ -33,6 +33,7 @@ export default defineConfig({
       { text: "指南", link: "/guide/quick-start" },
       { text: "接口", link: "/api/component" },
       { text: "示例", link: "/examples/repository" },
+      { text: "对比", link: "/guide/comparison" },
       { text: "演示区", link: "/playground" },
     ],
     sidebar: [
@@ -41,6 +42,7 @@ export default defineConfig({
         items: [
           { text: "快速开始", link: "/guide/quick-start" },
           { text: "组件使用", link: "/guide/usage" },
+          { text: "选型对比", link: "/guide/comparison" },
         ],
       },
       {
