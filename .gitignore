@@ -5,6 +5,8 @@ node_modules/
 dist/
 demo-dist/
 dist-ssr/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
 .tmp/
 
 # Local environment files

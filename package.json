@@ -52,6 +52,10 @@
     "build": "npm run build:library",
     "build:library": "vite build --config vite.lib.config.js && node scripts/copy-library-types.mjs",
     "build:demo": "vite build",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "pages:build": "node scripts/build-pages.mjs",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{js,vue}\" \"test/**/*.js\" \"scripts/**/*.mjs\" \"vite.config.js\" \"vite.lib.config.js\"",
     "test": "vitest run",
@@ -87,6 +91,7 @@
     "jsdom": "^29.1.1",
     "sass": "^1.85.1",
     "vite": "^6.4.3",
+    "vitepress": "^1.6.4",
     "vue": "^3.5.13",
     "vitest": "^3.2.4"
   }

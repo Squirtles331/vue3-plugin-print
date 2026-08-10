@@ -34,9 +34,9 @@ jobs:
         shell: bash
         run: |
           if [ "${{ github.event.repository.name }}" = "${{ github.repository_owner }}.github.io" ]; then
-            echo "VITE_BASE_URL=/" >> "$GITHUB_ENV"
+            echo "VITEPRESS_BASE=/" >> "$GITHUB_ENV"
           else
-            echo "VITE_BASE_URL=/${{ github.event.repository.name }}/" >> "$GITHUB_ENV"
+            echo "VITEPRESS_BASE=/${{ github.event.repository.name }}/" >> "$GITHUB_ENV"
           fi
 
       - name: Install dependencies
@@ -45,14 +45,14 @@ jobs:
       - name: Verify source
         run: npm run verify
 
-      - name: Build demo
-        run: npm run build:demo -- --mode github-pages
+      - name: Build documentation and demo
+        run: npm run pages:build
         env:
           NODE_ENV: production
 
       - name: Prepare artifact
         shell: bash
-        run: touch demo-dist/.nojekyll
+        run: touch docs/.vitepress/dist/.nojekyll
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -60,7 +60,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: demo-dist
+          path: docs/.vitepress/dist
 
       - name: Deploy to GitHub Pages
         id: deployment

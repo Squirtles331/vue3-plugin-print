@@ -3,12 +3,18 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 
-const repositoryName = "print-template-studio";
-const outputDirectory = resolve(".tmp", "github-pages-build");
-const viteCli = resolve("node_modules", "vite", "bin", "vite.js");
+const npmCli = process.env.npm_execpath;
+if (!npmCli) {
+  throw new Error("The GitHub Pages verification script must be run through npm.");
+}
+
+const repositoryName = "vue3-plugin-print";
+const docsDist = resolve("docs", ".vitepress", "dist");
+const docsIndexPath = resolve(docsDist, "index.html");
+const demoIndexPath = resolve(docsDist, "demo", "index.html");
 
 function resolveExpectedBasePath() {
-  const configuredBase = process.env.VITE_BASE_URL;
+  const configuredBase = process.env.VITEPRESS_BASE || process.env.VITE_BASE_URL;
   if (typeof configuredBase === "string" && configuredBase.trim()) {
     const normalizedBase = configuredBase.trim().replace(/^\/+|\/+$/g, "");
     return normalizedBase ? `/${normalizedBase}/` : "/";
@@ -17,24 +23,32 @@ function resolveExpectedBasePath() {
   return `/${repositoryName}/`;
 }
 
+function joinBase(base, child) {
+  const normalizedBase = base.replace(/\/+$/, "");
+  return `${normalizedBase}/${child.replace(/^\/+|\/+$/g, "")}/`;
+}
+
 const expectedBasePath = resolveExpectedBasePath();
 
-rmSync(outputDirectory, { recursive: true, force: true });
+rmSync(docsDist, { recursive: true, force: true });
 
 try {
-  execFileSync(process.execPath, [viteCli, "build", "--outDir", outputDirectory], {
+  execFileSync(process.execPath, [npmCli, "run", "pages:build"], {
     env: {
       ...process.env,
-      GITHUB_ACTIONS: "true",
-      GITHUB_REPOSITORY: `open-source-maintainer/${repositoryName}`,
+      VITEPRESS_BASE: expectedBasePath,
     },
     stdio: "inherit",
   });
 
-  const indexPath = resolve(outputDirectory, "index.html");
-  assert.equal(existsSync(indexPath), true, "GitHub Pages build did not emit index.html");
-  const index = readFileSync(indexPath, "utf8");
-  assert.ok(index.includes(`${expectedBasePath}assets/`), "GitHub Pages build did not use the configured asset base path");
+  assert.equal(existsSync(docsIndexPath), true, "GitHub Pages docs build did not emit index.html");
+  assert.equal(existsSync(demoIndexPath), true, "GitHub Pages docs build did not emit the demo application");
+
+  const docsIndex = readFileSync(docsIndexPath, "utf8");
+  const demoIndex = readFileSync(demoIndexPath, "utf8");
+
+  assert.ok(docsIndex.includes(`${expectedBasePath}assets/`), "Docs build did not use the configured asset base path");
+  assert.ok(demoIndex.includes(`${joinBase(expectedBasePath, "demo")}assets/`), "Demo build did not use the configured demo base path");
 } finally {
-  rmSync(outputDirectory, { recursive: true, force: true });
+  rmSync(docsDist, { recursive: true, force: true });
 }
