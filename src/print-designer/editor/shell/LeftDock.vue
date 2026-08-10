@@ -24,7 +24,7 @@
             class="left-dock__tab"
             :class="{ 'is-active': item.key === activeLeftPanel }"
             type="button"
-            @click="shellStore.openLeftDock(item.key)"
+            @click="shellStore.toggleLeftDockPanel(item.key)"
           >
             <el-icon class="left-dock__tab-icon"><component :is="item.icon" /></el-icon>
             <span>{{ item.label }}</span>

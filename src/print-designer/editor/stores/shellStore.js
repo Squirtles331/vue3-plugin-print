@@ -1,10 +1,12 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, shallowRef } from "vue";
 
 const PANEL_MIN_WIDTH = 280;
 const PANEL_MIN_HEIGHT = 320;
 const PANEL_MIN_X = 26;
 const PANEL_MIN_Y = 26;
+
+const TOP_PANEL_KEYS = ["template", "pages", "view", "properties"];
 
 function createPanelState({ key, title, x, y, width, height, zIndex }) {
   return {
@@ -15,6 +17,8 @@ function createPanelState({ key, title, x, y, width, height, zIndex }) {
     y,
     width,
     height,
+    defaultWidth: width,
+    defaultHeight: height,
     zIndex,
   };
 }
@@ -91,9 +95,15 @@ function createDefaultPanels() {
 }
 
 export const useEditorShellStore = defineStore("printDesignerShell", () => {
-  const statusbarVisible = ref(true);
-  const panelZSeed = ref(4);
+  const statusbarVisible = shallowRef(true);
+  const panelZSeed = shallowRef(4);
   const panels = ref(createDefaultPanels());
+  const leftDockCollapsed = shallowRef(false);
+  const rightDockCollapsed = shallowRef(false);
+  const activeLeftPanel = shallowRef("pages");
+  const activeRightPanel = shallowRef("properties");
+  const leftPanelWidth = shallowRef(320);
+  const rightPanelWidth = shallowRef(360);
 
   function nextZIndex() {
     panelZSeed.value += 1;
@@ -133,16 +143,56 @@ export const useEditorShellStore = defineStore("printDesignerShell", () => {
       return;
     }
 
-    updatePanel(panelName, {
-      visible: true,
+    const nextPanels = {};
+
+    TOP_PANEL_KEYS.forEach((key) => {
+      const panel = getPanel(key);
+
+      if (!panel) {
+        return;
+      }
+
+      nextPanels[key] = {
+        ...panel,
+        visible: key === panelName,
+        ...(key === panelName
+          ? {
+              zIndex: nextZIndex(),
+            }
+          : {}),
+      };
     });
-    focusPanel(panelName);
+
+    panels.value = nextPanels;
+  }
+
+  function togglePanel(panelName) {
+    const current = getPanel(panelName);
+
+    if (!current) {
+      return;
+    }
+
+    if (current.visible) {
+      closePanel(panelName);
+      return;
+    }
+
+    openPanel(panelName);
   }
 
   function closePanel(panelName) {
     updatePanel(panelName, {
       visible: false,
     });
+  }
+
+  function restorePanelSize(panel) {
+    return {
+      ...panel,
+      width: Math.max(panel.width, panel.defaultWidth || panel.width),
+      height: Math.max(panel.height, panel.defaultHeight || panel.height),
+    };
   }
 
   function setPanelPosition(panelName, x, y, bounds) {
@@ -205,7 +255,7 @@ export const useEditorShellStore = defineStore("printDesignerShell", () => {
         return;
       }
 
-      const nextSized = clampPanelSize(current, bounds);
+      const nextSized = clampPanelSize(restorePanelSize(current), bounds);
       const fallback = fallbackPositions[panelName] || fallbackPositions.template;
       const nextPositioned = clampPanelPosition(
         {
@@ -223,12 +273,83 @@ export const useEditorShellStore = defineStore("printDesignerShell", () => {
     });
   }
 
+  function setLeftPanelWidth(width) {
+    const nextWidth = Math.round(Number(width));
+
+    if (!Number.isFinite(nextWidth)) {
+      return;
+    }
+
+    leftPanelWidth.value = clamp(nextWidth, PANEL_MIN_WIDTH, 520);
+  }
+
+  function setRightPanelWidth(width) {
+    const nextWidth = Math.round(Number(width));
+
+    if (!Number.isFinite(nextWidth)) {
+      return;
+    }
+
+    rightPanelWidth.value = clamp(nextWidth, PANEL_MIN_WIDTH, 560);
+  }
+
+  function toggleLeftDock() {
+    leftDockCollapsed.value = !leftDockCollapsed.value;
+  }
+
+  function toggleRightDock() {
+    rightDockCollapsed.value = !rightDockCollapsed.value;
+  }
+
+  function openLeftDock(panelName) {
+    activeLeftPanel.value = panelName;
+    leftDockCollapsed.value = false;
+  }
+
+  function toggleLeftDockPanel(panelName) {
+    if (activeLeftPanel.value === panelName && !leftDockCollapsed.value) {
+      leftDockCollapsed.value = true;
+      return;
+    }
+
+    openLeftDock(panelName);
+  }
+
+  function openRightDock(panelName) {
+    activeRightPanel.value = panelName;
+    rightDockCollapsed.value = false;
+  }
+
+  function toggleRightDockPanel(panelName) {
+    if (activeRightPanel.value === panelName && !rightDockCollapsed.value) {
+      rightDockCollapsed.value = true;
+      return;
+    }
+
+    openRightDock(panelName);
+  }
+
   return {
     statusbarVisible,
     panels,
     openPanel,
+    togglePanel,
     closePanel,
     focusPanel,
+    leftDockCollapsed,
+    rightDockCollapsed,
+    activeLeftPanel,
+    activeRightPanel,
+    leftPanelWidth,
+    rightPanelWidth,
+    setLeftPanelWidth,
+    setRightPanelWidth,
+    toggleLeftDock,
+    toggleRightDock,
+    openLeftDock,
+    openRightDock,
+    toggleLeftDockPanel,
+    toggleRightDockPanel,
     setPanelPosition,
     setPanelSize,
     ensurePanelBounds,

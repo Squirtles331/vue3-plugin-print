@@ -3,6 +3,7 @@
     <InsertPanel
       v-if="resolvedPanelKey === 'template'"
       :palette="palette"
+      @insert="onPaletteInsert"
       @palette-dragstart="onPaletteDragStart"
       @palette-dragend="onPaletteDragEnd"
     />
@@ -19,9 +20,14 @@ import DataPanel from "../../components/sidebar/DataPanel.vue";
 import InsertPanel from "../../components/sidebar/InsertPanel.vue";
 import LayersPanel from "../../components/sidebar/LayersPanel.vue";
 import PagesPanel from "../../components/sidebar/PagesPanel.vue";
+import { createElement } from "../../core/elementFactory.js";
+import { createAddObjectCommand } from "../commands/documentCommands.js";
+import { executeEditorCommand } from "../commands/executeCommand.js";
 import { writePaletteDragPayload } from "../drag/paletteDragPayload.js";
 import { useEditorDragStore } from "../stores/dragStore";
 import { useEditorDocumentStore } from "../stores/documentStore";
+import { useEditorHistoryStore } from "../stores/historyStore";
+import { useEditorSelectionStore } from "../stores/selectionStore";
 
 const props = defineProps({
   panelKey: {
@@ -32,6 +38,8 @@ const props = defineProps({
 
 const documentStore = useEditorDocumentStore();
 const dragStore = useEditorDragStore();
+const historyStore = useEditorHistoryStore();
+const selectionStore = useEditorSelectionStore();
 const { palette, pages, layers, variables } = storeToRefs(documentStore);
 const resolvedPanelKey = computed(() => {
   if (props.panelKey === "insert") {
@@ -59,6 +67,23 @@ function onPaletteDragStart(payload) {
 
 function onPaletteDragEnd() {
   dragStore.clearPaletteDrag();
+}
+
+function onPaletteInsert(item) {
+  if (!item?.type) {
+    return;
+  }
+
+  const pageId = documentStore.currentPage?.id || "page-1";
+  const nextObject = createElement(item.type, {
+    pageId,
+    zIndex: documentStore.layers.length,
+  });
+
+  executeEditorCommand(historyStore, createAddObjectCommand(documentStore, nextObject));
+  selectionStore.select(nextObject.id);
+  selectionStore.focusedPageId = pageId;
+  selectionStore.hoverObjectId = null;
 }
 
 onBeforeUnmount(() => {

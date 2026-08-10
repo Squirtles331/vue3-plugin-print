@@ -71,6 +71,8 @@ import { createLocalElementPresetRepository, instantiateElementPreset } from "..
 import { instantiateStarterTemplate, listStarterTemplates } from "../template/templateCatalog.js";
 import { downloadTemplateInterchange, parseTemplateInterchange } from "../template/templateInterchange.js";
 import { createPublishReadyTemplatePayload, serializeTemplateDocument } from "../template/templateDocument.js";
+import { createRemoveObjectsCommand } from "./commands/documentCommands.js";
+import { executeEditorCommand } from "./commands/executeCommand";
 import TemplateLibraryDialog from "../template/TemplateLibraryDialog.vue";
 import StarterTemplateDialog from "../template/StarterTemplateDialog.vue";
 import ElementPresetDialog from "../template/ElementPresetDialog.vue";
@@ -107,6 +109,7 @@ const previewDocument = shallowRef(null);
 const { statusbarVisible } = storeToRefs(shellStore);
 const { templateModel, templateId } = storeToRefs(documentStore);
 const { runtimeData } = storeToRefs(previewStore);
+const { selectedIds } = storeToRefs(selectionStore);
 
 function reportError(scope, error, fallback) {
   const message = error?.message || fallback;
@@ -124,6 +127,58 @@ watch(templateModel, () => {
     emit("template-change", result.document);
   }
 }, { flush: "post" });
+
+watch(selectedIds, (nextIds) => {
+  if (nextIds.length > 0) {
+    shellStore.openRightDock("properties");
+  }
+});
+
+function isEditableTarget(target) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (target.closest("input, textarea, select, [contenteditable='true'], [contenteditable='plaintext-only']")) {
+    return true;
+  }
+
+  return target.isContentEditable;
+}
+
+function deleteSelectedObjects() {
+  const command = createRemoveObjectsCommand(documentStore, selectedIds.value);
+
+  if (!command) {
+    return false;
+  }
+
+  executeEditorCommand(historyStore, command);
+  selectionStore.clearSelection();
+  return true;
+}
+
+function onWindowKeyDown(event) {
+  if (event.defaultPrevented || event.isComposing) {
+    return;
+  }
+
+  if (event.key !== "Delete" && event.key !== "Backspace") {
+    return;
+  }
+
+  if (isEditableTarget(event.target)) {
+    return;
+  }
+
+  if (!selectedIds.value.length) {
+    return;
+  }
+
+  if (deleteSelectedObjects()) {
+    event.preventDefault();
+  }
+}
 
 async function onNewTemplate() {
   starterCatalogVisible.value = true;
@@ -409,10 +464,12 @@ function onWindowWheel(event) {
 
 onMounted(() => {
   window.addEventListener("wheel", onWindowWheel, { passive: false });
+  window.addEventListener("keydown", onWindowKeyDown);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("wheel", onWindowWheel);
+  window.removeEventListener("keydown", onWindowKeyDown);
 });
 
 defineExpose({ setRuntimeData, getTemplateDocument, getPublishReadyTemplatePayload, loadTemplateDocument, print: onPrint });

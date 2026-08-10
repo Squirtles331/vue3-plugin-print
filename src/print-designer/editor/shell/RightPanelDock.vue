@@ -26,7 +26,7 @@
             class="right-panel-dock__tab"
             :class="{ 'is-active': panel.key === activeRightPanel }"
             type="button"
-            @click="shellStore.openRightDock(panel.key)"
+            @click="shellStore.toggleRightDockPanel(panel.key)"
           >
             <el-icon class="right-panel-dock__tab-icon"><component :is="panel.icon" /></el-icon>
             <span>{{ panel.label }}</span>

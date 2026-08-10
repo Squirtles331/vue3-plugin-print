@@ -1,3 +1,5 @@
+import { cloneDeep } from "../../core/clone.js";
+
 export function createAddObjectCommand(documentStore, object) {
   return {
     id: `add-object-${object.id}`,
@@ -7,6 +9,40 @@ export function createAddObjectCommand(documentStore, object) {
     },
     undo() {
       documentStore.removeObject(object.id);
+    },
+  };
+}
+
+export function createRemoveObjectsCommand(documentStore, objectIds = []) {
+  const removableIds = [...new Set(objectIds)].filter((id) => documentStore.objectsById[id] && !documentStore.objectsById[id].locked);
+
+  if (!removableIds.length) {
+    return null;
+  }
+
+  const previousObjects = cloneDeep(removableIds.map((id) => documentStore.objectsById[id]));
+  const previousOrders = new Map();
+
+  removableIds.forEach((id) => {
+    const object = documentStore.objectsById[id];
+    const pageId = object?.pageId || documentStore.currentPage?.id || "page-1";
+
+    if (!previousOrders.has(pageId)) {
+      previousOrders.set(pageId, [...(documentStore.pageObjectMap[pageId] || [])]);
+    }
+  });
+
+  return {
+    id: `remove-objects-${Date.now()}`,
+    label: `Delete ${removableIds.length} element${removableIds.length > 1 ? "s" : ""}`,
+    execute() {
+      documentStore.removeObjects(removableIds);
+    },
+    undo() {
+      documentStore.addObjects(previousObjects);
+      previousOrders.forEach((ids, pageId) => {
+        documentStore.setPageObjectOrder(pageId, ids);
+      });
     },
   };
 }

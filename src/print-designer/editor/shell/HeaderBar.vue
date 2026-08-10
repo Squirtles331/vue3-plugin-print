@@ -91,19 +91,19 @@ const viewPanelActive = computed(() => !!panels.value.view?.visible);
 const propertiesPanelActive = computed(() => !!panels.value.properties?.visible);
 
 function openTemplatePanel() {
-  shellStore.openPanel("template");
+  shellStore.togglePanel("template");
 }
 
 function openPagesPanel() {
-  shellStore.openPanel("pages");
+  shellStore.togglePanel("pages");
 }
 
 function openViewPanel() {
-  shellStore.openPanel("view");
+  shellStore.togglePanel("view");
 }
 
 function openPropertiesPanel() {
-  shellStore.openPanel("properties");
+  shellStore.togglePanel("properties");
 }
 </script>
 

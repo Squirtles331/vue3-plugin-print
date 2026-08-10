@@ -16,6 +16,7 @@
           class="insert-panel__card"
           type="button"
           draggable="true"
+          @click="$emit('insert', item)"
           @dragstart="$emit('palette-dragstart', [item, $event])"
           @dragend="$emit('palette-dragend', $event)"
         >
@@ -39,7 +40,7 @@ const props = defineProps({
   },
 });
 
-defineEmits(["palette-dragstart", "palette-dragend"]);
+defineEmits(["insert", "palette-dragstart", "palette-dragend"]);
 
 const GROUP_DEFINITIONS = [
   {

@@ -1052,12 +1052,16 @@ import { FIELD_CONTROL, INSPECTOR_TABS, TAB_LABELS, SECTION_LAYOUT } from "../..
 import { getElementDefinition } from "../../core/elementFactory";
 import { getElementPropertyCapabilities, validateElementProperty } from "../../core/propertyCapabilities.js";
 import { MM_TO_CSS_PX } from "../measurement.js";
+import { createRemoveObjectsCommand } from "../commands/documentCommands.js";
+import { executeEditorCommand } from "../commands/executeCommand.js";
 import { useEditorDocumentStore } from "../stores/documentStore";
+import { useEditorHistoryStore } from "../stores/historyStore";
 import { useEditorSelectionStore } from "../stores/selectionStore";
 import { createLocalElementPresetRepository } from "../../template/elementPresetRepository.js";
 import { fieldErrorKey, getFieldError } from "./fieldErrorState.js";
 
 const documentStore = useEditorDocumentStore();
+const historyStore = useEditorHistoryStore();
 const selectionStore = useEditorSelectionStore();
 const presetRepository = createLocalElementPresetRepository();
 
@@ -2965,7 +2969,7 @@ async function runFieldAction(action) {
       documentStore.reorderObject(objectId, action);
       break;
     case "deleteElement":
-      if (documentStore.removeObject(objectId)) {
+      if (executeDeleteSelectedObjects([objectId])) {
         selectionStore.clearSelection();
       } else {
         ElMessage.warning("当前元素已锁定，无法删除。");
@@ -2989,6 +2993,17 @@ async function runFieldAction(action) {
     default:
       break;
   }
+}
+
+function executeDeleteSelectedObjects(objectIds) {
+  const command = createRemoveObjectsCommand(documentStore, objectIds);
+
+  if (!command) {
+    return false;
+  }
+
+  executeEditorCommand(historyStore, command);
+  return true;
 }
 </script>
 
