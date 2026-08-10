@@ -130,7 +130,7 @@ watch(templateModel, () => {
 
 watch(selectedIds, (nextIds) => {
   if (nextIds.length > 0) {
-    shellStore.openRightDock("properties");
+    shellStore.openPanel("properties");
   }
 });
 

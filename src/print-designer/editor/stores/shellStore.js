@@ -98,6 +98,7 @@ export const useEditorShellStore = defineStore("printDesignerShell", () => {
   const statusbarVisible = shallowRef(true);
   const panelZSeed = shallowRef(4);
   const panels = ref(createDefaultPanels());
+  const activeFloatingPanel = shallowRef("");
   const leftDockCollapsed = shallowRef(false);
   const rightDockCollapsed = shallowRef(false);
   const activeLeftPanel = shallowRef("pages");
@@ -136,13 +137,7 @@ export const useEditorShellStore = defineStore("printDesignerShell", () => {
     });
   }
 
-  function openPanel(panelName) {
-    const current = getPanel(panelName);
-
-    if (!current) {
-      return;
-    }
-
+  function setFloatingPanelVisibility(panelName, { focusActive = false } = {}) {
     const nextPanels = {};
 
     TOP_PANEL_KEYS.forEach((key) => {
@@ -152,10 +147,12 @@ export const useEditorShellStore = defineStore("printDesignerShell", () => {
         return;
       }
 
+      const isActivePanel = key === panelName;
+      const sizedPanel = isActivePanel ? restorePanelSize(panel) : panel;
       nextPanels[key] = {
-        ...panel,
-        visible: key === panelName,
-        ...(key === panelName
+        ...sizedPanel,
+        visible: isActivePanel,
+        ...(isActivePanel && focusActive
           ? {
               zIndex: nextZIndex(),
             }
@@ -166,6 +163,17 @@ export const useEditorShellStore = defineStore("printDesignerShell", () => {
     panels.value = nextPanels;
   }
 
+  function openPanel(panelName) {
+    const current = getPanel(panelName);
+
+    if (!current) {
+      return;
+    }
+
+    activeFloatingPanel.value = panelName;
+    setFloatingPanelVisibility(panelName, { focusActive: true });
+  }
+
   function togglePanel(panelName) {
     const current = getPanel(panelName);
 
@@ -173,7 +181,7 @@ export const useEditorShellStore = defineStore("printDesignerShell", () => {
       return;
     }
 
-    if (current.visible) {
+    if (activeFloatingPanel.value === panelName && current.visible) {
       closePanel(panelName);
       return;
     }
@@ -182,9 +190,17 @@ export const useEditorShellStore = defineStore("printDesignerShell", () => {
   }
 
   function closePanel(panelName) {
-    updatePanel(panelName, {
-      visible: false,
-    });
+    if (!getPanel(panelName)) {
+      return;
+    }
+
+    if (activeFloatingPanel.value === panelName) {
+      activeFloatingPanel.value = "";
+      setFloatingPanelVisibility("");
+      return;
+    }
+
+    updatePanel(panelName, { visible: false });
   }
 
   function restorePanelSize(panel) {
@@ -332,6 +348,7 @@ export const useEditorShellStore = defineStore("printDesignerShell", () => {
   return {
     statusbarVisible,
     panels,
+    activeFloatingPanel,
     openPanel,
     togglePanel,
     closePanel,

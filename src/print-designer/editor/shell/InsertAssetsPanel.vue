@@ -28,6 +28,7 @@ import { useEditorDragStore } from "../stores/dragStore";
 import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorHistoryStore } from "../stores/historyStore";
 import { useEditorSelectionStore } from "../stores/selectionStore";
+import { useEditorShellStore } from "../stores/shellStore";
 
 const props = defineProps({
   panelKey: {
@@ -40,6 +41,7 @@ const documentStore = useEditorDocumentStore();
 const dragStore = useEditorDragStore();
 const historyStore = useEditorHistoryStore();
 const selectionStore = useEditorSelectionStore();
+const shellStore = useEditorShellStore();
 const { palette, pages, layers, variables } = storeToRefs(documentStore);
 const resolvedPanelKey = computed(() => {
   if (props.panelKey === "insert") {
@@ -84,6 +86,7 @@ function onPaletteInsert(item) {
   selectionStore.select(nextObject.id);
   selectionStore.focusedPageId = pageId;
   selectionStore.hoverObjectId = null;
+  shellStore.openPanel("properties");
 }
 
 onBeforeUnmount(() => {

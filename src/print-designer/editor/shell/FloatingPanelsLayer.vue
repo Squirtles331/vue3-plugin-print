@@ -33,7 +33,7 @@ import ViewSettingsPanel from "../panels/ViewSettingsPanel.vue";
 import { useEditorShellStore } from "../stores/shellStore";
 
 const shellStore = useEditorShellStore();
-const { panels } = storeToRefs(shellStore);
+const { activeFloatingPanel, panels } = storeToRefs(shellStore);
 const hostRef = ref(null);
 let resizeObserver = null;
 let currentDrag = null;
@@ -42,6 +42,13 @@ const visiblePanels = computed(() =>
   Object.values(panels.value)
     .filter((panel) => panel.visible)
     .sort((a, b) => a.zIndex - b.zIndex)
+    .reduce((list, panel) => {
+      if (activeFloatingPanel.value) {
+        return panel.key === activeFloatingPanel.value ? [panel] : list;
+      }
+
+      return [panel];
+    }, [])
 );
 
 function getHostBounds() {

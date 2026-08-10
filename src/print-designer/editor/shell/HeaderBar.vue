@@ -83,12 +83,12 @@ const shellStore = useEditorShellStore();
 
 const { documentName, saveStatus } = storeToRefs(useEditorDocumentStore());
 const { canUndo, canRedo } = storeToRefs(historyStore);
-const { panels } = storeToRefs(shellStore);
+const { activeFloatingPanel } = storeToRefs(shellStore);
 
-const templatePanelActive = computed(() => !!panels.value.template?.visible);
-const pagePanelActive = computed(() => !!panels.value.pages?.visible);
-const viewPanelActive = computed(() => !!panels.value.view?.visible);
-const propertiesPanelActive = computed(() => !!panels.value.properties?.visible);
+const templatePanelActive = computed(() => activeFloatingPanel.value === "template");
+const pagePanelActive = computed(() => activeFloatingPanel.value === "pages");
+const viewPanelActive = computed(() => activeFloatingPanel.value === "view");
+const propertiesPanelActive = computed(() => activeFloatingPanel.value === "properties");
 
 function openTemplatePanel() {
   shellStore.togglePanel("template");
