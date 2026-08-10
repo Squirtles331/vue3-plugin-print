@@ -1,12 +1,16 @@
 <template>
   <div class="pages-panel">
     <div class="pages-panel__stack">
+      <div v-if="!filteredPages.length" class="pages-panel__empty">
+        没有匹配的页面
+      </div>
       <button
-        v-for="page in pages"
+        v-for="page in filteredPages"
         :key="page.id"
         class="pages-panel__card"
         :class="{ 'is-current': page.isCurrent }"
         type="button"
+        :title="page.title"
       >
         <span class="pages-panel__title">{{ page.title }}</span>
         <span class="pages-panel__meta">{{ page.size }} / {{ page.orientation }}</span>
@@ -16,11 +20,30 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from "vue";
+
+const props = defineProps({
   pages: {
     type: Array,
     default: () => [],
   },
+  searchQuery: {
+    type: String,
+    default: "",
+  },
+});
+
+const filteredPages = computed(() => {
+  const query = String(props.searchQuery || "").trim().toLowerCase();
+
+  if (!query) {
+    return props.pages;
+  }
+
+  return props.pages.filter((page) => {
+    const haystack = `${page.title || ""} ${page.size || ""} ${page.orientation || ""}`.toLowerCase();
+    return haystack.includes(query);
+  });
 });
 </script>
 
@@ -37,6 +60,16 @@ defineProps({
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.pages-panel__empty {
+  padding: 18px;
+  border: 1px solid var(--pd-border);
+  border-radius: var(--pd-radius-section);
+  background: #f8fafc;
+  color: var(--pd-muted);
+  font-size: 12px;
+  text-align: center;
 }
 
 .pages-panel__card {

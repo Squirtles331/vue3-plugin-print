@@ -10,8 +10,9 @@
     <section class="right-panel-dock__surface">
       <header class="right-panel-dock__header">
         <div>
-          <p class="right-panel-dock__eyebrow">右侧面板</p>
+          <p class="right-panel-dock__eyebrow">属性窗格</p>
           <h2 class="right-panel-dock__title">{{ panelTitle }}</h2>
+          <p class="right-panel-dock__description">{{ panelDescription }}</p>
         </div>
         <button class="right-panel-dock__close" type="button" @click="shellStore.toggleRightDock()">
           收起
@@ -30,6 +31,7 @@
           >
             <el-icon class="right-panel-dock__tab-icon"><component :is="panel.icon" /></el-icon>
             <span>{{ panel.label }}</span>
+            <small v-if="panelBadges[panel.key]" class="right-panel-dock__tab-badge">{{ panelBadges[panel.key] }}</small>
           </button>
         </div>
 
@@ -96,6 +98,25 @@ const panelTitle = computed(() => {
   return map[activeRightPanel.value] || "右侧面板";
 });
 
+const panelDescription = computed(() => {
+  const map = {
+    properties: selectedIds.value.length ? `正在编辑 ${selectedIds.value.length} 个选中元素。` : "选中画布元素后在这里调整位置、样式和绑定。",
+    page: "设置纸张、方向、边距和打印标记。",
+    view: "控制辅助线、网格、吸附和编辑器显示偏好。",
+    layers: "查看当前页面图层，并快速定位元素。",
+    bindings: "查看可用字段，核对模板的数据绑定。",
+    history: "查看最近编辑动作，确认可撤销范围。",
+  };
+
+  return map[activeRightPanel.value] || "";
+});
+
+const panelBadges = computed(() => ({
+  properties: selectedIds.value.length,
+  layers: layers.value.length,
+  bindings: variables.value.length,
+}));
+
 function onPointerMove(event) {
   const dockElement = rightDockRef.value;
 
@@ -147,9 +168,9 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px 8px;
+  padding: 12px 14px;
   border-bottom: 1px solid #e6ebf2;
-  background: linear-gradient(180deg, #fbfcfe 0%, #f5f8fc 100%);
+  background: #fbfcfe;
 }
 
 .right-panel-dock__eyebrow {
@@ -162,8 +183,16 @@ onBeforeUnmount(() => {
 .right-panel-dock__title {
   margin: 0;
   color: #0f172a;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1.1;
+}
+
+.right-panel-dock__description {
+  margin: 6px 0 0;
+  max-width: 260px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .right-panel-dock__close {
@@ -252,6 +281,22 @@ onBeforeUnmount(() => {
   min-height: 0;
   overflow: auto;
   background: #ffffff;
+}
+
+.right-panel-dock__tab span {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.right-panel-dock__tab-badge {
+  display: inline-flex;
+  min-width: 20px;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .right-panel-dock__resizer {

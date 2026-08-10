@@ -3,13 +3,14 @@
     <InsertPanel
       v-if="resolvedPanelKey === 'template'"
       :palette="palette"
+      :search-query="searchQuery"
       @insert="onPaletteInsert"
       @palette-dragstart="onPaletteDragStart"
       @palette-dragend="onPaletteDragEnd"
     />
-    <PagesPanel v-else-if="resolvedPanelKey === 'pages'" :pages="pages" />
-    <LayersPanel v-else-if="resolvedPanelKey === 'layers'" :layers="layers" />
-    <DataPanel v-else :variables="variables" />
+    <PagesPanel v-else-if="resolvedPanelKey === 'pages'" :pages="pages" :search-query="searchQuery" />
+    <LayersPanel v-else-if="resolvedPanelKey === 'layers'" :layers="layers" :search-query="searchQuery" />
+    <DataPanel v-else :variables="variables" :search-query="searchQuery" />
   </section>
 </template>
 
@@ -34,6 +35,10 @@ const props = defineProps({
   panelKey: {
     type: String,
     default: "pages",
+  },
+  searchQuery: {
+    type: String,
+    default: "",
   },
 });
 

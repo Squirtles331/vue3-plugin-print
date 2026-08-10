@@ -1,12 +1,18 @@
 <template>
   <div class="insert-panel">
+    <div v-if="!filteredGroups.length" class="insert-panel__empty">
+      <div class="insert-panel__empty-title">没有匹配的元素</div>
+      <p>试试搜索“文本”“图片”“表格”或清空搜索条件。</p>
+    </div>
+
     <section
-      v-for="group in groupedPalette"
+      v-for="group in filteredGroups"
       :key="group.label"
       class="insert-panel__group"
     >
       <div class="insert-panel__group-head">
         <span>{{ group.label }}</span>
+        <small>{{ group.items.length }} 项</small>
       </div>
 
       <div class="insert-panel__card-grid">
@@ -16,6 +22,7 @@
           class="insert-panel__card"
           type="button"
           draggable="true"
+          :title="item.label"
           @click="$emit('insert', item)"
           @dragstart="$emit('palette-dragstart', [item, $event])"
           @dragend="$emit('palette-dragend', $event)"
@@ -37,6 +44,10 @@ const props = defineProps({
   palette: {
     type: Array,
     default: () => [],
+  },
+  searchQuery: {
+    type: String,
+    default: "",
   },
 });
 
@@ -61,6 +72,8 @@ const GROUP_DEFINITIONS = [
   },
 ];
 
+const normalizedQuery = computed(() => String(props.searchQuery || "").trim().toLowerCase());
+
 const groupedPalette = computed(() => {
   return GROUP_DEFINITIONS.map((group) => ({
     label: group.label,
@@ -68,6 +81,24 @@ const groupedPalette = computed(() => {
       .map((type) => props.palette.find((item) => item.type === type))
       .filter(Boolean),
   })).filter((group) => group.items.length > 0);
+});
+
+const filteredGroups = computed(() => {
+  const query = normalizedQuery.value;
+
+  if (!query) {
+    return groupedPalette.value;
+  }
+
+  return groupedPalette.value
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => {
+        const haystack = `${item.label || ""} ${item.type || ""}`.toLowerCase();
+        return haystack.includes(query);
+      }),
+    }))
+    .filter((group) => group.items.length > 0);
 });
 </script>
 
@@ -83,6 +114,27 @@ const groupedPalette = computed(() => {
   background: #ffffff;
 }
 
+.insert-panel__empty {
+  padding: 18px;
+  border: 1px solid var(--pd-border);
+  border-radius: var(--pd-radius-section);
+  background: #f8fafc;
+}
+
+.insert-panel__empty-title {
+  margin-bottom: 6px;
+  color: var(--pd-strong);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.insert-panel__empty p,
+.insert-panel__group-head small {
+  margin: 0;
+  color: var(--pd-muted);
+  font-size: 12px;
+}
+
 .insert-panel__group {
   display: flex;
   flex-direction: column;
@@ -92,6 +144,7 @@ const groupedPalette = computed(() => {
 .insert-panel__group-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   font-size: 12px;
   font-weight: 700;
   color: var(--pd-strong);

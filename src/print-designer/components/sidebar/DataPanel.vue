@@ -4,30 +4,51 @@
       <div class="data-panel__block">
         <div class="data-panel__head">
           <span>数据字段</span>
-          <small>{{ variables.length }} 项</small>
+          <small>{{ filteredVariables.length }} / {{ variables.length }} 项</small>
         </div>
-        <div class="data-panel__chips">
-          <span v-for="variable in variables" :key="variable" class="data-panel__chip">
+        <div v-if="filteredVariables.length" class="data-panel__chips">
+          <span v-for="variable in filteredVariables" :key="variable" class="data-panel__chip" :title="`绑定路径：${variable}`">
             {{ variable }}
           </span>
         </div>
+        <p v-else class="data-panel__no-results">{{ noResultsText }}</p>
       </div>
 
       <div class="data-panel__empty">
-        <div class="data-panel__empty-title">测试数据面板待接入</div>
-        <p>后续这里会承载变量树、示例数据和批量套打入口。</p>
+        <div class="data-panel__empty-title">绑定数据建议</div>
+        <p>正式使用时，建议从业务 JSON 自动生成字段树，并在预览前提示缺失字段。</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-defineProps({
+import { computed } from "vue";
+
+const props = defineProps({
   variables: {
     type: Array,
     default: () => [],
   },
+  searchQuery: {
+    type: String,
+    default: "",
+  },
 });
+
+const filteredVariables = computed(() => {
+  const query = String(props.searchQuery || "").trim().toLowerCase();
+
+  if (!query) {
+    return props.variables;
+  }
+
+  return props.variables.filter((variable) => String(variable).toLowerCase().includes(query));
+});
+
+const noResultsText = computed(() =>
+  props.variables.length ? "没有匹配的字段，清空搜索后可查看全部。" : "还没有可绑定的数据字段。"
+);
 </script>
 
 <style scoped lang="scss">
@@ -71,6 +92,13 @@ defineProps({
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 14px;
+}
+
+.data-panel__no-results {
+  margin: 14px 0 0;
+  color: var(--pd-muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .data-panel__chip {
