@@ -30,11 +30,10 @@ export default defineConfig({
   themeConfig: {
     logo: "/logo.svg",
     nav: [
-      { text: "指南", link: "/guide/quick-start" },
-      { text: "接口", link: "/api/component" },
-      { text: "示例", link: "/examples/repository" },
-      { text: "对比", link: "/guide/comparison" },
-      { text: "演示区", link: "/playground" },
+      { text: "组件", link: "/guide/quick-start" },
+      { text: "工具", link: "/guide/comparison" },
+      { text: "演示", link: "/playground" },
+      { text: "v0.1.0", link: "/releases/v0.1.0" },
     ],
     sidebar: [
       {
