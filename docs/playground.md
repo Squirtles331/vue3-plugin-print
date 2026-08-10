@@ -4,12 +4,18 @@
 import { withBase } from "vitepress";
 
 const demoUrl = withBase("/demo/");
+
+function openDemo() {
+  window.open(demoUrl, "_blank", "noopener,noreferrer");
+}
 </script>
 
-这里不再嵌入演示画面。点击下面的链接，会在新页面中打开完整演示应用。
+这里不再嵌入演示画面。点击下面的按钮，会在新的标签页中打开完整演示应用。
 
 <p class="playground-link">
-  <a :href="demoUrl" target="_blank" rel="noreferrer">在新页面打开完整演示</a>
+  <button type="button" class="playground-button" @click="openDemo">
+    在新标签页打开完整演示
+  </button>
 </p>
 
 <p>

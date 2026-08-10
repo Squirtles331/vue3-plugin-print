@@ -58,3 +58,21 @@
 .playground-link {
   margin: 0 0 12px;
 }
+
+.playground-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--vp-c-brand-1);
+  border-radius: 8px;
+  background: var(--vp-c-brand-1);
+  color: #fff;
+  cursor: pointer;
+}
+
+.playground-button:hover {
+  border-color: var(--vp-c-brand-2);
+  background: var(--vp-c-brand-2);
+}
