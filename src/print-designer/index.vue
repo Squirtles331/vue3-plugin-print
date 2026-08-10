@@ -8,12 +8,11 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { createApp } from "vue";
 import { createPinia } from "pinia";
-import ElementPlus from "element-plus";
-import * as ElementPlusIconsVue from "@element-plus/icons-vue";
 import EditorRoot from "./editor/EditorRoot.vue";
 import { createLocalTemplateRepository } from "./template/templateRepository.js";
 import { createLocalElementPresetRepository } from "./template/elementPresetRepository.js";
 import { serializeTemplateDocument } from "./template/templateDocument.js";
+import { registerElementPlusComponents } from "./ui/elementPlus.js";
 
 defineOptions({ name: "PrintTemplateStudio" });
 
@@ -113,10 +112,7 @@ onMounted(() => {
     onError,
   });
   editorApp.use(createPinia());
-  editorApp.use(ElementPlus);
-  for (const [name, component] of Object.entries(ElementPlusIconsVue)) {
-    editorApp.component(name, component);
-  }
+  registerElementPlusComponents(editorApp);
   editorRoot = editorApp.mount(mountTargetRef.value);
   applyTemplate(props.template);
   applyRuntimeData(props.runtimeData);

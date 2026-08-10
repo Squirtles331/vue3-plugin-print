@@ -1,8 +1,6 @@
-import ElementPlus from "element-plus";
-import * as ElementPlusIconsVue from "@element-plus/icons-vue";
-import "element-plus/dist/index.css";
 import "../styles/library.scss";
 import PrintTemplateStudio from "../print-designer/index.vue";
+import { registerElementPlusComponents } from "../print-designer/ui/elementPlus.js";
 
 export { PrintTemplateStudio };
 export { createLocalTemplateRepository, createRestTemplateRepository } from "../print-designer/template/templateRepository.js";
@@ -17,14 +15,7 @@ export {
 
 const PrintTemplateStudioPlugin = {
   install(app) {
-    if (!app._context.components.ElButton) {
-      app.use(ElementPlus);
-    }
-    for (const [name, component] of Object.entries(ElementPlusIconsVue)) {
-      if (!app._context.components[name]) {
-        app.component(name, component);
-      }
-    }
+    registerElementPlusComponents(app);
     app.component("PrintTemplateStudio", PrintTemplateStudio);
   },
 };
