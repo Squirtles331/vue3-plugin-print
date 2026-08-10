@@ -13,7 +13,11 @@ assert.equal(manifest.private, undefined);
 assert.equal(manifest.exports["."].import, "./dist/index.js");
 assert.equal(manifest.exports["."].require, "./dist/index.cjs");
 assert.equal(manifest.exports["./style.css"], "./dist/style.css");
-assert.deepEqual(manifest.peerDependencies, { vue: "^3.5.13" });
+assert.deepEqual(manifest.peerDependencies, {
+  "@element-plus/icons-vue": "^2.3.1",
+  "element-plus": "^2.9.6",
+  vue: "^3.5.13",
+});
 
 const stylesheet = readFileSync("dist/style.css", "utf8");
 assert.doesNotMatch(stylesheet, /(^|[\n,])\s*(html|body|#app)\s*[,{]/m, "Package stylesheet must not target host page roots.");

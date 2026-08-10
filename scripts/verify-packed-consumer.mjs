@@ -32,7 +32,18 @@ try {
     'app.mount("#app");',
   ].join("\n"));
 
-  execFileSync(process.execPath, [npmCli, "install", "--ignore-scripts", "--no-package-lock", "--prefix", consumerRoot, "vue@^3.5.13", tarball], { stdio: "inherit" });
+  execFileSync(process.execPath, [
+    npmCli,
+    "install",
+    "--ignore-scripts",
+    "--no-package-lock",
+    "--prefix",
+    consumerRoot,
+    "vue@^3.5.13",
+    "element-plus@^2.9.6",
+    "@element-plus/icons-vue@^2.3.1",
+    tarball,
+  ], { stdio: "inherit" });
   execFileSync(process.execPath, [viteCli, "build", consumerRoot, "--outDir", resolve(consumerRoot, "dist")], { stdio: "inherit" });
 
   assert.equal(existsSync(resolve(consumerRoot, "dist", "index.html")), true, "Packed consumer build did not produce index.html");
