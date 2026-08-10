@@ -32,7 +32,7 @@
         </div>
 
         <div class="left-dock__body">
-          <InsertAssetsPanel />
+          <InsertAssetsPanel :panel-key="activeLeftPanel" />
         </div>
       </div>
     </section>

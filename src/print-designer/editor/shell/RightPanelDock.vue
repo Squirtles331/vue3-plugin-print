@@ -34,7 +34,9 @@
         </div>
 
         <div class="right-panel-dock__body">
-          <PageSettingsPanel v-if="activeRightPanel === 'page'" />
+          <ElementPropertiesPanel v-if="activeRightPanel === 'properties'" />
+          <PageSettingsPanel v-else-if="activeRightPanel === 'page'" />
+          <ViewSettingsPanel v-else-if="activeRightPanel === 'view'" />
           <StructurePanel
             v-else-if="activeRightPanel === 'layers'"
             :layers="layers"
@@ -50,13 +52,15 @@
 </template>
 
 <script setup>
-import { Clock, DataLine, Files, Setting } from "@element-plus/icons-vue";
+import { Clock, DataLine, Files, Setting, View } from "@element-plus/icons-vue";
 import { computed, onBeforeUnmount, ref } from "vue";
 import { storeToRefs } from "pinia";
 import StructurePanel from "../../components/inspector/StructurePanel.vue";
 import BindingPanel from "../panels/BindingPanel.vue";
+import ElementPropertiesPanel from "../panels/ElementPropertiesPanel.vue";
 import HistoryPanel from "../panels/HistoryPanel.vue";
 import PageSettingsPanel from "../panels/PageSettingsPanel.vue";
+import ViewSettingsPanel from "../panels/ViewSettingsPanel.vue";
 import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorSelectionStore } from "../stores/selectionStore";
 import { useEditorShellStore } from "../stores/shellStore";
@@ -71,7 +75,9 @@ const { selectedIds } = storeToRefs(selectionStore);
 const rightDockRef = ref(null);
 
 const panels = [
-  { key: "page", label: "属性", icon: Setting },
+  { key: "properties", label: "属性", icon: Setting },
+  { key: "page", label: "页面", icon: Setting },
+  { key: "view", label: "视图", icon: View },
   { key: "layers", label: "图层", icon: Files },
   { key: "bindings", label: "数据", icon: DataLine },
   { key: "history", label: "历史", icon: Clock },
@@ -79,7 +85,9 @@ const panels = [
 
 const panelTitle = computed(() => {
   const map = {
-    page: "页面与对象属性",
+    properties: "元素属性",
+    page: "页面设置",
+    view: "视图设置",
     layers: "图层结构",
     bindings: "数据绑定",
     history: "历史记录",
@@ -242,7 +250,6 @@ onBeforeUnmount(() => {
   flex: 1;
   min-width: 0;
   min-height: 0;
-  padding: 12px;
   overflow: auto;
   background: #ffffff;
 }

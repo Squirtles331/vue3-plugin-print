@@ -86,7 +86,7 @@ function onPaletteInsert(item) {
   selectionStore.select(nextObject.id);
   selectionStore.focusedPageId = pageId;
   selectionStore.hoverObjectId = null;
-  shellStore.openPanel("properties");
+  shellStore.openRightDock("properties");
 }
 
 onBeforeUnmount(() => {

@@ -83,27 +83,27 @@ const shellStore = useEditorShellStore();
 
 const { documentName, saveStatus } = storeToRefs(useEditorDocumentStore());
 const { canUndo, canRedo } = storeToRefs(historyStore);
-const { activeFloatingPanel } = storeToRefs(shellStore);
+const { activeLeftPanel, activeRightPanel, leftDockCollapsed, rightDockCollapsed } = storeToRefs(shellStore);
 
-const templatePanelActive = computed(() => activeFloatingPanel.value === "template");
-const pagePanelActive = computed(() => activeFloatingPanel.value === "pages");
-const viewPanelActive = computed(() => activeFloatingPanel.value === "view");
-const propertiesPanelActive = computed(() => activeFloatingPanel.value === "properties");
+const templatePanelActive = computed(() => !leftDockCollapsed.value && activeLeftPanel.value === "insert");
+const pagePanelActive = computed(() => !rightDockCollapsed.value && activeRightPanel.value === "page");
+const viewPanelActive = computed(() => !rightDockCollapsed.value && activeRightPanel.value === "view");
+const propertiesPanelActive = computed(() => !rightDockCollapsed.value && activeRightPanel.value === "properties");
 
 function openTemplatePanel() {
-  shellStore.togglePanel("template");
+  shellStore.toggleLeftDockPanel("insert");
 }
 
 function openPagesPanel() {
-  shellStore.togglePanel("pages");
+  shellStore.toggleRightDockPanel("page");
 }
 
 function openViewPanel() {
-  shellStore.togglePanel("view");
+  shellStore.toggleRightDockPanel("view");
 }
 
 function openPropertiesPanel() {
-  shellStore.togglePanel("properties");
+  shellStore.toggleRightDockPanel("properties");
 }
 </script>
 

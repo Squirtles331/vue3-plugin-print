@@ -14,10 +14,11 @@
       />
 
       <div class="editor-root__body">
+        <LeftDock />
         <div class="editor-root__workspace-shell">
           <WorkspaceRoot />
-          <FloatingPanelsLayer />
         </div>
+        <RightPanelDock />
       </div>
 
       <StatusBar v-if="statusbarVisible" />
@@ -58,8 +59,9 @@
 import { ElMessage, ElMessageBox } from "element-plus";
 import { storeToRefs } from "pinia";
 import { defineAsyncComponent, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
-import FloatingPanelsLayer from "./shell/FloatingPanelsLayer.vue";
 import HeaderBar from "./shell/HeaderBar.vue";
+import LeftDock from "./shell/LeftDock.vue";
+import RightPanelDock from "./shell/RightPanelDock.vue";
 import StatusBar from "./shell/StatusBar.vue";
 import { useEditorDocumentStore } from "./stores/documentStore";
 import { useEditorPreviewStore } from "./stores/previewStore";
@@ -130,7 +132,7 @@ watch(templateModel, () => {
 
 watch(selectedIds, (nextIds) => {
   if (nextIds.length > 0) {
-    shellStore.openPanel("properties");
+    shellStore.openRightDock("properties");
   }
 });
 
