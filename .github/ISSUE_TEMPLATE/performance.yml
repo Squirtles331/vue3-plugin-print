@@ -1,0 +1,27 @@
+name: 性能问题
+description: 反馈大模板、复杂页面或频繁编辑时的性能瓶颈。
+title: "[Perf]: "
+labels:
+  - performance
+body:
+  - type: textarea
+    id: scenario
+    attributes:
+      label: 场景说明
+      description: 说明是编辑、预览、打印还是导出阶段出现性能问题。
+    validations:
+      required: true
+  - type: textarea
+    id: symptom
+    attributes:
+      label: 性能表现
+      description: 例如卡顿、白屏、长时间渲染、内存占用过高等。
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现条件
+      description: 说明模板大小、元素数量、数据规模和浏览器环境。
+    validations:
+      required: true

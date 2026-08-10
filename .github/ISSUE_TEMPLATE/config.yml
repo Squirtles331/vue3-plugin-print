@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 文档站
+    url: https://github.com/Squirtles331/vue3-plugin-print/tree/master/docs
+    about: 先查看文档和示例，减少重复提问。
+  - name: 演示区
+    url: https://squirtles331.github.io/vue3-plugin-print/playground/
+    about: 先在演示区复现问题，再提交更容易定位。

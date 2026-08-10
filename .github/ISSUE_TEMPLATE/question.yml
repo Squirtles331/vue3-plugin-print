@@ -1,0 +1,27 @@
+name: 使用咨询
+description: 提交使用方式、集成方式或排错方向相关问题。
+title: "[Question]: "
+labels:
+  - question
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: 使用背景
+      description: 说明你当前的项目栈、接入方式和目标结果。
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: 具体问题
+      description: 把你卡住的地方写清楚，最好附上最小代码片段。
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: 已尝试方案
+      description: 写下你已经试过的方法，便于减少重复建议。
+    validations:
+      required: false

@@ -1,33 +1,33 @@
-name: Bug report
-description: Report a reproducible problem in the designer, preview, or browser printing flow.
+name: 问题反馈
+description: 提交可复现的问题，适用于编辑器、预览、打印和发布流程。
 title: "[Bug]: "
 labels:
   - bug
 body:
   - type: markdown
     attributes:
-      value: Please remove business data, credentials, and protected screenshots before submitting.
+      value: 提交前请移除业务数据、凭证、敏感截图和真实模板内容。
   - type: textarea
     id: summary
     attributes:
-      label: What happened?
-      description: Describe the observed behavior and the expected result.
+      label: 现象描述
+      description: 说明实际表现、期望表现，以及问题发生在哪个环节。
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: Reproduction steps
+      label: 复现步骤
       placeholder: |
-        1. Start from …
-        2. Insert or configure …
-        3. Observe …
+        1. 打开哪个页面
+        2. 配置了哪些模板或数据
+        3. 观察到什么结果
     validations:
       required: true
   - type: textarea
     id: environment
     attributes:
-      label: Environment
-      description: Include version, browser, OS, paper/printer settings if printing is involved, and anonymized JSON/template data.
+      label: 环境信息
+      description: 包括版本、浏览器、操作系统、纸张/打印机设置，以及脱敏后的 JSON 或模板片段。
     validations:
       required: true

@@ -1,0 +1,28 @@
+name: 文档反馈
+description: 修正文档错误、补充说明或优化示例。
+title: "[Docs]: "
+labels:
+  - documentation
+body:
+  - type: textarea
+    id: location
+    attributes:
+      label: 涉及页面
+      description: 请填写文档页路径、标题或截图位置。
+      placeholder: 例如：/guide/quick-start
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: 问题说明
+      description: 说明当前文档哪里不清楚、错误或缺少信息。
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: 建议修改
+      description: 如果方便，可以直接给出你希望替换成的文字。
+    validations:
+      required: false

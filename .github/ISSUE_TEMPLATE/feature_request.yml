@@ -1,5 +1,5 @@
-name: Feature request
-description: Suggest a scoped improvement for a future release.
+name: 功能建议
+description: 提交新的功能诉求、交互优化或兼容能力建议。
 title: "[Feature]: "
 labels:
   - enhancement
@@ -7,25 +7,25 @@ body:
   - type: textarea
     id: problem
     attributes:
-      label: Problem to solve
-      description: Describe the workflow and current limitation before proposing a solution.
+      label: 业务场景
+      description: 先说明你正在处理的业务流程，再描述当前限制。
     validations:
       required: true
   - type: textarea
     id: proposal
     attributes:
-      label: Proposed outcome
-      description: Explain the user-facing result, examples, and relevant print/browser constraints.
+      label: 期望结果
+      description: 说明你希望页面、模板或打印结果最终变成什么样。
     validations:
       required: true
   - type: dropdown
     id: scope
     attributes:
-      label: Likely scope
+      label: 建议范围
       options:
-        - v0.1 stabilization
-        - Future editor capability
-        - Future printing or export capability
-        - Documentation
+        - 当前版本可补充
+        - 编辑器能力
+        - 打印或导出能力
+        - 文档或示例
     validations:
       required: true
