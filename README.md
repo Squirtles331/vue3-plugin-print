@@ -1,4 +1,4 @@
-# Print Template Studio
+﻿# 打印模板工作台
 
 <p align="center">Vue 3 可嵌入打印设计器 · JSON 数据绑定 · 浏览器原生打印</p>
 
@@ -129,11 +129,11 @@ npm run verify          # 完整校验
 
 ## 参与贡献
 
-提交 Issue 或 Pull Request 前，请阅读 [贡献指南](CONTRIBUTING.md)、[安全策略](SECURITY.md) 和 [发布检查清单](docs/release-checklist.md)。
+提交 问题单 或 拉取请求 前，请阅读 [贡献指南](CONTRIBUTING.md)、[安全策略](SECURITY.md) 和 [发布检查清单](docs/release-checklist.md)。
 
 ---
 
-## English quick start
+## 英文快速开始
 
 ```bash
 npm install @squirtles331/vue3-plugin-print
@@ -146,4 +146,5 @@ import "@squirtles331/vue3-plugin-print/style.css";
 app.use(PrintTemplateStudioPlugin);
 ```
 
-Render `<PrintTemplateStudio v-model:template="template" v-model:runtime-data="runtimeData" />`. The package targets Vue 3.5+ and current desktop Chrome/Edge browser printing. PDF/image export, silent/cloud printing, Vue 2, Web Components, and server rendering are outside the first release scope.
+渲染 `<PrintTemplateStudio v-model:template="template" v-model:runtime-data="runtimeData" />`。这个包面向 Vue 3.5+ 与当前桌面版 Chrome / Edge 的浏览器打印。PDF / 图片导出、静默 / 云打印、Vue 2、Web Components 和服务端渲染都不在首发范围内。
+

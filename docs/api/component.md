@@ -1,6 +1,6 @@
-# 组件 API
+# 组件接口
 
-## `PrintTemplateStudio`
+## 组件 `PrintTemplateStudio`
 
 ### Props
 

@@ -1,6 +1,6 @@
 # 组件使用
 
-`PrintTemplateStudio` 是可直接嵌入业务应用的主组件。
+`PrintTemplateStudio` 是可直接嵌入业务应用的打印模板主组件。
 
 ## Props
 

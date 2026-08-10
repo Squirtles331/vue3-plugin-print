@@ -11,8 +11,8 @@ function resolveBase() {
 }
 
 export default defineConfig({
-  title: "Print Template Studio",
-  description: "Vue 3 visual print-template designer",
+  title: "打印模板工作台",
+  description: "基于 Vue 3 的可视化打印模板设计器",
   lang: "zh-CN",
   base: resolveBase(),
   srcExclude: [
@@ -30,36 +30,30 @@ export default defineConfig({
   themeConfig: {
     logo: "/logo.svg",
     nav: [
-      { text: "Guide", link: "/guide/quick-start" },
-      { text: "API", link: "/api/component" },
-      { text: "Examples", link: "/examples/repository" },
-      { text: "Playground", link: "/playground" },
+      { text: "指南", link: "/guide/quick-start" },
+      { text: "接口", link: "/api/component" },
+      { text: "示例", link: "/examples/repository" },
+      { text: "演示区", link: "/playground" },
     ],
     sidebar: [
       {
-        text: "Guide",
+        text: "使用指南",
         items: [
-          { text: "Quick Start", link: "/guide/quick-start" },
-          { text: "Usage", link: "/guide/usage" },
+          { text: "快速开始", link: "/guide/quick-start" },
+          { text: "组件使用", link: "/guide/usage" },
         ],
       },
       {
-        text: "API",
-        items: [
-          { text: "Component API", link: "/api/component" },
-        ],
+        text: "接口说明",
+        items: [{ text: "组件接口", link: "/api/component" }],
       },
       {
-        text: "Examples",
-        items: [
-          { text: "Repository", link: "/examples/repository" },
-        ],
+        text: "使用示例",
+        items: [{ text: "仓储示例", link: "/examples/repository" }],
       },
       {
-        text: "Live",
-        items: [
-          { text: "Playground", link: "/playground" },
-        ],
+        text: "在线演示",
+        items: [{ text: "演示区", link: "/playground" }],
       },
     ],
     search: {
@@ -69,28 +63,28 @@ export default defineConfig({
       { icon: "github", link: "https://github.com/Squirtles331/vue3-plugin-print" },
     ],
     footer: {
-      message: "Released under the MIT License.",
+      message: "开源协议：MIT",
       copyright: "Copyright 2026 songTongxue",
     },
     editLink: {
       pattern: "https://github.com/Squirtles331/vue3-plugin-print/edit/master/docs/:path",
-      text: "Edit this page on GitHub",
+      text: "在 GitHub 上编辑此页",
     },
     lastUpdated: {
-      text: "Last updated",
+      text: "最后更新",
     },
     outline: {
       level: [2, 3],
-      label: "On this page",
+      label: "本页目录",
     },
     docFooter: {
-      prev: "Previous page",
-      next: "Next page",
+      prev: "上一页",
+      next: "下一页",
     },
-    darkModeSwitchLabel: "Appearance",
-    lightModeSwitchTitle: "Switch to light theme",
-    darkModeSwitchTitle: "Switch to dark theme",
-    sidebarMenuLabel: "Menu",
-    returnToTopLabel: "Return to top",
+    darkModeSwitchLabel: "外观",
+    lightModeSwitchTitle: "切换到浅色模式",
+    darkModeSwitchTitle: "切换到深色模式",
+    sidebarMenuLabel: "菜单",
+    returnToTopLabel: "返回顶部",
   },
 });

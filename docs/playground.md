@@ -1,4 +1,4 @@
-# Playground
+# 演示区
 
 <script setup>
 import { withBase } from "vitepress";
@@ -12,7 +12,7 @@ const demoUrl = withBase("/demo/");
   <iframe
     class="playground-frame"
     :src="demoUrl"
-    title="Print Template Studio 演示"
+    title="打印模板工作台演示"
     loading="lazy"
   />
 </div>

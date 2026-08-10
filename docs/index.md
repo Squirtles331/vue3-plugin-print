@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: Print Template Studio
+  name: 打印模板工作台
   text: 面向业务系统的可视化打印模板设计器
   tagline: 基于 Vue 3、Element Plus 和浏览器原生打印，支持模板设计、JSON 绑定、预览与发布。
   actions:
@@ -10,7 +10,7 @@ hero:
       text: 开始使用
       link: /guide/quick-start
     - theme: alt
-      text: 打开 Playground
+      text: 打开演示区
       link: /playground
 
 features:
@@ -19,13 +19,13 @@ features:
   - title: TypeScript 友好
     details: 插件注册、组件绑定、仓储和导出接口都可以按现有项目方式逐步集成。
   - title: 文档和示例
-    details: 站点按安装、组件、仓储与 Playground 组织，适合团队直接查阅和落地。
+    details: 站点按安装、组件、仓储与演示区组织，适合团队直接查阅和落地。
 ---
 
 ## 你会得到什么
 
-Print Template Studio 适合订单、标签、出库单、质检单等需要频繁输出纸质内容的业务场景。
-它把模板 authoring、运行时数据绑定、浏览器预览和原生打印放在同一个工作流里。
+打印模板工作台适合订单、标签、出库单、质检单等需要频繁输出纸质内容的业务场景。
+它把模板设计、运行时数据绑定、浏览器预览和原生打印放在同一个工作流里。
 
 ## 核心能力
 
