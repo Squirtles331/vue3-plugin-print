@@ -16,7 +16,6 @@ export default defineConfig({
   lang: "zh-CN",
   base: resolveBase(),
   srcExclude: [
-    "releases/**",
     "browser-print-acceptance.md",
     "commercial-edition.md",
     "commercial-independence-audit.md",
@@ -32,8 +31,8 @@ export default defineConfig({
     nav: [
       { text: "组件", link: "/guide/quick-start" },
       { text: "工具", link: "/guide/comparison" },
+      { text: "版本", link: "/releases/" },
       { text: "演示", link: "/playground" },
-      { text: "v0.1.0", link: "/releases/v0.1.0" },
     ],
     sidebar: [
       {
@@ -55,6 +54,13 @@ export default defineConfig({
       {
         text: "在线演示",
         items: [{ text: "演示区", link: "/playground" }],
+      },
+      {
+        text: "版本记录",
+        items: [
+          { text: "版本首页", link: "/releases/" },
+          { text: "v0.1.0", link: "/releases/v0.1.0" },
+        ],
       },
     ],
     search: {
