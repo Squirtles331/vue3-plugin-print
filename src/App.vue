@@ -1,5 +1,5 @@
 <template>
-  <PrintDesigner />
+  <PrintDesigner height="100dvh" />
 </template>
 
 <script setup>
