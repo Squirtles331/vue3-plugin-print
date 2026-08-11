@@ -53,33 +53,34 @@
         </div>
 
         <div v-if="showActions" class="layers-panel__actions" @click.stop>
-          <el-button size="small" text :title="layer.visible ? '隐藏图层' : '显示图层'" @click="emit('toggle-visible', layer)">
-            <el-icon><component :is="layer.visible ? View : Hide" /></el-icon>
-          </el-button>
-          <el-button size="small" text :title="layer.locked ? '解除锁定' : '锁定图层'" @click="emit('toggle-lock', layer)">
-            <el-icon><component :is="layer.locked ? Unlock : Lock" /></el-icon>
-          </el-button>
-          <el-button :disabled="layer.locked" size="small" text title="置于顶层" @click="emit('move', { layer, action: 'bringToFront' })">
-            <el-icon><Top /></el-icon>
-          </el-button>
-          <el-button :disabled="layer.locked" size="small" text title="置于底层" @click="emit('move', { layer, action: 'sendToBack' })">
-            <el-icon><Bottom /></el-icon>
-          </el-button>
-          <el-button :disabled="layer.locked" size="small" text title="复制图层" @click="emit('duplicate', layer)">
-            <el-icon><CopyDocument /></el-icon>
-          </el-button>
-          <el-popconfirm
+          <PdButton size="small" text :title="layer.visible ? '隐藏图层' : '显示图层'" @click="emit('toggle-visible', layer)">
+            <PdIcon><component :is="layer.visible ? View : Hide" /></PdIcon>
+          </PdButton>
+          <PdButton size="small" text :title="layer.locked ? '解除锁定' : '锁定图层'" @click="emit('toggle-lock', layer)">
+            <PdIcon><component :is="layer.locked ? Unlock : Lock" /></PdIcon>
+          </PdButton>
+          <PdButton :disabled="layer.locked" size="small" text title="置于顶层" @click="emit('move', { layer, action: 'bringToFront' })">
+            <PdIcon><Top /></PdIcon>
+          </PdButton>
+          <PdButton :disabled="layer.locked" size="small" text title="置于底层" @click="emit('move', { layer, action: 'sendToBack' })">
+            <PdIcon><Bottom /></PdIcon>
+          </PdButton>
+          <PdButton :disabled="layer.locked" size="small" text title="复制图层" @click="emit('duplicate', layer)">
+            <PdIcon><CopyDocument /></PdIcon>
+          </PdButton>
+          <PdConfirm
             title="删除此图层后无法恢复，继续吗？"
             confirm-button-text="删除"
             cancel-button-text="取消"
+            :disabled="layer.locked"
             @confirm="emit('remove', layer)"
           >
             <template #reference>
-              <el-button :disabled="layer.locked" size="small" text class="layers-panel__danger" title="删除图层">
-                <el-icon><Delete /></el-icon>
-              </el-button>
+              <PdButton :disabled="layer.locked" size="small" text class="layers-panel__danger" title="删除图层">
+                <PdIcon><Delete /></PdIcon>
+              </PdButton>
             </template>
-          </el-popconfirm>
+          </PdConfirm>
         </div>
       </article>
     </div>
@@ -89,6 +90,9 @@
 <script setup>
 import { computed } from "vue";
 import { Bottom, CopyDocument, Delete, Hide, Lock, Top, Unlock, View } from "../../ui/icons.js";
+import PdButton from "../../ui/primitives/PdButton.vue";
+import PdConfirm from "../../ui/primitives/PdConfirm.vue";
+import PdIcon from "../../ui/primitives/PdIcon.vue";
 
 const props = defineProps({
   layers: {
@@ -350,7 +354,7 @@ function layerRank(layerId) {
   gap: 4px;
 }
 
-.layers-panel__actions :deep(.el-button) {
+.layers-panel__actions :deep(.pd-button) {
   height: 28px;
   width: 28px;
   padding: 0;
@@ -358,7 +362,7 @@ function layerRank(layerId) {
   color: #475569;
 }
 
-.layers-panel__actions :deep(.el-button:hover:not(:disabled)) {
+.layers-panel__actions :deep(.pd-button:hover:not(:disabled)) {
   border-color: var(--pd-accent-border);
   background: var(--pd-accent-bg);
   color: var(--pd-accent-text);

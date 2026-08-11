@@ -13,14 +13,14 @@
     </header>
 
     <div class="history-panel__actions">
-      <el-button :disabled="!canUndo" size="small" plain @click="historyStore.undo">
-        <el-icon><RefreshLeft /></el-icon>
+      <PdButton :disabled="!canUndo" size="small" plain @click="historyStore.undo">
+        <template #icon><PdIcon><RefreshLeft /></PdIcon></template>
         撤销
-      </el-button>
-      <el-button :disabled="!canRedo" size="small" plain @click="historyStore.redo">
-        <el-icon><RefreshRight /></el-icon>
+      </PdButton>
+      <PdButton :disabled="!canRedo" size="small" plain @click="historyStore.redo">
+        <template #icon><PdIcon><RefreshRight /></PdIcon></template>
         重做
-      </el-button>
+      </PdButton>
       <span class="history-panel__hint">{{ historyHint }}</span>
     </div>
 
@@ -52,6 +52,8 @@
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { RefreshLeft, RefreshRight } from "../../ui/icons.js";
+import PdButton from "../../ui/primitives/PdButton.vue";
+import PdIcon from "../../ui/primitives/PdIcon.vue";
 import { useEditorHistoryStore } from "../stores/historyStore";
 
 const historyStore = useEditorHistoryStore();
@@ -147,12 +149,12 @@ const historyHint = computed(() => {
   flex-wrap: wrap;
 }
 
-.history-panel__actions :deep(.el-button) {
+.history-panel__actions :deep(.pd-button) {
   border-color: var(--pd-border);
   color: #374151;
 }
 
-.history-panel__actions :deep(.el-button:hover:not(:disabled)) {
+.history-panel__actions :deep(.pd-button:hover:not(:disabled)) {
   border-color: var(--pd-accent-border);
   background: var(--pd-accent-bg);
   color: var(--pd-accent-text);

@@ -28,7 +28,7 @@
           @dragend="$emit('palette-dragend', $event)"
         >
           <span class="insert-panel__card-icon">
-            <el-icon><component :is="item.icon" /></el-icon>
+            <PdIcon><component :is="item.icon" /></PdIcon>
           </span>
           <span class="insert-panel__card-label">{{ item.label }}</span>
         </button>
@@ -39,6 +39,7 @@
 
 <script setup>
 import { computed } from "vue";
+import PdIcon from "../../ui/primitives/PdIcon.vue";
 
 const props = defineProps({
   palette: {

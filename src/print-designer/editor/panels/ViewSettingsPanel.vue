@@ -36,23 +36,23 @@
       <div class="view-settings-panel__section-title">编辑辅助</div>
       <label class="view-settings-panel__toggle">
         <span>显示参考线</span>
-        <el-switch :model-value="guidesVisible" @change="viewportStore.toggleGuides" />
+        <PdSwitch :model-value="guidesVisible" @change="viewportStore.toggleGuides" />
       </label>
       <label class="view-settings-panel__toggle">
         <span>显示网格</span>
-        <el-switch :model-value="gridVisible" @change="viewportStore.toggleGrid" />
+        <PdSwitch :model-value="gridVisible" @change="viewportStore.toggleGrid" />
       </label>
       <label class="view-settings-panel__toggle">
         <span>显示边距线</span>
-        <el-switch :model-value="safeAreaVisible" @change="viewportStore.toggleSafeArea" />
+        <PdSwitch :model-value="safeAreaVisible" @change="viewportStore.toggleSafeArea" />
       </label>
       <label class="view-settings-panel__toggle">
         <span>显示页面边框</span>
-        <el-switch :model-value="pageOutlineVisible" @change="viewportStore.togglePageOutline" />
+        <PdSwitch :model-value="pageOutlineVisible" @change="viewportStore.togglePageOutline" />
       </label>
       <label class="view-settings-panel__toggle">
         <span>吸附</span>
-        <el-switch :model-value="snapEnabled" @change="viewportStore.toggleSnap" />
+        <PdSwitch :model-value="snapEnabled" @change="viewportStore.toggleSnap" />
       </label>
     </section>
 
@@ -60,11 +60,11 @@
       <div class="view-settings-panel__section-title">交互偏好</div>
       <label class="view-settings-panel__toggle">
         <span>允许元素拖出画布</span>
-        <el-switch :model-value="allowOverflowDrag" @change="viewportStore.toggleAllowOverflowDrag" />
+        <PdSwitch :model-value="allowOverflowDrag" @change="viewportStore.toggleAllowOverflowDrag" />
       </label>
       <label class="view-settings-panel__toggle">
         <span>文本快捷操作条</span>
-        <el-switch :model-value="textQuickToolbarVisible" @change="viewportStore.toggleTextQuickToolbar" />
+        <PdSwitch :model-value="textQuickToolbarVisible" @change="viewportStore.toggleTextQuickToolbar" />
       </label>
     </section>
 
@@ -75,6 +75,7 @@
 <script setup>
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
+import PdSwitch from "../../ui/primitives/PdSwitch.vue";
 import { useEditorViewportStore } from "../stores/viewportStore";
 
 const viewportStore = useEditorViewportStore();

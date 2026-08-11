@@ -19,7 +19,7 @@
     </div>
 
     <div class="binding-panel__toolbar">
-      <el-input v-model="searchQuery" clearable size="small" :prefix-icon="Search" placeholder="搜索字段路径" />
+      <PdInput v-model="searchQuery" clearable size="small" :prefix-icon="Search" placeholder="搜索字段路径" />
     </div>
 
     <div class="binding-panel__body">
@@ -31,6 +31,7 @@
 <script setup>
 import { computed, ref } from "vue";
 import { Search } from "../../ui/icons.js";
+import PdInput from "../../ui/primitives/PdInput.vue";
 import DataPanel from "../../components/sidebar/DataPanel.vue";
 
 const props = defineProps({

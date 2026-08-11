@@ -38,11 +38,11 @@
       <div class="page-settings-panel__field-stack">
         <label class="page-settings-panel__field">
           <span>模板名称</span>
-          <el-input :model-value="documentName" maxlength="160" @change="documentStore.setDocumentName($event)" />
+          <PdInput :model-value="documentName" maxlength="160" @change="documentStore.setDocumentName($event)" />
         </label>
         <label class="page-settings-panel__field">
           <span>当前页名称</span>
-          <el-input :model-value="currentPageTitle" maxlength="160" @change="documentStore.setCurrentPageTitle($event)" />
+          <PdInput :model-value="currentPageTitle" maxlength="160" @change="documentStore.setCurrentPageTitle($event)" />
         </label>
       </div>
     </section>
@@ -65,44 +65,44 @@
 
       <label class="page-settings-panel__field">
         <span>纸张尺寸</span>
-        <el-select
+        <PdSelect
           :model-value="currentPaperPresetKey"
           placeholder="选择纸张尺寸"
           @change="documentStore.setPaperPreset"
         >
-          <el-option-group v-for="group in paperSizeGroups" :key="group.group" :label="group.group">
-            <el-option
+          <PdOptionGroup v-for="group in paperSizeGroups" :key="group.group" :label="group.group">
+            <PdOption
               v-for="option in group.options"
               :key="option.key"
               :label="option.recommended ? `${option.label} · 常用` : option.label"
               :value="option.key"
             />
-          </el-option-group>
-          <el-option label="自定义尺寸" :value="CUSTOM_PAPER_SIZE_KEY" />
-        </el-select>
+          </PdOptionGroup>
+          <PdOption label="自定义尺寸" :value="CUSTOM_PAPER_SIZE_KEY" />
+        </PdSelect>
       </label>
 
       <div class="page-settings-panel__grid-2">
         <label class="page-settings-panel__field">
           <span>方向</span>
-          <el-select :model-value="orientation" @change="documentStore.setOrientation($event)">
-            <el-option label="纵向" value="portrait" />
-            <el-option label="横向" value="landscape" />
-          </el-select>
+          <PdSelect :model-value="orientation" @change="documentStore.setOrientation($event)">
+            <PdOption label="纵向" value="portrait" />
+            <PdOption label="横向" value="landscape" />
+          </PdSelect>
         </label>
         <label class="page-settings-panel__field">
           <span>单位</span>
-          <el-select :model-value="unit" @change="documentStore.setUnit">
-            <el-option label="毫米" value="mm" />
-            <el-option label="像素" value="px" />
-          </el-select>
+          <PdSelect :model-value="unit" @change="documentStore.setUnit">
+            <PdOption label="毫米" value="mm" />
+            <PdOption label="像素" value="px" />
+          </PdSelect>
         </label>
       </div>
 
       <div class="page-settings-panel__grid-2">
         <label class="page-settings-panel__field">
           <span>宽度 (mm)</span>
-          <el-input-number
+          <PdInputNumber
             :model-value="pageWidthMm"
             :min="20"
             :max="1000"
@@ -113,7 +113,7 @@
         </label>
         <label class="page-settings-panel__field">
           <span>高度 (mm)</span>
-          <el-input-number
+          <PdInputNumber
             :model-value="pageHeightMm"
             :min="20"
             :max="1500"
@@ -130,19 +130,19 @@
       <div class="page-settings-panel__margin-grid">
         <label class="page-settings-panel__field">
           <span>上</span>
-          <el-input-number :model-value="marginTopMm" :min="0" :max="200" :precision="1" controls-position="right" @change="documentStore.setMargins({ top: $event })" />
+          <PdInputNumber :model-value="marginTopMm" :min="0" :max="200" :precision="1" @change="documentStore.setMargins({ top: $event })" />
         </label>
         <label class="page-settings-panel__field">
           <span>右</span>
-          <el-input-number :model-value="marginRightMm" :min="0" :max="200" :precision="1" controls-position="right" @change="documentStore.setMargins({ right: $event })" />
+          <PdInputNumber :model-value="marginRightMm" :min="0" :max="200" :precision="1" @change="documentStore.setMargins({ right: $event })" />
         </label>
         <label class="page-settings-panel__field">
           <span>下</span>
-          <el-input-number :model-value="marginBottomMm" :min="0" :max="200" :precision="1" controls-position="right" @change="documentStore.setMargins({ bottom: $event })" />
+          <PdInputNumber :model-value="marginBottomMm" :min="0" :max="200" :precision="1" @change="documentStore.setMargins({ bottom: $event })" />
         </label>
         <label class="page-settings-panel__field">
           <span>左</span>
-          <el-input-number :model-value="marginLeftMm" :min="0" :max="200" :precision="1" controls-position="right" @change="documentStore.setMargins({ left: $event })" />
+          <PdInputNumber :model-value="marginLeftMm" :min="0" :max="200" :precision="1" @change="documentStore.setMargins({ left: $event })" />
         </label>
       </div>
     </section>
@@ -157,24 +157,24 @@
 
         <label class="page-settings-panel__toggle">
           <span>编辑器角标（不打印）</span>
-          <el-switch :model-value="pageCornerVisible" @change="documentStore.togglePageCorner" />
+          <PdSwitch :model-value="pageCornerVisible" @change="documentStore.togglePageCorner" />
         </label>
 
         <label class="page-settings-panel__toggle">
           <span>浏览器打印标记</span>
-          <el-switch :model-value="printMarksVisible" @change="documentStore.togglePrintMarks" />
+          <PdSwitch :model-value="printMarksVisible" @change="documentStore.togglePrintMarks" />
         </label>
 
         <div class="page-settings-panel__line-row">
-          <el-switch :model-value="headerLineVisible" @change="documentStore.toggleHeaderLine" />
+          <PdSwitch :model-value="headerLineVisible" @change="documentStore.toggleHeaderLine" />
           <span class="page-settings-panel__line-label">页眉辅助线（不打印）</span>
-          <el-input-number :model-value="headerOffsetMm" :min="0" :max="200" :precision="1" controls-position="right" @change="documentStore.setHeaderOffset" />
+          <PdInputNumber :model-value="headerOffsetMm" :min="0" :max="200" :precision="1" @change="documentStore.setHeaderOffset" />
         </div>
 
         <div class="page-settings-panel__line-row">
-          <el-switch :model-value="footerLineVisible" @change="documentStore.toggleFooterLine" />
+          <PdSwitch :model-value="footerLineVisible" @change="documentStore.toggleFooterLine" />
           <span class="page-settings-panel__line-label">页脚辅助线（不打印）</span>
-          <el-input-number :model-value="footerOffsetMm" :min="0" :max="200" :precision="1" controls-position="right" @change="documentStore.setFooterOffset" />
+          <PdInputNumber :model-value="footerOffsetMm" :min="0" :max="200" :precision="1" @change="documentStore.setFooterOffset" />
         </div>
       </div>
     </section>
@@ -184,6 +184,12 @@
 <script setup>
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
+import PdInput from "../../ui/primitives/PdInput.vue";
+import PdInputNumber from "../../ui/primitives/PdInputNumber.vue";
+import PdOption from "../../ui/primitives/PdOption.vue";
+import PdOptionGroup from "../../ui/primitives/PdOptionGroup.vue";
+import PdSelect from "../../ui/primitives/PdSelect.vue";
+import PdSwitch from "../../ui/primitives/PdSwitch.vue";
 import { CUSTOM_PAPER_SIZE_KEY, PAPER_SIZE_PRESETS } from "../paperSizePresets";
 import { useEditorDocumentStore } from "../stores/documentStore";
 
@@ -449,17 +455,17 @@ function onHeightChange(value) {
   gap: 10px;
 }
 
-:deep(.page-settings-panel .el-select),
-:deep(.page-settings-panel .el-input-number) {
+.page-settings-panel :deep(.pd-select),
+.page-settings-panel :deep(.pd-input-number),
+.page-settings-panel :deep(.pd-input) {
   width: 100%;
 }
 
-:deep(.page-settings-panel .el-select__wrapper),
-:deep(.page-settings-panel .el-input-number),
-:deep(.page-settings-panel .el-input__wrapper) {
+.page-settings-panel :deep(.pd-select),
+.page-settings-panel :deep(.pd-input-number),
+.page-settings-panel :deep(.pd-input) {
   border-radius: var(--pd-radius-control);
   background: var(--pd-surface-bg);
-  box-shadow: inset 0 0 0 1px var(--pd-border);
 }
 
 @media (max-width: 480px) {
@@ -483,7 +489,7 @@ function onHeightChange(value) {
     grid-template-columns: auto 1fr;
   }
 
-  .page-settings-panel__line-row :deep(.el-input-number) {
+  .page-settings-panel__line-row :deep(.pd-input-number) {
     grid-column: 2;
   }
 }

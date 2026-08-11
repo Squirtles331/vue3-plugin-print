@@ -9,7 +9,7 @@
       @click="$emit('update:modelValue', item.key)"
     >
       <span class="sidebar-tabs__icon">
-        <el-icon><component :is="item.icon" /></el-icon>
+        <PdIcon><component :is="item.icon" /></PdIcon>
       </span>
       <span class="sidebar-tabs__label">{{ item.label }}</span>
     </button>
@@ -17,6 +17,8 @@
 </template>
 
 <script setup>
+import PdIcon from "../../ui/primitives/PdIcon.vue";
+
 defineProps({
   modelValue: {
     type: String,

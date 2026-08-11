@@ -13,10 +13,10 @@
           <strong>{{ filteredPages.length }}</strong>
           <span>{{ pages.length }} 页</span>
         </div>
-        <el-button v-if="showActions" class="pages-panel__create" type="primary" plain size="small" @click="emit('create')">
-          <el-icon><Plus /></el-icon>
+        <PdButton v-if="showActions" class="pages-panel__create" type="primary" plain size="small" @click="emit('create')">
+          <template #icon><PdIcon><Plus /></PdIcon></template>
           新建
-        </el-button>
+        </PdButton>
       </div>
     </header>
 
@@ -47,7 +47,7 @@
           </span>
         </div>
 
-        <el-input
+        <PdInput
           v-if="showActions"
           class="pages-panel__title-input"
           :model-value="page.title"
@@ -60,27 +60,28 @@
         <span class="pages-panel__meta">{{ page.size }} / {{ page.orientation }}</span>
 
         <div v-if="showActions" class="pages-panel__actions" @click.stop>
-          <el-button :disabled="pageIndex(page.id) <= 1" size="small" text @click="onMove(page, 'up')">
-            <el-icon><Top /></el-icon>
-          </el-button>
-          <el-button :disabled="pageIndex(page.id) >= pages.length" size="small" text @click="onMove(page, 'down')">
-            <el-icon><Bottom /></el-icon>
-          </el-button>
-          <el-button size="small" text @click="emit('duplicate', page)">
-            <el-icon><CopyDocument /></el-icon>
-          </el-button>
-          <el-popconfirm
+          <PdButton :disabled="pageIndex(page.id) <= 1" size="small" text title="上移页面" @click="onMove(page, 'up')">
+            <PdIcon><Top /></PdIcon>
+          </PdButton>
+          <PdButton :disabled="pageIndex(page.id) >= pages.length" size="small" text title="下移页面" @click="onMove(page, 'down')">
+            <PdIcon><Bottom /></PdIcon>
+          </PdButton>
+          <PdButton size="small" text title="复制页面" @click="emit('duplicate', page)">
+            <PdIcon><CopyDocument /></PdIcon>
+          </PdButton>
+          <PdConfirm
             title="删除此页面后无法恢复，继续吗？"
             confirm-button-text="删除"
             cancel-button-text="取消"
+            :disabled="pages.length <= 1"
             @confirm="emit('remove', page)"
           >
             <template #reference>
-              <el-button :disabled="pages.length <= 1" size="small" text class="pages-panel__danger">
-                <el-icon><Delete /></el-icon>
-              </el-button>
+              <PdButton :disabled="pages.length <= 1" size="small" text class="pages-panel__danger" title="删除页面">
+                <PdIcon><Delete /></PdIcon>
+              </PdButton>
             </template>
-          </el-popconfirm>
+          </PdConfirm>
         </div>
       </article>
     </div>
@@ -90,6 +91,10 @@
 <script setup>
 import { computed } from "vue";
 import { Bottom, CopyDocument, Delete, Plus, Top } from "../../ui/icons.js";
+import PdButton from "../../ui/primitives/PdButton.vue";
+import PdConfirm from "../../ui/primitives/PdConfirm.vue";
+import PdIcon from "../../ui/primitives/PdIcon.vue";
+import PdInput from "../../ui/primitives/PdInput.vue";
 
 const props = defineProps({
   pages: {
@@ -304,9 +309,7 @@ function onMove(page, direction) {
   width: 100%;
 }
 
-.pages-panel__title-input :deep(.el-input__wrapper) {
-  box-shadow: none;
-  border-radius: var(--pd-radius-control);
+.pages-panel__title-input {
   background: rgba(255, 255, 255, 0.7);
 }
 
@@ -327,7 +330,7 @@ function onMove(page, direction) {
   gap: 4px;
 }
 
-.pages-panel__actions :deep(.el-button) {
+.pages-panel__actions :deep(.pd-button) {
   height: 28px;
   width: 28px;
   padding: 0;
@@ -335,7 +338,7 @@ function onMove(page, direction) {
   color: #475569;
 }
 
-.pages-panel__actions :deep(.el-button:hover:not(:disabled)) {
+.pages-panel__actions :deep(.pd-button:hover:not(:disabled)) {
   border-color: var(--pd-accent-border);
   background: var(--pd-accent-bg);
   color: var(--pd-accent-text);
