@@ -7,12 +7,11 @@ import TemplateLibraryDialog from "../src/print-designer/template/TemplateLibrar
 
 const messageBox = vi.hoisted(() => ({ confirm: vi.fn() }));
 
-vi.mock("element-plus", () => ({
-  ElMessageBox: messageBox,
+vi.mock("../src/print-designer/ui/feedback.js", () => ({
+  PdMessageBox: messageBox,
 }));
 
-const DialogStub = { template: "<section><slot /></section>" };
-const ButtonStub = { emits: ["click"], template: "<button v-bind='$attrs' @click='$emit(\"click\")'><slot /></button>" };
+const DialogStub = { props: ["modelValue"], template: "<section v-if='modelValue'><slot /></section>" };
 
 function mountLibrary() {
   return mount(TemplateLibraryDialog, {
@@ -22,8 +21,7 @@ function mountLibrary() {
     },
     global: {
       stubs: {
-        ElDialog: DialogStub,
-        ElButton: ButtonStub,
+        PdDialog: DialogStub,
       },
     },
   });

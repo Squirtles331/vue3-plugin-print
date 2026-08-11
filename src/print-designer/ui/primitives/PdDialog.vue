@@ -1,6 +1,8 @@
 <script setup>
-import { computed, onBeforeUnmount, watch } from "vue";
+import { computed, onBeforeUnmount, useAttrs, watch } from "vue";
 import PdButton from "./PdButton.vue";
+
+defineOptions({ inheritAttrs: false });
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -10,6 +12,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["update:modelValue", "close"]);
+const attrs = useAttrs();
 const panelStyle = computed(() => ({ width: props.width }));
 
 function closeDialog() {
@@ -54,7 +57,7 @@ onBeforeUnmount(() => {
 <template>
   <Teleport to="body">
     <div v-if="modelValue" class="pd-dialog" role="dialog" aria-modal="true" @click.self="onBackdropClick">
-      <section class="pd-dialog__panel" :style="panelStyle">
+      <section v-bind="attrs" class="pd-dialog__panel" :style="panelStyle">
         <header class="pd-dialog__header">
           <slot name="header">
             <h2 class="pd-dialog__title">{{ title }}</h2>

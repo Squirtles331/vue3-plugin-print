@@ -26,4 +26,4 @@
 
 - [x] 5.1 Remove Element Plus from package metadata, library externals, consumer verification, and release checks.
 - [x] 5.2 Update plugin registration, demo bootstrap, and library entrypoints so the package no longer exposes Element Plus setup.
-- [ ] 5.3 Rewrite tests and mocks that assert Element Plus components, then run lint, unit tests, build, and packed-consumer verification.
+- [x] 5.3 Rewrite tests and mocks that assert Element Plus components, then run lint, unit tests, build, and packed-consumer verification.

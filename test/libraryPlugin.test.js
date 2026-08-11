@@ -20,7 +20,8 @@ test("registers the package component through the Vue plugin", () => {
   app.use(PrintTemplateStudioPlugin);
 
   assert.equal(app.component("PrintTemplateStudio"), PrintTemplateStudio);
-  assert.ok(app.component("ElButton"));
+  assert.ok(app.component("PdButton"));
+  assert.equal(app.component("ElButton"), undefined);
 });
 
 test("isolates template state for multiple mounted designers", async () => {
