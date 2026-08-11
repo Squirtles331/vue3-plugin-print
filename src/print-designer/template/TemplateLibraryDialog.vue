@@ -1,16 +1,16 @@
 <template>
-  <el-dialog :model-value="visible" title="模板库" width="min(720px, 92vw)" @update:model-value="emit('update:visible', $event)">
+  <PdDialog :model-value="visible" title="模板库" width="min(720px, 92vw)" @update:model-value="emit('update:visible', $event)">
     <div class="template-library">
       <div class="template-library__toolbar">
-        <el-input
+        <PdInput
           v-model="searchQuery"
           clearable
           :prefix-icon="Search"
           placeholder="搜索模板名称"
         />
         <div class="template-library__actions">
-          <el-button type="danger" plain :disabled="loading || !templates.length" @click="confirmClear">清空本地库</el-button>
-          <el-button :loading="loading" @click="emit('refresh')">刷新</el-button>
+          <PdButton type="danger" plain :disabled="loading || !templates.length" @click="confirmClear">清空本地库</PdButton>
+          <PdButton :loading="loading" @click="emit('refresh')">刷新</PdButton>
         </div>
       </div>
       <p class="template-library__summary">{{ summaryText }}</p>
@@ -20,16 +20,19 @@
           <strong>{{ template.name }}</strong>
           <small>{{ formatUpdatedAt(template.updatedAt) }}</small>
         </button>
-        <el-button text type="danger" class="template-library__delete" @click="confirmRemove(template)">删除</el-button>
+        <PdButton text type="danger" class="template-library__delete" @click="confirmRemove(template)">删除</PdButton>
       </article>
     </div>
-  </el-dialog>
+  </PdDialog>
 </template>
 
 <script setup>
 import { computed, shallowRef } from "vue";
-import { ElMessageBox } from "../ui/elementPlus.js";
+import { PdMessageBox } from "../ui/feedback.js";
 import { Search } from "../ui/icons.js";
+import PdButton from "../ui/primitives/PdButton.vue";
+import PdDialog from "../ui/primitives/PdDialog.vue";
+import PdInput from "../ui/primitives/PdInput.vue";
 
 const props = defineProps({ visible: { type: Boolean, default: false }, templates: { type: Array, default: () => [] }, loading: { type: Boolean, default: false } });
 const emit = defineEmits(["update:visible", "refresh", "select", "remove", "clear"]);
@@ -64,7 +67,7 @@ const emptyText = computed(() =>
 
 async function confirmRemove(template) {
   try {
-    await ElMessageBox.confirm(`Delete “${template.name}” from this browser? This cannot be undone.`, "Delete saved template", { type: "warning" });
+    await PdMessageBox.confirm(`Delete “${template.name}” from this browser? This cannot be undone.`, "Delete saved template", { type: "warning" });
   } catch {
     return;
   }
@@ -73,7 +76,7 @@ async function confirmRemove(template) {
 
 async function confirmClear() {
   try {
-    await ElMessageBox.confirm("Remove every saved template from this browser? This cannot be undone.", "Clear local template library", { type: "warning" });
+    await PdMessageBox.confirm("Remove every saved template from this browser? This cannot be undone.", "Clear local template library", { type: "warning" });
   } catch {
     return;
   }

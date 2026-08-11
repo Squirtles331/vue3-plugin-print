@@ -12,9 +12,9 @@
 
 ## 3. Migrate the editor shell first
 
-- [ ] 3.1 Replace Element Plus usage in the editor entry points, top bar, side docks, and status surfaces with owned primitives.
-- [ ] 3.2 Replace Element Plus usage in the template library, starter template, element preset, and runtime preview dialogs.
-- [ ] 3.3 Update shell styles so the migrated editor surfaces rely on Tailwind-based classes and internal component styles.
+- [x] 3.1 Replace Element Plus usage in the editor entry points, top bar, side docks, and status surfaces with owned primitives.
+- [x] 3.2 Replace Element Plus usage in the template library, starter template, element preset, and runtime preview dialogs.
+- [x] 3.3 Update shell styles so the migrated editor surfaces rely on Tailwind-based classes and internal component styles.
 
 ## 4. Migrate panels and dense controls
 

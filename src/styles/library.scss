@@ -2,13 +2,24 @@
 @tailwind utilities;
 
 .print-template-studio,
+.pd-dialog,
+.pd-message-box,
 .print-template-studio *,
 .print-template-studio *::before,
-.print-template-studio *::after {
+.print-template-studio *::after,
+.pd-dialog *,
+.pd-dialog *::before,
+.pd-dialog *::after,
+.pd-message-box *,
+.pd-message-box *::before,
+.pd-message-box *::after {
   box-sizing: border-box;
 }
 
-.print-template-studio {
+.print-template-studio,
+.pd-dialog,
+.pd-message-box,
+.pd-message-root {
   color: #1f2328;
   font-family:
     "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial,
@@ -21,12 +32,19 @@
 .print-template-studio button,
 .print-template-studio input,
 .print-template-studio select,
-.print-template-studio textarea {
+.print-template-studio textarea,
+.pd-dialog button,
+.pd-dialog input,
+.pd-dialog select,
+.pd-dialog textarea,
+.pd-message-box button,
+.pd-message-box input {
   font: inherit;
 }
 
 @layer components {
-  .print-template-studio .pd-button {
+  .print-template-studio .pd-button,
+  .pd-dialog .pd-button {
     @apply inline-flex items-center justify-center gap-1 border border-solid px-3 text-xs font-semibold transition;
     min-height: 30px;
     border-radius: var(--pd-radius-control, 2px);
@@ -36,42 +54,49 @@
     cursor: pointer;
   }
 
-  .print-template-studio .pd-button:hover:not(:disabled) {
+  .print-template-studio .pd-button:hover:not(:disabled),
+  .pd-dialog .pd-button:hover:not(:disabled) {
     border-color: var(--pd-accent-border, #b6c8f9);
     background: var(--pd-accent-bg, #e8f0fe);
     color: var(--pd-accent-text, #1d4ed8);
   }
 
-  .print-template-studio .pd-button:disabled {
+  .print-template-studio .pd-button:disabled,
+  .pd-dialog .pd-button:disabled {
     cursor: not-allowed;
     opacity: 0.48;
   }
 
-  .print-template-studio .pd-button--primary {
+  .print-template-studio .pd-button--primary,
+  .pd-dialog .pd-button--primary {
     border-color: var(--pd-accent-border, #b6c8f9);
     background: var(--pd-accent-text, #1d4ed8);
     color: #fff;
   }
 
-  .print-template-studio .pd-button--danger {
+  .print-template-studio .pd-button--danger,
+  .pd-dialog .pd-button--danger {
     border-color: #fecaca;
     color: #b91c1c;
   }
 
-  .print-template-studio .pd-button--text {
+  .print-template-studio .pd-button--text,
+  .pd-dialog .pd-button--text {
     min-height: 26px;
     border-color: transparent;
     background: transparent;
     padding-inline: 6px;
   }
 
-  .print-template-studio .pd-button--small {
+  .print-template-studio .pd-button--small,
+  .pd-dialog .pd-button--small {
     min-height: 26px;
     padding-inline: 8px;
     font-size: 11px;
   }
 
-  .print-template-studio .pd-button__spinner {
+  .print-template-studio .pd-button__spinner,
+  .pd-dialog .pd-button__spinner {
     width: 12px;
     height: 12px;
     border: 2px solid currentColor;
@@ -81,14 +106,26 @@
   }
 
   .print-template-studio .pd-button__icon,
-  .print-template-studio .pd-icon {
+  .print-template-studio .pd-icon,
+  .pd-dialog .pd-button__icon,
+  .pd-dialog .pd-icon {
     display: inline-flex;
     flex: 0 0 auto;
   }
 
+  .print-template-studio .pd-button__content,
+  .pd-dialog .pd-button__content {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+  }
+
   .print-template-studio .pd-input,
   .print-template-studio .pd-select,
-  .print-template-studio .pd-input-number {
+  .print-template-studio .pd-input-number,
+  .pd-dialog .pd-input,
+  .pd-dialog .pd-select,
+  .pd-dialog .pd-input-number {
     @apply inline-flex min-w-0 items-center border border-solid bg-white text-xs;
     min-height: 30px;
     border-radius: var(--pd-radius-control, 2px);
@@ -96,14 +133,18 @@
     color: var(--pd-text, #1f2328);
   }
 
-  .print-template-studio .pd-input {
+  .print-template-studio .pd-input,
+  .pd-dialog .pd-input {
     position: relative;
     width: 100%;
   }
 
   .print-template-studio .pd-input__control,
   .print-template-studio .pd-select,
-  .print-template-studio .pd-input-number {
+  .print-template-studio .pd-input-number,
+  .pd-dialog .pd-input__control,
+  .pd-dialog .pd-select,
+  .pd-dialog .pd-input-number {
     width: 100%;
     min-width: 0;
     border: 0;
@@ -113,25 +154,31 @@
   }
 
   .print-template-studio .pd-input__control,
-  .print-template-studio .pd-select {
+  .print-template-studio .pd-select,
+  .pd-dialog .pd-input__control,
+  .pd-dialog .pd-select {
     padding: 6px 8px;
   }
 
-  .print-template-studio .pd-input-number {
+  .print-template-studio .pd-input-number,
+  .pd-dialog .pd-input-number {
     padding: 5px 8px;
   }
 
-  .print-template-studio .pd-input__control--textarea {
+  .print-template-studio .pd-input__control--textarea,
+  .pd-dialog .pd-input__control--textarea {
     resize: vertical;
   }
 
-  .print-template-studio .pd-input__prefix {
+  .print-template-studio .pd-input__prefix,
+  .pd-dialog .pd-input__prefix {
     display: inline-flex;
     padding-left: 8px;
     color: var(--pd-muted, #6b7280);
   }
 
-  .print-template-studio .pd-input__clear {
+  .print-template-studio .pd-input__clear,
+  .pd-dialog .pd-input__clear {
     border: 0;
     background: transparent;
     color: var(--pd-muted, #6b7280);
@@ -141,12 +188,16 @@
 
   .print-template-studio .pd-input:focus-within,
   .print-template-studio .pd-select:focus,
-  .print-template-studio .pd-input-number:focus {
+  .print-template-studio .pd-input-number:focus,
+  .pd-dialog .pd-input:focus-within,
+  .pd-dialog .pd-select:focus,
+  .pd-dialog .pd-input-number:focus {
     border-color: var(--pd-accent-border, #b6c8f9);
     box-shadow: 0 0 0 2px rgb(29 78 216 / 10%);
   }
 
-  .print-template-studio .pd-switch {
+  .print-template-studio .pd-switch,
+  .pd-dialog .pd-switch {
     position: relative;
     width: 34px;
     height: 18px;
@@ -157,11 +208,13 @@
     transition: background 0.16s ease;
   }
 
-  .print-template-studio .pd-switch--checked {
+  .print-template-studio .pd-switch--checked,
+  .pd-dialog .pd-switch--checked {
     background: var(--pd-accent-text, #1d4ed8);
   }
 
-  .print-template-studio .pd-switch__thumb {
+  .print-template-studio .pd-switch__thumb,
+  .pd-dialog .pd-switch__thumb {
     position: absolute;
     top: 2px;
     left: 2px;
@@ -172,17 +225,20 @@
     transition: transform 0.16s ease;
   }
 
-  .print-template-studio .pd-switch--checked .pd-switch__thumb {
+  .print-template-studio .pd-switch--checked .pd-switch__thumb,
+  .pd-dialog .pd-switch--checked .pd-switch__thumb {
     transform: translateX(16px);
   }
 
-  .print-template-studio .pd-radio-group {
+  .print-template-studio .pd-radio-group,
+  .pd-dialog .pd-radio-group {
     display: inline-flex;
     flex-wrap: wrap;
     gap: 10px;
   }
 
-  .print-template-studio .pd-radio {
+  .print-template-studio .pd-radio,
+  .pd-dialog .pd-radio {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -191,13 +247,15 @@
     font-size: 12px;
   }
 
-  .print-template-studio .pd-radio__input {
+  .print-template-studio .pd-radio__input,
+  .pd-dialog .pd-radio__input {
     position: absolute;
     opacity: 0;
     pointer-events: none;
   }
 
-  .print-template-studio .pd-radio__mark {
+  .print-template-studio .pd-radio__mark,
+  .pd-dialog .pd-radio__mark {
     width: 14px;
     height: 14px;
     border: 1px solid var(--pd-border, #dcdfe4);
@@ -205,32 +263,38 @@
     box-shadow: inset 0 0 0 3px #fff;
   }
 
-  .print-template-studio .pd-radio--checked .pd-radio__mark {
+  .print-template-studio .pd-radio--checked .pd-radio__mark,
+  .pd-dialog .pd-radio--checked .pd-radio__mark {
     border-color: var(--pd-accent-text, #1d4ed8);
     background: var(--pd-accent-text, #1d4ed8);
   }
 
-  .print-template-studio .pd-radio--disabled {
+  .print-template-studio .pd-radio--disabled,
+  .pd-dialog .pd-radio--disabled {
     cursor: not-allowed;
     opacity: 0.48;
   }
 
-  .print-template-studio .pd-tabs {
+  .print-template-studio .pd-tabs,
+  .pd-dialog .pd-tabs {
     display: flex;
     min-height: 0;
     flex-direction: column;
   }
 
-  .print-template-studio .pd-tabs__nav {
+  .print-template-studio .pd-tabs__nav,
+  .pd-dialog .pd-tabs__nav {
     display: flex;
     border-bottom: 1px solid var(--pd-border, #dcdfe4);
   }
 
-  .print-template-studio .pd-tabs--stretch .pd-tabs__tab {
+  .print-template-studio .pd-tabs--stretch .pd-tabs__tab,
+  .pd-dialog .pd-tabs--stretch .pd-tabs__tab {
     flex: 1;
   }
 
-  .print-template-studio .pd-tabs__tab {
+  .print-template-studio .pd-tabs__tab,
+  .pd-dialog .pd-tabs__tab {
     border: 0;
     border-bottom: 2px solid transparent;
     background: transparent;
@@ -241,13 +305,16 @@
     font-weight: 700;
   }
 
-  .print-template-studio .pd-tabs__tab--active {
+  .print-template-studio .pd-tabs__tab--active,
+  .pd-dialog .pd-tabs__tab--active {
     border-bottom-color: var(--pd-accent-text, #1d4ed8);
     color: var(--pd-accent-text, #1d4ed8);
   }
 
   .print-template-studio .pd-tabs__content,
-  .print-template-studio .pd-tab-pane {
+  .print-template-studio .pd-tab-pane,
+  .pd-dialog .pd-tabs__content,
+  .pd-dialog .pd-tab-pane {
     min-height: 0;
   }
 

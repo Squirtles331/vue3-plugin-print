@@ -290,7 +290,7 @@ function openPropertiesPanel() {
   white-space: normal;
 }
 
-.header-bar button {
+.header-bar__chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -305,14 +305,14 @@ function openPropertiesPanel() {
   cursor: pointer;
 }
 
-.header-bar button:hover:not(:disabled),
+.header-bar__chip:hover:not(:disabled),
 .header-bar__chip.is-active {
   border-color: var(--pd-accent-border);
   background: var(--pd-accent-bg);
   color: var(--pd-accent-text);
 }
 
-.header-bar button:disabled {
+.header-bar__chip:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }

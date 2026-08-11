@@ -1,5 +1,5 @@
 <template>
-  <el-dialog :model-value="visible" title="选择起始模板" width="min(920px, 94vw)" @update:model-value="emit('update:visible', $event)">
+  <PdDialog :model-value="visible" title="选择起始模板" width="min(920px, 94vw)" @update:model-value="emit('update:visible', $event)">
     <div class="starter-dialog">
       <aside class="starter-dialog__filters" aria-label="模板分类">
         <button type="button" :class="{ 'is-active': !selectedCategory }" @click="selectedCategory = ''">
@@ -13,7 +13,7 @@
       </aside>
       <section class="starter-dialog__content">
         <div class="starter-dialog__toolbar">
-          <el-input
+          <PdInput
             v-model="searchQuery"
             size="small"
             clearable
@@ -35,15 +35,18 @@
         <div v-if="selectedTemplate" class="starter-dialog__preview">
           <div><strong>{{ selectedTemplate.name }}</strong><span>{{ selectedTemplate.categoryLabel }}</span></div>
           <p>{{ selectedTemplate.description }}</p>
-          <el-button type="primary" @click="emit('create', selectedTemplate.id)">使用此模板</el-button>
+          <PdButton type="primary" @click="emit('create', selectedTemplate.id)">使用此模板</PdButton>
         </div>
       </section>
     </div>
-  </el-dialog>
+  </PdDialog>
 </template>
 
 <script setup>
 import { Search } from "../ui/icons.js";
+import PdButton from "../ui/primitives/PdButton.vue";
+import PdDialog from "../ui/primitives/PdDialog.vue";
+import PdInput from "../ui/primitives/PdInput.vue";
 import { computed, shallowRef, ref, watch } from "vue";
 
 const props = defineProps({ visible: { type: Boolean, default: false }, templates: { type: Array, default: () => [] } });

@@ -1,9 +1,8 @@
 <template>
-  <el-dialog
+  <PdDialog
     :model-value="visible"
     title="打印预览与预检"
     width="min(1200px, 94vw)"
-    top="4vh"
     @update:model-value="emit('update:visible', $event)"
   >
     <div class="runtime-preview">
@@ -37,7 +36,7 @@
             <span class="runtime-preview__field-count">{{ runtimeDataFieldCount }} 字段</span>
           </header>
 
-          <el-input v-model="runtimeDataText" type="textarea" :rows="14" spellcheck="false" />
+          <PdInput v-model="runtimeDataText" type="textarea" :rows="14" spellcheck="false" />
           <p v-if="parseError" class="runtime-preview__error">{{ parseError }}</p>
 
           <ul v-if="issueList.length" class="runtime-preview__issue-list">
@@ -50,7 +49,7 @@
 
         <footer class="runtime-preview__actions">
           <span>{{ printHint }}</span>
-          <el-button type="primary" :disabled="!canPrint" @click="print">浏览器打印</el-button>
+          <PdButton type="primary" :disabled="!canPrint" @click="print">浏览器打印</PdButton>
         </footer>
       </aside>
 
@@ -66,11 +65,14 @@
         </div>
       </main>
     </div>
-  </el-dialog>
+  </PdDialog>
 </template>
 
 <script setup>
 import { computed, ref, watch } from "vue";
+import PdButton from "../ui/primitives/PdButton.vue";
+import PdDialog from "../ui/primitives/PdDialog.vue";
+import PdInput from "../ui/primitives/PdInput.vue";
 import { validateTemplateDocument } from "../template/templateDocument.js";
 import { resolveRuntimeTemplate } from "./dataResolver.js";
 import { printRuntimeDocument } from "./print.js";
