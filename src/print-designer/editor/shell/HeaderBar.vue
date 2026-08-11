@@ -143,10 +143,10 @@ const saveStatusClass = computed(() => ({
 
 const workflowHint = computed(() => {
   if (selectedCount.value > 0) {
-    return `已选中 ${selectedCount.value} 个元素，可在右侧属性面板继续调整。`;
+    return `已选中 ${selectedCount.value} 个元素，可继续在右侧调整属性。`;
   }
 
-  return "从左侧插入元素，完成绑定后先预览，再决定是否打印。";
+  return "从左侧插入元素，完成后先预览，再决定是否打印。";
 });
 
 function openTemplatePanel() {
@@ -186,20 +186,20 @@ function openPropertiesPanel() {
 .header-bar__row {
   width: 100%;
   min-width: 0;
-  gap: 10px;
-  padding: 8px 14px;
+  gap: 8px;
+  padding: 7px 12px;
 }
 
 .header-bar__brand {
-  gap: 10px;
-  flex: 0 1 320px;
+  gap: 8px;
+  flex: 0 1 300px;
   min-width: 220px;
 }
 
 .header-bar__logo {
   display: grid;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   place-items: center;
   border: 1px solid var(--pd-border);
   background: var(--pd-surface-bg);
@@ -209,24 +209,24 @@ function openPropertiesPanel() {
 }
 
 .header-bar__title-group {
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
   flex-wrap: wrap;
 }
 
 .header-bar__title {
-  max-width: 180px;
+  max-width: 170px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--pd-text);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .header-bar__meta,
 .header-bar__status {
   color: var(--pd-muted);
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .header-bar__status {
@@ -250,7 +250,7 @@ function openPropertiesPanel() {
 }
 
 .header-bar__tool-group {
-  gap: 6px;
+  gap: 5px;
   flex: 0 0 auto;
 }
 
@@ -260,7 +260,7 @@ function openPropertiesPanel() {
 
 .header-bar__group-label {
   color: #94a3b8;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -276,11 +276,11 @@ function openPropertiesPanel() {
 }
 
 .header-bar__hint {
-  max-width: 280px;
+  max-width: 240px;
   margin: 0;
   overflow: hidden;
   color: #64748b;
-  font-size: 12px;
+  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -290,10 +290,10 @@ function openPropertiesPanel() {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  height: 28px;
-  padding: 0 9px;
+  height: 26px;
+  padding: 0 8px;
   border: 1px solid transparent;
-  border-radius: var(--pd-radius-control);
+  border-radius: 4px;
   background: transparent;
   color: #374151;
   font-size: 12px;

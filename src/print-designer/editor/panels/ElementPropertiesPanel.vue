@@ -3,7 +3,7 @@
     <InspectorEmpty
       v-if="!selectedObject"
       title="未选中元素"
-      description="选中画布中的元素后，这里会显示位置、样式、绑定和运行时属性。页面级设置请到右侧页面面板。"
+      description="选中元素后，这里会显示位置、样式、绑定和运行时属性。页面级设置请到右侧页面设置。"
     />
 
     <template v-else-if="isTableObject">
@@ -18,15 +18,17 @@
         </div>
 
         <div class="element-properties-panel__summary-meta">
-          <span>分组 {{ tabs.length }}</span>
-          <span>属性 {{ propertyCapabilities.length }}</span>
+          <span>X {{ displayNumber(selectedObject.x) }}</span>
+          <span>Y {{ displayNumber(selectedObject.y) }}</span>
+          <span>W {{ displayNumber(selectedObject.width) }}</span>
+          <span>H {{ displayNumber(selectedObject.height) }}</span>
           <span>状态 {{ selectedObject.locked ? "已锁定" : "可编辑" }}</span>
         </div>
 
         <p class="element-properties-panel__summary-hint">{{ panelHint }}</p>
       </section>
 
-      <nav class="element-properties-panel__tabs">
+      <nav class="element-properties-panel__tabs" aria-label="属性分组">
         <button
           v-for="tab in tabs"
           :key="tab.key"
@@ -43,7 +45,7 @@
         <template v-if="activeTab === INSPECTOR_TABS.PROPERTY">
           <section class="element-properties-panel__section">
             <header class="element-properties-panel__section-head">
-              <h3>位置 & 尺寸</h3>
+              <h3>位置与尺寸</h3>
             </header>
             <div class="element-properties-panel__section-body is-grid-2">
               <label class="element-properties-panel__field">
@@ -131,7 +133,7 @@
 
           <section class="element-properties-panel__section">
             <header class="element-properties-panel__section-head">
-              <h3>数据连接</h3>
+              <h3>数据绑定</h3>
             </header>
             <div class="element-properties-panel__section-body is-stack">
               <label class="element-properties-panel__field element-properties-panel__field--switch">
@@ -194,7 +196,7 @@
                   @input="setTablePropValue('footerDataVariable', $event)"
                 />
               </label>
-              <p class="element-properties-panel__field-help">任意 JavaScript 已禁用。可使用下方受限的 JSON 数据转换配置。</p>
+              <p class="element-properties-panel__field-help">仅支持受限 JSON 配置，不支持任意 JavaScript。</p>
 
               <div class="element-properties-panel__code-card">
                 <div class="element-properties-panel__code-card-head">
@@ -313,7 +315,7 @@
 
           <section class="element-properties-panel__section">
             <header class="element-properties-panel__section-head">
-              <h3>主体样式</h3>
+              <h3>基础样式</h3>
             </header>
             <div class="element-properties-panel__section-body is-stack">
               <label class="element-properties-panel__field">
@@ -561,7 +563,7 @@
       </section>
 
       <template v-if="selectedSchema">
-        <nav class="element-properties-panel__tabs">
+        <nav class="element-properties-panel__tabs" aria-label="属性分组">
           <button
             v-for="tab in tabs"
             :key="tab.key"
@@ -868,7 +870,7 @@
                   </div>
 
                   <div v-else class="element-properties-panel__table-empty-state">
-                    请先配置表格列，再录入示例数据。
+                    先配置表格列，再填写示例数据。
                   </div>
 
                   <button
@@ -886,7 +888,7 @@
                   class="element-properties-panel__table-footer"
                 >
                   <div class="element-properties-panel__table-columns-hint">
-                    汇总行会按当前列结构写入，支持多行，预览区会优先显示这里配置的页脚内容。
+                    汇总行会按当前列结构写入，预览区会优先显示这里配置的页脚内容。
                   </div>
 
                   <div v-if="tableColumnsValue(tableColumnsField).length">
@@ -932,12 +934,12 @@
                     </div>
 
                     <div v-else class="element-properties-panel__table-empty-state">
-                      暂无汇总行，点击下方按钮新增。
+                      当前还没有汇总行，点击下方按钮添加。
                     </div>
                   </div>
 
                   <div v-else class="element-properties-panel__table-empty-state">
-                    请先配置表格列，再编辑页脚数据。
+                    先配置表格列，再编辑页脚。
                   </div>
 
                   <div class="element-properties-panel__button-list">
@@ -965,7 +967,7 @@
                   class="element-properties-panel__multi-label-data"
                 >
                   <div class="element-properties-panel__table-columns-hint">
-                    可选预览数据不会自动生成；未提供数据时，画布仅显示标签网格结构。
+                    未填数据时，画布只显示标签网格。
                   </div>
 
                   <div class="element-properties-panel__multi-label-grid">
@@ -1189,11 +1191,11 @@ const activeTableEditor = ref({
 const typeLabel = computed(() => selectedDefinition.value?.label || selectedObject.value?.type || "");
 const panelHint = computed(() => {
   if (!selectedObject.value) {
-    return "选中画布中的元素后，这里会显示位置、样式、绑定和运行时属性。";
+    return "选中元素后，这里会显示位置、样式、绑定和运行时属性。";
   }
 
   const label = typeLabel.value || "元素";
-  const status = selectedObject.value.locked ? "当前元素已锁定，部分字段只读。" : "当前元素可编辑。";
+  const status = selectedObject.value.locked ? "已锁定，部分字段只读。" : "可直接编辑。";
 
   return `正在编辑 ${label}。${status}`;
 });
@@ -1370,7 +1372,7 @@ function groupRuntimeSections(fields, definitions) {
 }
 
 function createGeometryRuntimeSection() {
-  return createRuntimeSection("geometry", "位置 & 尺寸", SECTION_LAYOUT.GRID_2, [
+  return createRuntimeSection("geometry", "位置与尺寸", SECTION_LAYOUT.GRID_2, [
     "root:x",
     "root:y",
     "root:width",
@@ -1408,7 +1410,7 @@ function runtimeSectionDefinitions(type, tab) {
   switch (`${type}:${tab}`) {
     case "text:property":
       return [
-        createRuntimeSection("geometry", "位置 & 尺寸", SECTION_LAYOUT.GRID_2, [
+        createRuntimeSection("geometry", "位置与尺寸", SECTION_LAYOUT.GRID_2, [
           "root:x",
           "root:y",
           "root:width",
@@ -1458,7 +1460,7 @@ function runtimeSectionDefinitions(type, tab) {
       ];
     case "image:property":
       return [
-        createRuntimeSection("geometry", "位置 & 尺寸", SECTION_LAYOUT.GRID_2, [
+        createRuntimeSection("geometry", "位置与尺寸", SECTION_LAYOUT.GRID_2, [
           "root:x",
           "root:y",
           "root:width",
@@ -3060,6 +3062,7 @@ function executeDeleteSelectedObjects(objectIds) {
   gap: 12px;
   padding: 12px;
   border: 1px solid var(--pd-border);
+  border-radius: 6px;
   background: var(--pd-panel-bg);
 }
 
@@ -3073,7 +3076,7 @@ function executeDeleteSelectedObjects(objectIds) {
 .element-properties-panel__type-tag {
   display: inline-flex;
   align-items: center;
-  height: 32px;
+  height: 30px;
   padding: 0 10px;
   border: 1px solid var(--pd-border);
   background: #f8fafc;
@@ -3104,7 +3107,7 @@ function executeDeleteSelectedObjects(objectIds) {
 }
 
 .element-properties-panel__tab {
-  height: 32px;
+  height: 30px;
   border: 1px solid var(--pd-border);
   background: #ffffff;
   color: #374151;
@@ -3253,7 +3256,7 @@ function executeDeleteSelectedObjects(objectIds) {
   margin-top: -2px;
   font-size: 12px;
   line-height: 1.5;
-  text-align: center;
+  text-align: left;
   color: var(--pd-subtle);
 }
 
@@ -3272,7 +3275,7 @@ function executeDeleteSelectedObjects(objectIds) {
   gap: 10px;
   padding: 12px;
   border: 1px solid var(--pd-border);
-  border-radius: 10px;
+  border-radius: 6px;
   background: #ffffff;
 }
 
@@ -3303,7 +3306,7 @@ function executeDeleteSelectedObjects(objectIds) {
   margin: 0;
   padding: 12px 14px;
   border: 1px solid #dbe3ef;
-  border-radius: 10px;
+  border-radius: 6px;
   background: linear-gradient(180deg, #fff, #fbfdff);
   color: #0f172a;
   font-family: "Cascadia Code", "Consolas", "SFMono-Regular", monospace;
@@ -3352,6 +3355,7 @@ function executeDeleteSelectedObjects(objectIds) {
   gap: 10px;
   padding: 10px;
   border: 1px solid var(--pd-border);
+  border-radius: 6px;
   background: #fcfcfd;
 }
 
@@ -3421,6 +3425,7 @@ function executeDeleteSelectedObjects(objectIds) {
   gap: 10px;
   padding: 10px;
   border: 1px solid var(--pd-border);
+  border-radius: 6px;
   background: #fcfcfd;
 }
 
@@ -3479,6 +3484,7 @@ function executeDeleteSelectedObjects(objectIds) {
 .element-properties-panel__table-empty-state {
   padding: 12px;
   border: 1px dashed var(--pd-border);
+  border-radius: 6px;
   background: #f8fafc;
   color: var(--pd-muted);
   font-size: 12px;
@@ -3486,9 +3492,10 @@ function executeDeleteSelectedObjects(objectIds) {
 }
 
 .element-properties-panel__mini-button {
-  min-height: 28px;
+  min-height: 26px;
   padding: 0 8px;
   border: 1px solid var(--pd-border);
+  border-radius: 4px;
   background: #ffffff;
   color: #374151;
   font-size: 12px;
@@ -3516,18 +3523,18 @@ function executeDeleteSelectedObjects(objectIds) {
   top: 0;
   z-index: 1;
   gap: 0;
-  padding: 0 12px;
+  padding: 0 10px;
   border-bottom: 1px solid #e5e7eb;
   background: #ffffff;
 }
 
 .element-properties-panel--table .element-properties-panel__tab {
-  height: 46px;
+  height: 40px;
   border: 0;
   border-bottom: 2px solid transparent;
   background: transparent;
   color: #6b7280;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .element-properties-panel--table .element-properties-panel__tab.is-active {
@@ -3538,12 +3545,12 @@ function executeDeleteSelectedObjects(objectIds) {
 
 .element-properties-panel--table .element-properties-panel__sections {
   gap: 0;
-  padding: 12px;
+  padding: 10px 12px;
 }
 
 .element-properties-panel--table .element-properties-panel__section {
-  gap: 14px;
-  padding: 18px 0;
+  gap: 12px;
+  padding: 14px 0;
   border: 0;
   border-bottom: 1px solid #eef2f7;
   background: transparent;
@@ -3554,8 +3561,8 @@ function executeDeleteSelectedObjects(objectIds) {
 }
 
 .element-properties-panel--table .element-properties-panel__section-head h3 {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   color: #1f2937;
 }
 
@@ -3564,12 +3571,12 @@ function executeDeleteSelectedObjects(objectIds) {
 }
 
 .element-properties-panel--table .element-properties-panel__button-list {
-  padding-top: 12px;
+  padding-top: 8px;
 }
 
 .element-properties-panel--table .element-properties-panel__section-button {
-  min-height: 40px;
-  border-radius: 10px;
+  min-height: 34px;
+  border-radius: 6px;
 }
 
 :deep(.element-properties-panel .el-input-number),

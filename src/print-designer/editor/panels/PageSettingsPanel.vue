@@ -5,7 +5,7 @@
         <p class="page-settings-panel__eyebrow">页面设置</p>
         <h2 class="page-settings-panel__title">文档页面</h2>
         <p class="page-settings-panel__description">
-          这里控制纸张、边距和打印辅助线。修改后会同步到预览与输出。
+          控制纸张、边距和打印辅助线。修改后会同步到预览与输出。
         </p>
       </div>
       <div class="page-settings-panel__badge">
@@ -34,7 +34,7 @@
     </div>
 
     <section class="page-settings-panel__section">
-      <div class="page-settings-panel__section-title">基础信息</div>
+      <div class="page-settings-panel__section-title">文档信息</div>
       <div class="page-settings-panel__field-stack">
         <label class="page-settings-panel__field">
           <span>模板名称</span>
@@ -48,7 +48,7 @@
     </section>
 
     <section class="page-settings-panel__section">
-      <div class="page-settings-panel__section-title">纸张</div>
+      <div class="page-settings-panel__section-title">纸张与方向</div>
       <div class="page-settings-panel__preset-grid">
         <button
           v-for="option in recommendedPaperOptions"
@@ -268,8 +268,6 @@ function onHeightChange(value) {
   color: #94a3b8;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .page-settings-panel__title {
@@ -288,13 +286,14 @@ function onHeightChange(value) {
 
 .page-settings-panel__badge {
   display: flex;
-  min-width: 84px;
+  min-width: 76px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
   padding: 8px 10px;
   border: 1px solid var(--pd-border);
+  border-radius: 6px;
   background: #f8fafc;
   text-align: center;
 }
@@ -318,12 +317,13 @@ function onHeightChange(value) {
 
 .page-settings-panel__summary-chip {
   display: flex;
-  min-height: 62px;
+  min-height: 56px;
   flex-direction: column;
   justify-content: center;
   gap: 4px;
   padding: 10px 11px;
   border: 1px solid var(--pd-border);
+  border-radius: 6px;
   background: #f8fafc;
 }
 
@@ -344,6 +344,7 @@ function onHeightChange(value) {
   gap: 10px;
   padding: 12px;
   border: 1px solid var(--pd-border);
+  border-radius: 6px;
   background: var(--pd-panel-bg);
 }
 
@@ -380,11 +381,12 @@ function onHeightChange(value) {
 
 .page-settings-panel__preset {
   display: flex;
-  min-height: 60px;
+  min-height: 56px;
   flex-direction: column;
   gap: 4px;
   padding: 10px 11px;
   border: 1px solid var(--pd-border);
+  border-radius: 6px;
   background: var(--pd-panel-bg);
   text-align: left;
   cursor: pointer;
@@ -436,7 +438,7 @@ function onHeightChange(value) {
   height: 28px;
   padding: 2px;
   border: 1px solid var(--pd-border);
-  border-radius: var(--pd-radius-control);
+  border-radius: 4px;
   background: var(--pd-surface-bg);
 }
 

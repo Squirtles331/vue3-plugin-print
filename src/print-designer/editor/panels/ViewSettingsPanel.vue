@@ -17,15 +17,15 @@
     <section class="view-settings-panel__section">
       <div class="view-settings-panel__section-title">模式预设</div>
       <div class="view-settings-panel__modes">
-        <button type="button" class="view-settings-panel__mode" @click="applyMode('focus')">
+        <button type="button" class="view-settings-panel__mode" :class="{ 'is-active': activeMode === 'focus' }" @click="applyMode('focus')">
           <strong>专注编辑</strong>
           <span>保留必要辅助线，减少干扰。</span>
         </button>
-        <button type="button" class="view-settings-panel__mode" @click="applyMode('print')">
+        <button type="button" class="view-settings-panel__mode" :class="{ 'is-active': activeMode === 'print' }" @click="applyMode('print')">
           <strong>打印检查</strong>
           <span>更接近最终输出时的视觉状态。</span>
         </button>
-        <button type="button" class="view-settings-panel__mode" @click="applyMode('simple')">
+        <button type="button" class="view-settings-panel__mode" :class="{ 'is-active': activeMode === 'simple' }" @click="applyMode('simple')">
           <strong>简洁视图</strong>
           <span>关闭大多数辅助层，便于快速浏览。</span>
         </button>
@@ -103,6 +103,40 @@ const activeOptionCount = computed(() => {
   return options.filter(Boolean).length;
 });
 
+const activeMode = computed(() => {
+  if (
+    guidesVisible.value &&
+    gridVisible.value &&
+    !safeAreaVisible.value &&
+    pageOutlineVisible.value &&
+    snapEnabled.value
+  ) {
+    return "focus";
+  }
+
+  if (
+    guidesVisible.value &&
+    !gridVisible.value &&
+    !safeAreaVisible.value &&
+    pageOutlineVisible.value &&
+    snapEnabled.value
+  ) {
+    return "print";
+  }
+
+  if (
+    !guidesVisible.value &&
+    !gridVisible.value &&
+    !safeAreaVisible.value &&
+    !pageOutlineVisible.value &&
+    snapEnabled.value
+  ) {
+    return "simple";
+  }
+
+  return "";
+});
+
 function applyMode(mode) {
   if (mode === "focus") {
     if (!guidesVisible.value) viewportStore.toggleGuides();
@@ -150,8 +184,6 @@ function applyMode(mode) {
   color: #94a3b8;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .view-settings-panel__title {
@@ -177,6 +209,7 @@ function applyMode(mode) {
   gap: 2px;
   padding: 8px 10px;
   border: 1px solid var(--pd-border);
+  border-radius: 6px;
   background: #f8fafc;
   text-align: center;
 }
@@ -198,6 +231,7 @@ function applyMode(mode) {
   gap: 10px;
   padding: 12px;
   border: 1px solid var(--pd-border);
+  border-radius: 6px;
   background: var(--pd-panel-bg);
 }
 
@@ -215,18 +249,24 @@ function applyMode(mode) {
 
 .view-settings-panel__mode {
   display: flex;
-  min-height: 76px;
+  min-height: 72px;
   flex-direction: column;
   justify-content: flex-start;
   gap: 6px;
   padding: 10px 11px;
   border: 1px solid var(--pd-border);
+  border-radius: 6px;
   background: var(--pd-panel-bg);
   text-align: left;
   cursor: pointer;
 }
 
 .view-settings-panel__mode:hover {
+  border-color: var(--pd-accent-border);
+  background: var(--pd-accent-bg);
+}
+
+.view-settings-panel__mode.is-active {
   border-color: var(--pd-accent-border);
   background: var(--pd-accent-bg);
 }

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Vue3 Print Plugin UX Review"
+  short_description: "Review print-plugin UX, DX, and API design"
+  default_prompt: "Use $vue3-print-plugin-ux-review to review the functional UX of this Vue3 print plugin, focusing on API design, defaults, errors, and printing flow."
+
+policy:
+  allow_implicit_invocation: true

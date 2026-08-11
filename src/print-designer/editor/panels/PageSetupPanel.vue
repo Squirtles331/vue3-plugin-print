@@ -2,7 +2,7 @@
   <div class="page-setup-panel">
     <div class="page-setup-panel__intro">
       <strong>页面设置</strong>
-      <span>这里仅控制纸张尺寸、边距、背景和打印标记，不展示元素属性。</span>
+      <span>这里只控制纸张、边距和打印辅助，不影响元素属性。</span>
     </div>
 
     <PageSettingsPanel />
@@ -32,6 +32,7 @@ import PageSettingsPanel from "./PageSettingsPanel.vue";
   gap: 4px;
   padding: 12px;
   border: 1px solid var(--pd-border);
+  border-radius: 6px;
   background: var(--pd-panel-bg);
 }
 
