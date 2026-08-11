@@ -54,16 +54,24 @@ export function createUpdateObjectPropsCommand(documentStore, objectId, patch) {
     return null;
   }
 
-  const previous = { ...currentObject };
+  const previous = cloneDeep(currentObject);
+  let nextPatch = cloneDeep(patch);
 
   return {
     id: `update-object-${objectId}`,
     label: `Update object ${objectId}`,
     execute() {
-      documentStore.updateObjectProps(objectId, patch);
+      return documentStore.updateObjectProps(objectId, cloneDeep(nextPatch));
     },
     undo() {
-      documentStore.updateObjectProps(objectId, previous);
+      if (typeof documentStore.restoreObjectSnapshot === "function") {
+        return documentStore.restoreObjectSnapshot(objectId, previous);
+      }
+
+      return documentStore.updateObjectProps(objectId, cloneDeep(previous));
+    },
+    setPatch(patch) {
+      nextPatch = cloneDeep(patch);
     },
   };
 }

@@ -397,6 +397,22 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     return true;
   }
 
+  function restoreObjectSnapshot(objectId, snapshot) {
+    if (!objectsById.value[objectId] || !snapshot || typeof snapshot !== "object") {
+      return false;
+    }
+
+    objectsById.value = {
+      ...objectsById.value,
+      [objectId]: {
+        ...cloneDeep(snapshot),
+        id: objectId,
+      },
+    };
+    markDirty();
+    return true;
+  }
+
   function applyObjectPatches(patches = []) {
     const nextObjects = { ...objectsById.value };
     let changed = false;
@@ -720,6 +736,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     removeObjects,
     reorderObject,
     updateObjectProps,
+    restoreObjectSnapshot,
     applyObjectPatches,
     setPageObjectOrder,
     setPaperPreset,

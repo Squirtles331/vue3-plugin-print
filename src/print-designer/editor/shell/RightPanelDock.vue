@@ -101,9 +101,11 @@ const panelTitle = computed(() => {
 
 const panelDescription = computed(() => {
   const map = {
-    properties: selectedIds.value.length
-      ? `正在编辑 ${selectedIds.value.length} 个选中元素。`
-      : "选中画布元素后，可在这里修改位置、样式和绑定。",
+    properties: !selectedIds.value.length
+      ? "选中画布元素后，可在这里修改位置、样式和绑定。"
+      : selectedIds.value.length === 1
+        ? "正在编辑 1 个选中元素。"
+        : `已选中 ${selectedIds.value.length} 个元素。属性面板暂不支持批量编辑，请选择单个元素。`,
     page: "设置纸张、方向、边距和打印标记。",
     view: "控制辅助线、网格、吸附和编辑器显示。",
     layers: "查看当前页图层并定位到画布。",

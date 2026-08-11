@@ -1,7 +1,13 @@
 ﻿<template>
   <div class="element-properties-panel" :class="{ 'element-properties-panel--table': isTableObject }">
     <InspectorEmpty
-      v-if="!selectedObject"
+      v-if="isMultipleSelection"
+      title="已选中多个元素"
+      description="属性面板暂不支持批量编辑。请选择一个元素后再修改位置、样式或绑定。"
+    />
+
+    <InspectorEmpty
+      v-else-if="!selectedObject"
       title="未选中元素"
       description="选中元素后，这里会显示位置、样式、绑定和运行时属性。页面级设置请到右侧页面设置。"
     />
@@ -1067,7 +1073,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { PdMessage, PdMessageBox } from "../../ui/feedback.js";
 import PdInput from "../../ui/primitives/PdInput.vue";
@@ -1081,7 +1087,7 @@ import { FIELD_CONTROL, INSPECTOR_TABS, TAB_LABELS, SECTION_LAYOUT } from "../..
 import { getElementDefinition } from "../../core/elementFactory";
 import { getElementPropertyCapabilities, validateElementProperty } from "../../core/propertyCapabilities.js";
 import { MM_TO_CSS_PX } from "../measurement.js";
-import { createRemoveObjectsCommand } from "../commands/documentCommands.js";
+import { createRemoveObjectsCommand, createUpdateObjectPropsCommand } from "../commands/documentCommands.js";
 import { executeEditorCommand } from "../commands/executeCommand.js";
 import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorHistoryStore } from "../stores/historyStore";
@@ -1138,9 +1144,14 @@ const tableColumnsField = {
 };
 
 const selectedObject = computed(() => {
+  if (selectedIds.value.length !== 1) {
+    return null;
+  }
+
   const objectId = selectedIds.value[0];
   return objectId ? objectsById.value[objectId] || null : null;
 });
+const isMultipleSelection = computed(() => selectedIds.value.length > 1);
 const isTableObject = computed(() => selectedObject.value?.type === "table");
 
 const selectedDefinition = computed(() => {
@@ -1157,6 +1168,8 @@ const activeTabSchema = computed(() => tabs.value.find((tab) => tab.key === acti
 const propertyCapabilities = computed(() => getElementPropertyCapabilities(selectedObject.value?.type).fields);
 const activeSections = computed(() => enrichSections(normalizeSections(activeTabSchema.value?.sections || []), propertyCapabilities.value));
 const fieldErrors = ref({});
+const propertyEditSession = ref(null);
+let propertyEditTimer = null;
 const tableEditorDrafts = ref({
   columns: "",
   sampleData: "",
@@ -1225,6 +1238,14 @@ watch(
   () => selectedObject.value?.id,
   () => {
     fieldErrors.value = {};
+    endPropertyEditSession();
+  }
+);
+
+watch(
+  selectedIds,
+  () => {
+    endPropertyEditSession();
   }
 );
 
@@ -2833,7 +2854,7 @@ function setMultiLabelSampleData(data) {
     return;
   }
 
-  documentStore.updateObjectProps(selectedObject.value.id, {
+  updateSelectedObject({ source: "props", key: "sampleData" }, {
     props: {
       ...(selectedObject.value.props || {}),
       sampleData: normalizeMultiLabelSampleData(data),
@@ -2902,13 +2923,71 @@ function validateFieldChange(field, value) {
   return !message;
 }
 
+function endPropertyEditSession() {
+  if (propertyEditTimer) {
+    clearTimeout(propertyEditTimer);
+    propertyEditTimer = null;
+  }
+  propertyEditSession.value = null;
+}
+
+function schedulePropertyEditSessionEnd() {
+  if (propertyEditTimer) {
+    clearTimeout(propertyEditTimer);
+  }
+  propertyEditTimer = setTimeout(endPropertyEditSession, 600);
+}
+
+function propertyEditKey(objectId, field) {
+  return `${objectId}:${field?.source || "root"}:${field?.key || "property"}`;
+}
+
+function isLockSafePatch(patch) {
+  const patchKeys = Object.keys(patch || {});
+  return patchKeys.length > 0 && patchKeys.every((key) => ["locked", "visible", "printable"].includes(key));
+}
+
 function updateSelectedObject(field, patch) {
-  const updated = documentStore.updateObjectProps(selectedObject.value.id, patch);
-  if (!updated) {
+  const object = selectedObject.value;
+
+  if (!object) {
+    return false;
+  }
+
+  if (object.locked && !isLockSafePatch(patch)) {
     setFieldError(field, "当前元素已锁定，请先解除锁定后再编辑。");
     PdMessage.warning("当前元素已锁定，请先解除锁定后再编辑。");
+    return false;
   }
-  return updated;
+
+  const key = propertyEditKey(object.id, field);
+  const session = propertyEditSession.value;
+
+  if (session?.key === key && historyStore.undoStack.at(-1) === session.command) {
+    const updated = documentStore.updateObjectProps(object.id, patch);
+
+    if (!updated) {
+      setFieldError(field, "当前元素已锁定，请先解除锁定后再编辑。");
+      PdMessage.warning("当前元素已锁定，请先解除锁定后再编辑。");
+      return false;
+    }
+
+    session.command.setPatch(patch);
+    schedulePropertyEditSessionEnd();
+    return true;
+  }
+
+  endPropertyEditSession();
+  const command = createUpdateObjectPropsCommand(documentStore, object.id, patch);
+
+  if (!command) {
+    return false;
+  }
+
+  executeEditorCommand(historyStore, command);
+  propertyEditSession.value = { key, command };
+  schedulePropertyEditSessionEnd();
+  return true;
 }
 
 function setRootValue(key, value) {
@@ -3044,6 +3123,10 @@ function executeDeleteSelectedObjects(objectIds) {
   executeEditorCommand(historyStore, command);
   return true;
 }
+
+onBeforeUnmount(() => {
+  endPropertyEditSession();
+});
 </script>
 
 <style scoped lang="scss">
