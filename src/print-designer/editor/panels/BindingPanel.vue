@@ -2,10 +2,10 @@
   <div class="binding-panel">
     <header class="binding-panel__header">
       <div>
-        <p class="binding-panel__eyebrow">绑定面板</p>
-        <h2 class="binding-panel__title">数据字段</h2>
+        <p class="binding-panel__eyebrow">数据绑定</p>
+        <h2 class="binding-panel__title">字段路径</h2>
         <p class="binding-panel__description">
-          在这里检查模板可绑定字段，复制路径后填入元素属性即可完成数据接入。
+          在这里快速查看可绑定字段，路径复制后可直接填入元素属性。
         </p>
       </div>
       <div class="binding-panel__badge">
@@ -13,6 +13,17 @@
         <span>可用字段</span>
       </div>
     </header>
+
+    <div class="binding-panel__summary">
+      <div class="binding-panel__summary-chip">
+        <strong>筛选</strong>
+        <span>{{ toolbarNote }}</span>
+      </div>
+      <div class="binding-panel__summary-chip">
+        <strong>用途</strong>
+        <span>表格、多标签、条码、二维码都依赖这些路径</span>
+      </div>
+    </div>
 
     <div class="binding-panel__toolbar">
       <el-input
@@ -22,12 +33,6 @@
         :prefix-icon="Search"
         placeholder="搜索字段路径"
       />
-      <span class="binding-panel__toolbar-note">{{ toolbarNote }}</span>
-    </div>
-
-    <div class="binding-panel__tips">
-      <span>字段可以直接复制到变量绑定属性</span>
-      <span>表格、多标签、条码和二维码都依赖这些路径</span>
     </div>
 
     <div class="binding-panel__body">
@@ -54,11 +59,7 @@ const variableCount = computed(() => props.variables.length);
 const toolbarNote = computed(() => {
   const query = String(searchQuery.value || "").trim();
 
-  if (query) {
-    return `正在筛选：${query}`;
-  }
-
-  return "按字段路径查找可绑定数据";
+  return query ? `正在筛选：${query}` : "按字段路径查找可绑定数据";
 });
 </script>
 
@@ -129,29 +130,38 @@ const toolbarNote = computed(() => {
   font-size: 11px;
 }
 
+.binding-panel__summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.binding-panel__summary-chip {
+  display: flex;
+  min-height: 62px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 11px;
+  border: 1px solid var(--pd-border);
+  background: #f8fafc;
+}
+
+.binding-panel__summary-chip strong {
+  color: var(--pd-strong);
+  font-size: 12px;
+}
+
+.binding-panel__summary-chip span {
+  color: var(--pd-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .binding-panel__toolbar {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.binding-panel__toolbar-note {
-  flex: 0 0 auto;
-  color: #64748b;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.binding-panel__tips {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px;
-  border: 1px solid #dbeafe;
-  background: #eff6ff;
-  color: #1e40af;
-  font-size: 12px;
-  line-height: 1.5;
 }
 
 .binding-panel__body {
@@ -166,13 +176,12 @@ const toolbarNote = computed(() => {
 }
 
 @media (max-width: 480px) {
-  .binding-panel__header {
-    flex-direction: column;
+  .binding-panel__summary {
+    grid-template-columns: 1fr;
   }
 
-  .binding-panel__toolbar {
+  .binding-panel__header {
     flex-direction: column;
-    align-items: stretch;
   }
 }
 </style>
