@@ -103,13 +103,14 @@ test("runtime data cannot replace authored table columns or presentation", () =>
 
 test("paginates table rows deterministically and exposes page totals", () => {
   const document = createBlankTemplateDocument({
-    pages: [{ id: "page-1", title: "Page 1", elements: [{ id: "items", type: "table", x: 0, y: 0, width: 80, height: 32, props: { columns: [{ key: "name" }], headerHeight: 8, rowHeight: 8, autoPaginate: true }, runtime: { table: { rows: [{ name: "1" }, { name: "2" }, { name: "3" }, { name: "4" }], footerRows: [] } }, style: {} }] }],
+    pages: [{ id: "page-1", title: "Page 1", elements: [{ id: "items", type: "table", x: 0, y: 0, width: 80, height: 32, props: { columns: [{ key: "name" }], headerHeight: 8, rowHeight: 8, showFooter: false, autoPaginate: true }, runtime: { table: { rows: [{ name: "1" }, { name: "2" }, { name: "3" }, { name: "4" }], footerRows: [] } }, style: {} }] }],
   });
   const result = paginateRuntimeDocument(document);
 
   assert.equal(result.pageCount, 2);
   assert.equal(result.pages[0].elements[0].runtime.table.rows.length, 3);
   assert.equal(result.pages[1].elements[0].runtime.table.rows.length, 1);
+  assert.equal(result.pages[1].elements[0].runtime.table.allRows.length, 4);
   assert.equal(result.pages[1].runtime.pageNumber, 2);
 });
 

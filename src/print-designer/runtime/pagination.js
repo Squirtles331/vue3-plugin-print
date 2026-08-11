@@ -27,6 +27,7 @@ function fragmentElement(element, fragmentIndex) {
 
   const capacity = rowsPerPage(element);
   const table = element.runtime?.table || { rows: [], footerRows: [] };
+  const allRows = table.allRows || table.rows;
   const start = fragmentIndex * capacity;
   const rows = table.rows.slice(start, start + capacity);
   if (fragmentIndex > 0 && !rows.length) {
@@ -39,6 +40,7 @@ function fragmentElement(element, fragmentIndex) {
       table: {
         ...table,
         rows,
+        allRows,
         footerRows: fragmentIndex > 0 && element.props?.tfootRepeat === false ? [] : table.footerRows,
       },
     },

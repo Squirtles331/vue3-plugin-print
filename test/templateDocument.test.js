@@ -3,11 +3,12 @@ import { readFileSync } from "node:fs";
 import { test } from "vitest";
 import { reactive } from "vue";
 import { createElement } from "../src/print-designer/core/elementFactory.js";
+import { buildTableInsertOverrides, TABLE_INSERT_MODES } from "../src/print-designer/core/tableInsertBuilder.js";
 import { createBlankTemplateDocument, createPublishReadyTemplatePayload, migrateTemplateDocument, serializeTemplateDocument, validateTemplateDocument } from "../src/print-designer/template/templateDocument.js";
 import { getElementPropertyCapability, validateElementProperty } from "../src/print-designer/core/propertyCapabilities.js";
 import { createLocalTemplateRepository } from "../src/print-designer/template/templateRepository.js";
 
-test("new elements start without business demo data", () => {
+test("new elements reserve business data for table line-item presets only", () => {
   const text = createElement("text");
   const barcode = createElement("barcode");
   const table = createElement("table");
@@ -15,12 +16,23 @@ test("new elements start without business demo data", () => {
 
   assert.equal(text.content, "");
   assert.equal(barcode.content, "");
-  assert.deepEqual(table.props.sampleData, []);
-  assert.deepEqual(table.props.footerData, []);
+  assert.equal(table.props.sampleData.length, 26);
+  assert.equal(table.props.footerData.length, 3);
+  assert.deepEqual(table.props.columns.map((column) => column.key), ["id", "name", "qty", "price", "total"]);
   assert.equal("customScript" in table.props, false);
   assert.deepEqual(table.props.transform, {});
   assert.equal(labels.props.dataVariable, "");
   assert.deepEqual(labels.props.sampleData, []);
+});
+
+test("custom table insert keeps structural dimensions without sample data", () => {
+  const custom = buildTableInsertOverrides({ mode: TABLE_INSERT_MODES.CUSTOM, columnCount: 3, rowCount: 4 });
+
+  assert.equal(custom.props.columns.length, 3);
+  assert.deepEqual(custom.props.sampleData, []);
+  assert.deepEqual(custom.props.footerData, []);
+  assert.equal(custom.props.showFooter, false);
+  assert.equal(custom.editorHints.rowCount, 4);
 });
 
 test("template serialization strips editor-only page state", () => {
