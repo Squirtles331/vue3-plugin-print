@@ -8,14 +8,14 @@
           <p class="designer-sidebar__eyebrow">{{ currentSection.eyebrow }}</p>
           <h2 class="designer-sidebar__title">{{ currentSection.title }}</h2>
         </div>
-        <el-button
+        <PdButton
           v-if="activeTab === 'pages'"
           size="small"
           type="primary"
           plain
         >
           新增页面
-        </el-button>
+        </PdButton>
       </header>
 
       <div class="designer-sidebar__body">
@@ -36,6 +36,7 @@
 import { computed, ref, watch } from "vue";
 import { useEditorDocumentStore } from "../../editor/stores/documentStore";
 import { useEditorSelectionStore } from "../../editor/stores/selectionStore";
+import PdButton from "../../ui/primitives/PdButton.vue";
 import DataPanel from "../sidebar/DataPanel.vue";
 import InsertPanel from "../sidebar/InsertPanel.vue";
 import LayersPanel from "../sidebar/LayersPanel.vue";
@@ -161,7 +162,7 @@ function onPageSelect(page) {
   min-height: 0;
 }
 
-:deep(.designer-sidebar .el-button--primary.is-plain) {
+.designer-sidebar :deep(.pd-button--primary.pd-button--plain) {
   border-color: rgba(115, 165, 255, 0.3);
   background: rgba(79, 140, 255, 0.12);
   color: #cfe0ff;

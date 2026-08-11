@@ -6,19 +6,21 @@
       <p class="designer-inspector__desc">查看当前页面结构，并编辑选中元素的属性与绑定信息。</p>
     </div>
 
-    <el-tabs v-model="activeTab" class="designer-inspector__tabs" stretch>
-      <el-tab-pane label="结构" name="structure">
+    <PdTabs v-model="activeTab" class="designer-inspector__tabs" stretch>
+      <PdTabPane label="结构" name="structure">
         <StructurePanel :layers="layers" />
-      </el-tab-pane>
-      <el-tab-pane label="属性" name="properties">
+      </PdTabPane>
+      <PdTabPane label="属性" name="properties">
         <PropertiesPanel :variables="variables" />
-      </el-tab-pane>
-    </el-tabs>
+      </PdTabPane>
+    </PdTabs>
   </aside>
 </template>
 
 <script setup>
 import { ref } from "vue";
+import PdTabPane from "../../ui/primitives/PdTabPane.vue";
+import PdTabs from "../../ui/primitives/PdTabs.vue";
 import PropertiesPanel from "../inspector/PropertiesPanel.vue";
 import StructurePanel from "../inspector/StructurePanel.vue";
 
@@ -80,12 +82,12 @@ const activeTab = ref("properties");
   padding: 0 14px 14px;
 }
 
-:deep(.designer-inspector__tabs .el-tabs__header) {
+.designer-inspector__tabs :deep(.pd-tabs__nav) {
   margin: 0;
   padding-top: 10px;
 }
 
-:deep(.designer-inspector__tabs .el-tabs__content) {
+.designer-inspector__tabs :deep(.pd-tabs__content) {
   height: calc(100% - 54px);
   overflow: auto;
   padding-top: 14px;

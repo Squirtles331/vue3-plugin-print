@@ -15,11 +15,11 @@
       <section class="designer-topbar__group">
         <span class="designer-topbar__label">文件</span>
         <button class="designer-topbar__tool" type="button" @click="$emit('new-template')">
-          <el-icon><DocumentAdd /></el-icon>
+          <PdIcon><DocumentAdd /></PdIcon>
           <span>新建</span>
         </button>
         <button class="designer-topbar__tool" type="button" @click="$emit('open-template')">
-          <el-icon><FolderOpened /></el-icon>
+          <PdIcon><FolderOpened /></PdIcon>
           <span>打开</span>
         </button>
       </section>
@@ -27,11 +27,11 @@
       <section class="designer-topbar__group">
         <span class="designer-topbar__label">编辑</span>
         <button class="designer-topbar__tool" type="button" :disabled="!canUndo" @click="$emit('undo')">
-          <el-icon><RefreshLeft /></el-icon>
+          <PdIcon><RefreshLeft /></PdIcon>
           <span>撤销</span>
         </button>
         <button class="designer-topbar__tool" type="button" :disabled="!canRedo" @click="$emit('redo')">
-          <el-icon><RefreshRight /></el-icon>
+          <PdIcon><RefreshRight /></PdIcon>
           <span>重做</span>
         </button>
       </section>
@@ -39,13 +39,13 @@
       <section class="designer-topbar__group">
         <span class="designer-topbar__label">视图</span>
         <button class="designer-topbar__tool designer-topbar__tool--icon" type="button" @click="$emit('zoom-out')">
-          <el-icon><ZoomOut /></el-icon>
+          <PdIcon><ZoomOut /></PdIcon>
         </button>
         <button class="designer-topbar__tool designer-topbar__tool--value" type="button" @click="$emit('zoom-reset')">
           {{ zoomLabel }}
         </button>
         <button class="designer-topbar__tool designer-topbar__tool--icon" type="button" @click="$emit('zoom-in')">
-          <el-icon><ZoomIn /></el-icon>
+          <PdIcon><ZoomIn /></PdIcon>
         </button>
       </section>
     </div>
@@ -58,19 +58,19 @@
 
       <section class="designer-topbar__group">
         <button class="designer-topbar__tool" type="button" @click="$emit('preview')">
-          <el-icon><View /></el-icon>
+          <PdIcon><View /></PdIcon>
           <span>预览</span>
         </button>
         <button class="designer-topbar__tool" type="button" @click="$emit('print')">
-          <el-icon><Printer /></el-icon>
+          <PdIcon><Printer /></PdIcon>
           <span>打印</span>
         </button>
         <button class="designer-topbar__tool" type="button" @click="$emit('export', 'pdf')">
-          <el-icon><Download /></el-icon>
+          <PdIcon><Download /></PdIcon>
           <span>导出</span>
         </button>
         <button class="designer-topbar__tool designer-topbar__tool--primary" type="button" @click="$emit('save-template')">
-          <el-icon><Check /></el-icon>
+          <PdIcon><Check /></PdIcon>
           <span>保存</span>
         </button>
       </section>
@@ -91,6 +91,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from "../../ui/icons.js";
+import PdIcon from "../../ui/primitives/PdIcon.vue";
 
 defineProps({
   templateName: {
