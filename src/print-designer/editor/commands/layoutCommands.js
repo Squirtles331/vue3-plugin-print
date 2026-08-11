@@ -200,3 +200,56 @@ export function createOrderTransactionCommand(documentStore, pageId, nextIds, la
     },
   };
 }
+
+export function createReorderObjectCommand(documentStore, objectId, action) {
+  const object = documentStore.objectsById[objectId];
+
+  if (!object || object.locked) {
+    return null;
+  }
+
+  const pageId = object.pageId || documentStore.currentPage?.id || "page-1";
+  const previousIds = [...(documentStore.pageObjectMap[pageId] || [])];
+  const currentIndex = previousIds.indexOf(objectId);
+  const nextIds = [...previousIds];
+
+  if (currentIndex < 0) {
+    return null;
+  }
+
+  if (action === "bringForward" && currentIndex < nextIds.length - 1) {
+    [nextIds[currentIndex], nextIds[currentIndex + 1]] = [nextIds[currentIndex + 1], nextIds[currentIndex]];
+  } else if (action === "sendBackward" && currentIndex > 0) {
+    [nextIds[currentIndex], nextIds[currentIndex - 1]] = [nextIds[currentIndex - 1], nextIds[currentIndex]];
+  } else if (action === "bringToFront" && currentIndex < nextIds.length - 1) {
+    nextIds.splice(currentIndex, 1);
+    nextIds.push(objectId);
+  } else if (action === "sendToBack" && currentIndex > 0) {
+    nextIds.splice(currentIndex, 1);
+    nextIds.unshift(objectId);
+  } else {
+    return null;
+  }
+
+  if (previousIds.join("|") === nextIds.join("|")) {
+    return null;
+  }
+
+  const labels = {
+    bringForward: "Bring layer forward",
+    sendBackward: "Send layer backward",
+    bringToFront: "Bring layer to front",
+    sendToBack: "Send layer to back",
+  };
+
+  return {
+    id: `layout-layer-order-${objectId}-${action}-${Date.now()}`,
+    label: labels[action] || "Reorder layer",
+    execute() {
+      documentStore.setPageObjectOrder(pageId, nextIds);
+    },
+    undo() {
+      documentStore.setPageObjectOrder(pageId, previousIds);
+    },
+  };
+}

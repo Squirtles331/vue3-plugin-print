@@ -2,47 +2,94 @@
   <div class="pages-panel">
     <header class="pages-panel__header">
       <div>
-        <p class="pages-panel__eyebrow">页面切换</p>
-        <h3 class="pages-panel__title">文档页</h3>
+        <p class="pages-panel__eyebrow">页面管理</p>
+        <h3 class="pages-panel__title">页面列表</h3>
         <p class="pages-panel__description">
-          点击任意页签可切换当前编辑页，选区会同步清空，避免跨页误操作。
+          在这里切换、重命名、复制和删除页面，当前页会同步到画布与右侧属性区。
         </p>
       </div>
-      <div class="pages-panel__badge">
-        <strong>{{ filteredPages.length }}</strong>
-        <span>{{ pages.length }} 页</span>
+      <div class="pages-panel__header-actions">
+        <div class="pages-panel__badge">
+          <strong>{{ filteredPages.length }}</strong>
+          <span>{{ pages.length }} 页</span>
+        </div>
+        <el-button v-if="showActions" class="pages-panel__create" type="primary" plain size="small" @click="emit('create')">
+          <el-icon><Plus /></el-icon>
+          新建
+        </el-button>
       </div>
     </header>
 
     <div class="pages-panel__stack">
       <div v-if="!filteredPages.length" class="pages-panel__empty">
         <strong>{{ searchQuery ? "没有匹配的页面" : "当前没有页面" }}</strong>
-        <span>{{ searchQuery ? "清空搜索后可以看到全部页面。" : "先创建一个页面，再开始布局。" }}</span>
+        <span>{{ searchQuery ? "清空搜索后可以看到全部页面。" : "先新建一个页面，再开始编辑内容。" }}</span>
       </div>
 
-      <button
-        v-for="page in filteredPages"
+      <article
+        v-for="(page, index) in filteredPages"
         :key="page.id"
         class="pages-panel__card"
         :class="{ 'is-current': page.isCurrent }"
-        type="button"
         :title="page.title"
+        role="button"
+        tabindex="0"
         :aria-pressed="page.isCurrent"
         @click="emit('select', page)"
+        @keydown.enter.prevent="emit('select', page)"
+        @keydown.space.prevent="emit('select', page)"
       >
-        <span class="pages-panel__card-head">
+        <div class="pages-panel__card-head">
           <span class="pages-panel__page-index">#{{ pageIndex(page.id) }}</span>
-          <span v-if="page.isCurrent" class="pages-panel__current-tag">当前页</span>
-        </span>
-        <span class="pages-panel__card-title">{{ page.title }}</span>
+          <span class="pages-panel__head-meta">
+            <span v-if="page.isCurrent" class="pages-panel__current-tag">当前页</span>
+            <span v-if="showActions" class="pages-panel__order-hint">{{ index === 0 ? "首位" : index === filteredPages.length - 1 ? "末位" : "可排序" }}</span>
+          </span>
+        </div>
+
+        <el-input
+          v-if="showActions"
+          class="pages-panel__title-input"
+          :model-value="page.title"
+          size="small"
+          @click.stop
+          @change="onRename(page, $event)"
+        />
+        <span v-else class="pages-panel__card-title">{{ page.title }}</span>
+
         <span class="pages-panel__meta">{{ page.size }} / {{ page.orientation }}</span>
-      </button>
+
+        <div v-if="showActions" class="pages-panel__actions" @click.stop>
+          <el-button :disabled="pageIndex(page.id) <= 1" size="small" text @click="onMove(page, 'up')">
+            <el-icon><Top /></el-icon>
+          </el-button>
+          <el-button :disabled="pageIndex(page.id) >= pages.length" size="small" text @click="onMove(page, 'down')">
+            <el-icon><Bottom /></el-icon>
+          </el-button>
+          <el-button size="small" text @click="emit('duplicate', page)">
+            <el-icon><CopyDocument /></el-icon>
+          </el-button>
+          <el-popconfirm
+            title="删除此页面后无法恢复，继续吗？"
+            confirm-button-text="删除"
+            cancel-button-text="取消"
+            @confirm="emit('remove', page)"
+          >
+            <template #reference>
+              <el-button :disabled="pages.length <= 1" size="small" text class="pages-panel__danger">
+                <el-icon><Delete /></el-icon>
+              </el-button>
+            </template>
+          </el-popconfirm>
+        </div>
+      </article>
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from "vue";
+import { CopyDocument, Delete, Bottom, Plus, Top } from "@element-plus/icons-vue";
 
 const props = defineProps({
   pages: {
@@ -53,9 +100,13 @@ const props = defineProps({
     type: String,
     default: "",
   },
+  showActions: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-const emit = defineEmits(["select"]);
+const emit = defineEmits(["select", "create", "duplicate", "remove", "rename", "move"]);
 
 const filteredPages = computed(() => {
   const query = String(props.searchQuery || "").trim().toLowerCase();
@@ -74,12 +125,23 @@ function pageIndex(pageId) {
   const index = props.pages.findIndex((page) => page.id === pageId);
   return index >= 0 ? index + 1 : 0;
 }
+
+function onRename(page, value) {
+  emit("rename", { page, title: value });
+}
+
+function onMove(page, direction) {
+  emit("move", { page, direction });
+}
 </script>
 
 <style scoped lang="scss">
 .pages-panel {
+  display: flex;
   flex: 1;
   min-height: 0;
+  flex-direction: column;
+  gap: 12px;
   padding: 16px;
   overflow: auto;
   background: #ffffff;
@@ -90,7 +152,13 @@ function pageIndex(pageId) {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+}
+
+.pages-panel__header-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
 }
 
 .pages-panel__eyebrow {
@@ -143,7 +211,7 @@ function pageIndex(pageId) {
 .pages-panel__stack {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .pages-panel__empty {
@@ -151,7 +219,7 @@ function pageIndex(pageId) {
   flex-direction: column;
   gap: 6px;
   padding: 18px;
-  border: 1px solid var(--pd-border);
+  border: 1px dashed var(--pd-border);
   border-radius: var(--pd-radius-section);
   background: #f8fafc;
   color: var(--pd-muted);
@@ -167,21 +235,25 @@ function pageIndex(pageId) {
 .pages-panel__card {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 10px 12px 12px;
   border: 1px solid var(--pd-border);
   border-radius: var(--pd-radius-section);
   background: var(--pd-panel-bg);
   text-align: left;
-  color: inherit;
+  cursor: pointer;
   transition:
     border-color 0.18s ease,
-    background-color 0.18s ease;
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
-.pages-panel__card:hover {
+.pages-panel__card:hover,
+.pages-panel__card:focus-visible {
   border-color: var(--pd-accent-border);
   background: #f8fafc;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.08) inset;
+  outline: none;
 }
 
 .pages-panel__card.is-current {
@@ -202,16 +274,40 @@ function pageIndex(pageId) {
   font-weight: 700;
 }
 
-.pages-panel__current-tag {
+.pages-panel__head-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pages-panel__current-tag,
+.pages-panel__order-hint {
   display: inline-flex;
   align-items: center;
   height: 20px;
   padding: 0 8px;
-  border: 1px solid var(--pd-accent-border);
-  background: #f5f9ff;
-  color: var(--pd-accent-text);
+  border: 1px solid var(--pd-border);
+  background: #ffffff;
+  color: var(--pd-muted);
   font-size: 11px;
   font-weight: 700;
+  white-space: nowrap;
+}
+
+.pages-panel__current-tag {
+  border-color: var(--pd-accent-border);
+  background: #f5f9ff;
+  color: var(--pd-accent-text);
+}
+
+.pages-panel__title-input {
+  width: 100%;
+}
+
+.pages-panel__title-input :deep(.el-input__wrapper) {
+  box-shadow: none;
+  border-radius: var(--pd-radius-control);
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .pages-panel__card-title {
@@ -221,7 +317,48 @@ function pageIndex(pageId) {
 }
 
 .pages-panel__meta {
-  font-size: 12px;
   color: var(--pd-muted);
+  font-size: 12px;
+}
+
+.pages-panel__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.pages-panel__actions :deep(.el-button) {
+  height: 28px;
+  width: 28px;
+  padding: 0;
+  border-color: var(--pd-border);
+  color: #475569;
+}
+
+.pages-panel__actions :deep(.el-button:hover:not(:disabled)) {
+  border-color: var(--pd-accent-border);
+  background: var(--pd-accent-bg);
+  color: var(--pd-accent-text);
+}
+
+.pages-panel__danger {
+  color: #b91c1c;
+}
+
+.pages-panel__create {
+  width: fit-content;
+}
+
+@media (max-width: 1100px) {
+  .pages-panel__header {
+    flex-direction: column;
+  }
+
+  .pages-panel__header-actions {
+    width: 100%;
+    align-items: flex-start;
+    flex-direction: row;
+    justify-content: space-between;
+  }
 }
 </style>

@@ -257,14 +257,12 @@
       </div>
 
       <div v-if="!pageObjects.length" class="paper-canvas__empty-state">
-        <div class="paper-canvas__empty-badge">页面内容区</div>
-        <h2>从模板面板拖入元素，开始搭建打印页面。</h2>
-        <p>先把文字、图片、表格、条码和二维码放到纸面上，再继续做排版和属性调整。</p>
+        <div class="paper-canvas__empty-badge">{{ canvasEmptyState.badge }}</div>
+        <h2>{{ canvasEmptyState.title }}</h2>
+        <p>{{ canvasEmptyState.description }}</p>
         <div class="paper-canvas__empty-actions">
-          <span>推荐起点</span>
-          <span class="paper-canvas__empty-chip">文本</span>
-          <span class="paper-canvas__empty-chip">表格</span>
-          <span class="paper-canvas__empty-chip">二维码</span>
+          <span>{{ canvasEmptyState.helper }}</span>
+          <span v-for="chip in canvasEmptyState.chips" :key="chip" class="paper-canvas__empty-chip">{{ chip }}</span>
         </div>
       </div>
     </div>
@@ -535,10 +533,31 @@ function resolveResizeSnap(rect, startRect, handle) {
   };
 }
 
-const pageObjects = computed(() => {
+const allPageObjects = computed(() => {
   const pageId = currentPage.value?.id || "page-1";
   const objectIds = pageObjectMap.value[pageId] || [];
   return objectIds.map((objectId) => objectsById.value[objectId]).filter(Boolean);
+});
+const pageObjects = computed(() => allPageObjects.value.filter((object) => object.visible !== false));
+const hiddenObjectCount = computed(() => allPageObjects.value.length - pageObjects.value.length);
+const canvasEmptyState = computed(() => {
+  if (hiddenObjectCount.value > 0) {
+    return {
+      badge: "全部隐藏",
+      title: "当前页元素已隐藏",
+      description: "页面里有元素，但它们都被图层面板隐藏了。恢复显示后即可继续在画布中编辑。",
+      helper: "可在图层面板处理",
+      chips: ["显示", "锁定", "排序"],
+    };
+  }
+
+  return {
+    badge: "页面内容区",
+    title: "从模板面板拖入元素，开始搭建打印页面。",
+    description: "先把文字、图片、表格、条码和二维码放到纸面上，再继续做排版和属性调整。",
+    helper: "推荐起点",
+    chips: ["文本", "表格", "二维码"],
+  };
 });
 
 const gridDefinition = computed(() => createGridDefinition(props.pixelsPerUnit));

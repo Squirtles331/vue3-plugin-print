@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { computed, ref, shallowRef } from "vue";
+import { cloneDeep } from "../../core/clone.js";
 import { paletteItems } from "../../mock/palette";
 import { pageCards } from "../../mock/pages";
 import { createTemplateModel } from "../documentModel.js";
@@ -26,6 +27,18 @@ function updateCurrentPageMeta(pages, size, orientation) {
       orientation,
     };
   });
+}
+
+function syncCurrentPageFlags(pages, pageId) {
+  const nextPageId = pages.some((page) => page.id === pageId) ? pageId : pages[0]?.id || "page-1";
+
+  return {
+    currentPageId: nextPageId,
+    pages: pages.map((page) => ({
+      ...page,
+      isCurrent: page.id === nextPageId,
+    })),
+  };
 }
 
 export const useEditorDocumentStore = defineStore("printDesignerDocument", () => {
@@ -75,6 +88,10 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
           id: object.id,
           name: object.name,
           type: object.type,
+          locked: Boolean(object.locked),
+          visible: object.visible !== false,
+          printable: object.printable !== false,
+          zIndex: Number.isFinite(Number(object.zIndex)) ? Number(object.zIndex) : 0,
         };
       })
       .filter(Boolean)
@@ -127,6 +144,31 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
   function markSaved() {
     dirty.value = false;
     saveStatus.value = "已保存";
+  }
+
+  function capturePageState() {
+    return {
+      pages: cloneDeep(pages.value),
+      objectsById: cloneDeep(objectsById.value),
+      pageObjectMap: cloneDeep(pageObjectMap.value),
+      currentPageId: currentPageId.value,
+    };
+  }
+
+  function applyPageState(snapshot) {
+    const nextPages = Array.isArray(snapshot?.pages) ? cloneDeep(snapshot.pages) : [];
+    const nextObjectsById = snapshot?.objectsById && typeof snapshot.objectsById === "object" ? cloneDeep(snapshot.objectsById) : {};
+    const nextPageObjectMap = snapshot?.pageObjectMap && typeof snapshot.pageObjectMap === "object" ? cloneDeep(snapshot.pageObjectMap) : {};
+    const { currentPageId: resolvedCurrentPageId, pages: normalizedPages } = syncCurrentPageFlags(
+      nextPages,
+      snapshot?.currentPageId || currentPageId.value
+    );
+
+    pages.value = normalizedPages;
+    objectsById.value = nextObjectsById;
+    pageObjectMap.value = Object.fromEntries(normalizedPages.map((page) => [page.id, [...(nextPageObjectMap[page.id] || [])]]));
+    currentPageId.value = resolvedCurrentPageId;
+    markDirty();
   }
 
   function loadTemplateDocument(source, { markAsDirty = false } = {}) {
@@ -333,8 +375,8 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
       return false;
     }
     const patchKeys = Object.keys(patch || {});
-    const unlockOnly = patchKeys.length === 1 && patchKeys[0] === "locked" && patch.locked === false;
-    if (object.locked && !unlockOnly) {
+    const lockSafePatch = patchKeys.length > 0 && patchKeys.every((key) => ["locked", "visible", "printable"].includes(key));
+    if (object.locked && !lockSafePatch) {
       return false;
     }
 
@@ -510,11 +552,54 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
       return false;
     }
 
-    currentPageId.value = nextPageId;
-    pages.value = pages.value.map((page) => ({
-      ...page,
-      isCurrent: page.id === nextPageId,
-    }));
+    const { currentPageId: resolvedCurrentPageId, pages: normalizedPages } = syncCurrentPageFlags(pages.value, nextPageId);
+    currentPageId.value = resolvedCurrentPageId;
+    pages.value = normalizedPages;
+    return true;
+  }
+
+  function setPageTitle(pageId, title) {
+    const nextTitle = String(title ?? "").trim();
+
+    if (!nextTitle) {
+      return false;
+    }
+
+    let changed = false;
+    pages.value = pages.value.map((page) => {
+      if (page.id !== pageId || page.title === nextTitle.slice(0, 160)) {
+        return page;
+      }
+      changed = true;
+      return {
+        ...page,
+        title: nextTitle.slice(0, 160),
+      };
+    });
+
+    if (!changed) {
+      return false;
+    }
+
+    markDirty();
+    return true;
+  }
+
+  function movePage(pageId, direction) {
+    const index = pages.value.findIndex((page) => page.id === pageId);
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+
+    if (index < 0 || targetIndex < 0 || targetIndex >= pages.value.length) {
+      return false;
+    }
+
+    const nextPages = [...pages.value];
+    const [page] = nextPages.splice(index, 1);
+    nextPages.splice(targetIndex, 0, page);
+    const { currentPageId: resolvedCurrentPageId, pages: normalizedPages } = syncCurrentPageFlags(nextPages, currentPageId.value);
+    pages.value = normalizedPages;
+    currentPageId.value = resolvedCurrentPageId;
+    markDirty();
     return true;
   }
 
@@ -613,6 +698,8 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     currentPageTitle,
     layers,
     templateModel,
+    capturePageState,
+    applyPageState,
     markDirty,
     markSaved,
     loadTemplateDocument,
@@ -635,6 +722,8 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     setDocumentName,
     setCurrentPageTitle,
     setCurrentPage,
+    setPageTitle,
+    movePage,
     setPageBackground,
     togglePageCorner,
     toggleHeaderLine,
