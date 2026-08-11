@@ -51,7 +51,7 @@
 <script setup>
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
-import { RefreshLeft, RefreshRight } from "@element-plus/icons-vue";
+import { RefreshLeft, RefreshRight } from "../../ui/icons.js";
 import { useEditorHistoryStore } from "../stores/historyStore";
 
 const historyStore = useEditorHistoryStore();

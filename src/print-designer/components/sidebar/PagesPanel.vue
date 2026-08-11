@@ -89,7 +89,7 @@
 
 <script setup>
 import { computed } from "vue";
-import { CopyDocument, Delete, Bottom, Plus, Top } from "@element-plus/icons-vue";
+import { Bottom, CopyDocument, Delete, Plus, Top } from "../../ui/icons.js";
 
 const props = defineProps({
   pages: {

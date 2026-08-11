@@ -2,7 +2,7 @@
   <section class="text-format-toolbar" :class="{ 'is-disabled': toolbarDisabled }">
     <div class="text-format-toolbar__group">
       <span class="text-format-toolbar__label">文字</span>
-      <el-select
+      <PdSelect
         class="text-format-toolbar__preset"
         size="small"
         :model-value="activePreset"
@@ -10,79 +10,79 @@
         :disabled="!presetEnabled"
         @change="applyPreset"
       >
-        <el-option
+        <PdOption
           v-for="option in TEXT_PRESET_OPTIONS"
           :key="option.value"
           :label="option.label"
           :value="option.value"
         />
-      </el-select>
+      </PdSelect>
     </div>
 
     <div class="text-format-toolbar__divider"></div>
 
     <div class="text-format-toolbar__group">
-      <el-select
+      <PdSelect
         class="text-format-toolbar__font"
         size="small"
         :model-value="fontFamilyValue"
         :disabled="toolbarDisabled"
         @change="setStyleValue('fontFamily', $event)"
       >
-        <el-option
+        <PdOption
           v-for="option in FONT_FAMILY_OPTIONS"
           :key="option.value || '__default__'"
           :label="option.label"
           :value="option.value"
         />
-      </el-select>
+      </PdSelect>
 
-      <el-select
+      <PdSelect
         class="text-format-toolbar__size"
         size="small"
         :model-value="fontSizeValue"
         :disabled="toolbarDisabled"
         @change="setStyleValue('fontSize', Number($event))"
       >
-        <el-option
+        <PdOption
           v-for="size in FONT_SIZE_OPTIONS"
           :key="size"
           :label="String(size)"
           :value="size"
         />
-      </el-select>
+      </PdSelect>
     </div>
 
     <div class="text-format-toolbar__divider"></div>
 
     <div class="text-format-toolbar__group text-format-toolbar__group--icons">
-      <button
-        type="button"
+      <PdButton
+        native-type="button"
         class="text-format-toolbar__icon"
         :class="{ 'is-active': isBold }"
         :disabled="toolbarDisabled"
         @click="toggleFontWeight"
       >
         B
-      </button>
-      <button
-        type="button"
+      </PdButton>
+      <PdButton
+        native-type="button"
         class="text-format-toolbar__icon text-format-toolbar__icon--italic"
         :class="{ 'is-active': isItalic }"
         :disabled="toolbarDisabled"
         @click="toggleFontStyle"
       >
         I
-      </button>
-      <button
-        type="button"
+      </PdButton>
+      <PdButton
+        native-type="button"
         class="text-format-toolbar__icon text-format-toolbar__icon--underline"
         :class="{ 'is-active': isUnderline }"
         :disabled="toolbarDisabled"
         @click="toggleUnderline"
       >
         U
-      </button>
+      </PdButton>
     </div>
 
     <div class="text-format-toolbar__divider"></div>
@@ -100,50 +100,50 @@
     <div class="text-format-toolbar__divider"></div>
 
     <div class="text-format-toolbar__group text-format-toolbar__group--icons">
-      <button
+      <PdButton
         v-for="option in horizontalAlignButtons"
         :key="option.value"
-        type="button"
+        native-type="button"
         class="text-format-toolbar__icon"
         :class="{ 'is-active': textAlignValue === option.value }"
         :disabled="toolbarDisabled"
         @click="setStyleValue('textAlign', option.value)"
       >
         {{ option.label }}
-      </button>
+      </PdButton>
     </div>
 
     <div class="text-format-toolbar__group text-format-toolbar__group--icons">
-      <button
+      <PdButton
         v-for="option in verticalAlignButtons"
         :key="option.value"
-        type="button"
+        native-type="button"
         class="text-format-toolbar__icon"
         :class="{ 'is-active': verticalAlignValue === option.value }"
         :disabled="toolbarDisabled"
         @click="setStyleValue('verticalAlign', option.value)"
       >
         {{ option.label }}
-      </button>
+      </PdButton>
     </div>
 
     <div class="text-format-toolbar__divider"></div>
 
     <div class="text-format-toolbar__group">
-      <el-select
+      <PdSelect
         class="text-format-toolbar__line-height"
         size="small"
         :model-value="lineHeightValue"
         :disabled="toolbarDisabled"
         @change="setStyleValue('lineHeight', Number($event))"
       >
-        <el-option
+        <PdOption
           v-for="value in LINE_HEIGHT_OPTIONS"
           :key="value"
           :label="`行高 ${value}`"
           :value="value"
         />
-      </el-select>
+      </PdSelect>
     </div>
   </section>
 </template>
@@ -151,6 +151,9 @@
 <script setup>
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
+import PdButton from "../../ui/primitives/PdButton.vue";
+import PdOption from "../../ui/primitives/PdOption.vue";
+import PdSelect from "../../ui/primitives/PdSelect.vue";
 import {
   FONT_FAMILY_OPTIONS,
   FONT_SIZE_OPTIONS,
@@ -310,6 +313,8 @@ function toggleUnderline() {
   justify-content: center;
   width: 28px;
   height: 28px;
+  min-height: 28px;
+  padding: 0;
   border: 1px solid var(--pd-border);
   background: #ffffff;
   color: #374151;
@@ -351,7 +356,7 @@ function toggleUnderline() {
   opacity: 0.55;
 }
 
-:deep(.text-format-toolbar .el-select) {
+.text-format-toolbar :deep(.pd-select) {
   width: 100%;
 }
 

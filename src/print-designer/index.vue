@@ -12,7 +12,7 @@ import EditorRoot from "./editor/EditorRoot.vue";
 import { createLocalTemplateRepository } from "./template/templateRepository.js";
 import { createLocalElementPresetRepository } from "./template/elementPresetRepository.js";
 import { serializeTemplateDocument } from "./template/templateDocument.js";
-import { registerElementPlusComponents } from "./ui/elementPlus.js";
+import { registerPrintDesignerUi } from "./ui/index.js";
 
 defineOptions({ name: "PrintTemplateStudio" });
 
@@ -112,7 +112,7 @@ onMounted(() => {
     onError,
   });
   editorApp.use(createPinia());
-  registerElementPlusComponents(editorApp);
+  registerPrintDesignerUi(editorApp);
   editorRoot = editorApp.mount(mountTargetRef.value);
   applyTemplate(props.template);
   applyRuntimeData(props.runtimeData);

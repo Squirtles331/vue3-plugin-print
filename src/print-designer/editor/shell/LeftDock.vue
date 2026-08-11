@@ -12,29 +12,29 @@
           <h2 class="left-dock__title">{{ panelTitle }}</h2>
           <p class="left-dock__description">{{ panelDescription }}</p>
         </div>
-        <button class="left-dock__close" type="button" @click="shellStore.toggleLeftDock()">收起</button>
+        <PdButton class="left-dock__close" native-type="button" @click="shellStore.toggleLeftDock()">收起</PdButton>
       </header>
 
       <div class="left-dock__main">
         <nav class="left-dock__tabs" aria-label="左侧面板">
-          <button
+          <PdButton
             v-for="item in panelItems"
             :key="item.key"
             class="left-dock__tab"
             :class="{ 'is-active': item.key === activeLeftPanel }"
-            type="button"
+            native-type="button"
             :title="item.title"
             @click="shellStore.toggleLeftDockPanel(item.key)"
           >
-            <el-icon class="left-dock__tab-icon"><component :is="item.icon" /></el-icon>
+            <template #icon><PdIcon class="left-dock__tab-icon"><component :is="item.icon" /></PdIcon></template>
             <span class="left-dock__tab-label">{{ item.label }}</span>
             <small class="left-dock__tab-count">{{ panelCounts[item.key] }}</small>
-          </button>
+          </PdButton>
         </nav>
 
         <div class="left-dock__content">
           <div class="left-dock__tools">
-            <el-input
+            <PdInput
               v-model="searchQuery"
               size="small"
               clearable
@@ -56,7 +56,10 @@
 </template>
 
 <script setup>
-import { CollectionTag, DataLine, Document, Files, Search } from "@element-plus/icons-vue";
+import { CollectionTag, DataLine, Document, Files, Search } from "../../ui/icons.js";
+import PdButton from "../../ui/primitives/PdButton.vue";
+import PdIcon from "../../ui/primitives/PdIcon.vue";
+import PdInput from "../../ui/primitives/PdInput.vue";
 import { computed, onBeforeUnmount, ref, shallowRef } from "vue";
 import { storeToRefs } from "pinia";
 import InsertAssetsPanel from "./InsertAssetsPanel.vue";
@@ -263,6 +266,14 @@ onBeforeUnmount(() => {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.left-dock__tab :deep(.pd-button__content) {
+  display: inline-flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
 }
 
 .left-dock__tab-count {

@@ -1069,7 +1069,7 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { ElMessage, ElMessageBox } from "element-plus";
+import { ElMessage, ElMessageBox } from "../../ui/elementPlus.js";
 import InspectorEmpty from "../../components/inspector/InspectorEmpty.vue";
 import TableCodeEditorDialog from "../components/TableCodeEditorDialog.vue";
 import { FIELD_CONTROL, INSPECTOR_TABS, TAB_LABELS, SECTION_LAYOUT } from "../../core/elementInspectorSchemas";

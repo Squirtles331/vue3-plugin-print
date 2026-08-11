@@ -43,7 +43,7 @@
 </template>
 
 <script setup>
-import { Search } from "@element-plus/icons-vue";
+import { Search } from "../ui/icons.js";
 import { computed, shallowRef, ref, watch } from "vue";
 
 const props = defineProps({ visible: { type: Boolean, default: false }, templates: { type: Array, default: () => [] } });

@@ -88,7 +88,7 @@
 
 <script setup>
 import { computed } from "vue";
-import { Bottom, CopyDocument, Delete, Hide, Lock, Top, Unlock, View } from "@element-plus/icons-vue";
+import { Bottom, CopyDocument, Delete, Hide, Lock, Top, Unlock, View } from "../../ui/icons.js";
 
 const props = defineProps({
   layers: {

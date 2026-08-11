@@ -56,7 +56,7 @@
 </template>
 
 <script setup>
-import { ElMessage, ElMessageBox } from "element-plus";
+import { PdMessage, PdMessageBox } from "../ui/feedback.js";
 import { storeToRefs } from "pinia";
 import { defineAsyncComponent, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
 import HeaderBar from "./shell/HeaderBar.vue";
@@ -115,7 +115,7 @@ const { selectedIds } = storeToRefs(selectionStore);
 
 function reportError(scope, error, fallback) {
   const message = error?.message || fallback;
-  ElMessage.error(message);
+  PdMessage.error(message);
   emit("error", { scope, error, message });
 }
 
@@ -189,7 +189,7 @@ async function onNewTemplate() {
 async function onCreateStarter(starterId) {
   if (documentStore.dirty) {
     try {
-      await ElMessageBox.confirm("未保存的修改将丢失，是否继续新建？", "新建模板", { type: "warning" });
+      await PdMessageBox.confirm("未保存的修改将丢失，是否继续新建？", "新建模板", { type: "warning" });
     } catch {
       return;
     }
@@ -198,13 +198,13 @@ async function onCreateStarter(starterId) {
   try {
     documentStore.loadTemplateDocument(instantiateStarterTemplate(starterId), { markAsDirty: true });
   } catch (error) {
-    ElMessage.error(error?.message || "无法创建起始模板");
+    PdMessage.error(error?.message || "无法创建起始模板");
     return;
   }
   historyStore.reset();
   previewStore.setRuntimeData({});
   starterCatalogVisible.value = false;
-  ElMessage.success("已创建新的可编辑模板");
+  PdMessage.success("已创建新的可编辑模板");
 }
 
 async function refreshTemplateLibrary() {
@@ -227,7 +227,7 @@ async function onDeleteTemplate(id) {
   try {
     const removed = await repository.delete(id);
     await refreshTemplateLibrary();
-    ElMessage[removed ? "success" : "warning"](removed ? "Saved template deleted from this browser" : "Saved template no longer exists");
+    PdMessage[removed ? "success" : "warning"](removed ? "Saved template deleted from this browser" : "Saved template no longer exists");
   } catch (error) {
     reportError("repository.delete", error, "Unable to delete the saved template");
   }
@@ -241,7 +241,7 @@ async function onClearTemplateLibrary() {
   try {
     await repository.clear();
     await refreshTemplateLibrary();
-    ElMessage.success("Saved templates cleared from this browser");
+    PdMessage.success("Saved templates cleared from this browser");
   } catch (error) {
     reportError("repository.clear", error, "Unable to clear saved templates");
   }
@@ -258,12 +258,12 @@ function onImportTemplate() {
     }
     const imported = parseTemplateInterchange(await file.text());
     if (!imported.document) {
-      ElMessage.error(imported.issues?.[0]?.message || "模板导入失败");
+      PdMessage.error(imported.issues?.[0]?.message || "模板导入失败");
       return;
     }
     if (documentStore.dirty) {
       try {
-        await ElMessageBox.confirm("未保存的修改将丢失，是否继续导入？", "导入模板", { type: "warning" });
+        await PdMessageBox.confirm("未保存的修改将丢失，是否继续导入？", "导入模板", { type: "warning" });
       } catch {
         return;
       }
@@ -271,7 +271,7 @@ function onImportTemplate() {
     documentStore.loadTemplateDocument(imported.document, { markAsDirty: true });
     historyStore.reset();
     previewStore.setRuntimeData({});
-    ElMessage.success(imported.issues.length ? "模板已导入，已应用兼容迁移" : "模板已导入");
+    PdMessage.success(imported.issues.length ? "模板已导入，已应用兼容迁移" : "模板已导入");
   }, { once: true });
   input.click();
 }
@@ -279,22 +279,22 @@ function onImportTemplate() {
 function onExportTemplate() {
   const result = currentTemplateResult();
   if (!result.valid) {
-    ElMessage.error(result.issues[0]?.message || "模板校验失败");
+    PdMessage.error(result.issues[0]?.message || "模板校验失败");
     return;
   }
   const exported = downloadTemplateInterchange(result.document, `${result.document.meta.name || "print-template"}.json`);
   if (!exported.valid) {
-    ElMessage.error(exported.issues[0]?.message || "模板导出失败");
+    PdMessage.error(exported.issues[0]?.message || "模板导出失败");
     return;
   }
-  ElMessage.success("模板 JSON 已导出");
+  PdMessage.success("模板 JSON 已导出");
 }
 
 async function refreshPresetLibrary() {
   try {
     savedPresets.value = await presetRepository.list();
   } catch (error) {
-    ElMessage.error(error?.message || "无法读取元素预设");
+    PdMessage.error(error?.message || "无法读取元素预设");
   }
 }
 
@@ -307,7 +307,7 @@ async function onInsertPreset(id) {
   try {
     const preset = await presetRepository.get(id);
     if (!preset) {
-      ElMessage.error("元素预设不存在或已删除");
+      PdMessage.error("元素预设不存在或已删除");
       return;
     }
     const pageId = documentStore.currentPage?.id || "page-1";
@@ -315,32 +315,32 @@ async function onInsertPreset(id) {
     documentStore.addObject(nextObject);
     selectionStore.select(nextObject.id);
     presetLibraryVisible.value = false;
-    ElMessage.success("已插入元素预设");
+    PdMessage.success("已插入元素预设");
   } catch (error) {
-    ElMessage.error(error?.message || "插入元素预设失败");
+    PdMessage.error(error?.message || "插入元素预设失败");
   }
 }
 
 async function onRenamePreset(preset) {
   try {
-    const { value } = await ElMessageBox.prompt("输入新的预设名称", "重命名元素预设", { inputValue: preset.name, inputPattern: /\S/, inputErrorMessage: "请输入名称" });
+    const { value } = await PdMessageBox.prompt("输入新的预设名称", "重命名元素预设", { inputValue: preset.name, inputPattern: /\S/, inputErrorMessage: "请输入名称" });
     await presetRepository.rename(preset.id, value);
     await refreshPresetLibrary();
   } catch (error) {
     if (error !== "cancel" && error !== "close") {
-      ElMessage.error(error?.message || "重命名元素预设失败");
+      PdMessage.error(error?.message || "重命名元素预设失败");
     }
   }
 }
 
 async function onRemovePreset(preset) {
   try {
-    await ElMessageBox.confirm(`删除预设“${preset.name}”后不可恢复，是否继续？`, "删除元素预设", { type: "warning" });
+    await PdMessageBox.confirm(`删除预设“${preset.name}”后不可恢复，是否继续？`, "删除元素预设", { type: "warning" });
     await presetRepository.delete(preset.id);
     await refreshPresetLibrary();
   } catch (error) {
     if (error !== "cancel" && error !== "close") {
-      ElMessage.error(error?.message || "删除元素预设失败");
+      PdMessage.error(error?.message || "删除元素预设失败");
     }
   }
 }
@@ -349,26 +349,26 @@ async function openTemplate(id) {
   try {
     const document = await repository.get(id);
     if (!document) {
-      ElMessage.error("模板不存在或已被删除");
+      PdMessage.error("模板不存在或已被删除");
       return;
     }
     const result = documentStore.loadTemplateDocument(document);
     if (!result.document) {
-      ElMessage.error(result.issues?.[0]?.message || "模板无法加载");
+      PdMessage.error(result.issues?.[0]?.message || "模板无法加载");
       return;
     }
     historyStore.reset();
     templateLibraryVisible.value = false;
-    ElMessage.success("模板已打开");
+    PdMessage.success("模板已打开");
   } catch (error) {
-    ElMessage.error(error.message || "打开模板失败");
+    PdMessage.error(error.message || "打开模板失败");
   }
 }
 
 async function onSaveTemplate() {
   const result = currentTemplateResult();
   if (!result.valid) {
-    ElMessage.error(result.issues[0]?.message || "模板校验失败");
+    PdMessage.error(result.issues[0]?.message || "模板校验失败");
     return;
   }
 
@@ -376,7 +376,7 @@ async function onSaveTemplate() {
     const saved = await repository.save(result.document);
     documentStore.loadTemplateDocument(saved);
     await refreshTemplateLibrary();
-    ElMessage.success("模板已保存到本地仓储");
+    PdMessage.success("模板已保存到本地仓储");
   } catch (error) {
     reportError("repository.save", error, "保存模板失败");
   }
@@ -385,7 +385,7 @@ async function onSaveTemplate() {
 function onPreview() {
   const result = currentTemplateResult();
   if (!result.valid) {
-    ElMessage.error(result.issues[0]?.message || "模板校验失败");
+    PdMessage.error(result.issues[0]?.message || "模板校验失败");
     return;
   }
   previewDocument.value = result.document;
@@ -395,7 +395,7 @@ function onPreview() {
 async function onPrint() {
   const result = currentTemplateResult();
   if (!result.valid) {
-    ElMessage.error(result.issues[0]?.message || "模板校验失败");
+    PdMessage.error(result.issues[0]?.message || "模板校验失败");
     return;
   }
   try {
@@ -411,7 +411,7 @@ function onPrintError(error) {
 }
 
 function onExportPdf() {
-  ElMessage.info("PDF 导出不在当前首发范围内。");
+  PdMessage.info("PDF 导出不在当前首发范围内。");
 }
 
 function setRuntimeData(data) {

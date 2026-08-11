@@ -1,11 +1,12 @@
 import { createPinia } from "pinia";
 import { createApp } from "vue";
 import "./styles/demo.scss";
+import "./styles/library.scss";
 import App from "./App.vue";
-import { registerElementPlusComponents } from "./print-designer/ui/elementPlus.js";
+import { registerPrintDesignerUi } from "./print-designer/ui/index.js";
 
 const app = createApp(App);
 
 app.use(createPinia());
-registerElementPlusComponents(app);
+registerPrintDesignerUi(app);
 app.mount("#app");

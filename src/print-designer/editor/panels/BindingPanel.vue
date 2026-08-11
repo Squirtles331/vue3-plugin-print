@@ -30,7 +30,7 @@
 
 <script setup>
 import { computed, ref } from "vue";
-import { Search } from "@element-plus/icons-vue";
+import { Search } from "../../ui/icons.js";
 import DataPanel from "../../components/sidebar/DataPanel.vue";
 
 const props = defineProps({

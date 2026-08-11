@@ -90,7 +90,7 @@ import {
   View,
   ZoomIn,
   ZoomOut,
-} from "@element-plus/icons-vue";
+} from "../../ui/icons.js";
 
 defineProps({
   templateName: {

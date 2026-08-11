@@ -14,23 +14,23 @@
           <h2 class="right-panel-dock__title">{{ panelTitle }}</h2>
           <p class="right-panel-dock__description">{{ panelDescription }}</p>
         </div>
-        <button class="right-panel-dock__close" type="button" @click="shellStore.toggleRightDock()">收起</button>
+        <PdButton class="right-panel-dock__close" native-type="button" @click="shellStore.toggleRightDock()">收起</PdButton>
       </header>
 
       <div class="right-panel-dock__main">
         <nav class="right-panel-dock__tabs" aria-label="右侧面板">
-          <button
+          <PdButton
             v-for="panel in panels"
             :key="panel.key"
             class="right-panel-dock__tab"
             :class="{ 'is-active': panel.key === activeRightPanel }"
-            type="button"
+            native-type="button"
             @click="shellStore.toggleRightDockPanel(panel.key)"
           >
-            <el-icon class="right-panel-dock__tab-icon"><component :is="panel.icon" /></el-icon>
+            <template #icon><PdIcon class="right-panel-dock__tab-icon"><component :is="panel.icon" /></PdIcon></template>
             <span>{{ panel.label }}</span>
             <small v-if="panelBadges[panel.key]" class="right-panel-dock__tab-badge">{{ panelBadges[panel.key] }}</small>
-          </button>
+          </PdButton>
         </nav>
 
         <div class="right-panel-dock__body">
@@ -52,7 +52,9 @@
 </template>
 
 <script setup>
-import { Clock, DataLine, Files, Setting, View } from "@element-plus/icons-vue";
+import { Clock, DataLine, Files, Setting, View } from "../../ui/icons.js";
+import PdButton from "../../ui/primitives/PdButton.vue";
+import PdIcon from "../../ui/primitives/PdIcon.vue";
 import { computed, onBeforeUnmount, ref } from "vue";
 import { storeToRefs } from "pinia";
 import StructurePanel from "../../components/inspector/StructurePanel.vue";
@@ -288,6 +290,14 @@ onBeforeUnmount(() => {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.right-panel-dock__tab :deep(.pd-button__content) {
+  display: inline-flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
 }
 
 .right-panel-dock__tab-badge {

@@ -1,4 +1,4 @@
-import { Collection, CopyDocument, DataAnalysis, Document } from "@element-plus/icons-vue";
+import { Collection, CopyDocument, DataAnalysis, Document } from "../ui/icons.js";
 
 export const sidebarTabs = [
   { key: "insert", label: "插入", icon: Collection },

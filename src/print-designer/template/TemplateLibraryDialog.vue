@@ -28,8 +28,8 @@
 
 <script setup>
 import { computed, shallowRef } from "vue";
-import { ElMessageBox } from "element-plus";
-import { Search } from "@element-plus/icons-vue";
+import { ElMessageBox } from "../ui/elementPlus.js";
+import { Search } from "../ui/icons.js";
 
 const props = defineProps({ visible: { type: Boolean, default: false }, templates: { type: Array, default: () => [] }, loading: { type: Boolean, default: false } });
 const emit = defineEmits(["update:visible", "refresh", "select", "remove", "clear"]);

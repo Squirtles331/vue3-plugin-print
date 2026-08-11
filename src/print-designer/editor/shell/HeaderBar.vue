@@ -14,42 +14,42 @@
 
       <section class="header-bar__tool-group" aria-label="编辑命令">
         <span class="header-bar__group-label">编辑</span>
-        <button type="button" class="header-bar__chip" :disabled="!canUndo" title="撤销上一步操作" @click="historyStore.undo()">
-          <el-icon><RefreshLeft /></el-icon>
+        <PdButton native-type="button" class="header-bar__chip" :disabled="!canUndo" title="撤销上一步操作" @click="historyStore.undo()">
+          <template #icon><PdIcon><RefreshLeft /></PdIcon></template>
           撤销
-        </button>
-        <button type="button" class="header-bar__chip" :disabled="!canRedo" title="重做刚才撤销的操作" @click="historyStore.redo()">
-          <el-icon><RefreshRight /></el-icon>
+        </PdButton>
+        <PdButton native-type="button" class="header-bar__chip" :disabled="!canRedo" title="重做刚才撤销的操作" @click="historyStore.redo()">
+          <template #icon><PdIcon><RefreshRight /></PdIcon></template>
           重做
-        </button>
+        </PdButton>
       </section>
 
       <div class="header-bar__divider"></div>
 
       <section class="header-bar__tool-group" aria-label="面板切换">
         <span class="header-bar__group-label">面板</span>
-        <button
+        <PdButton
           class="header-bar__chip"
           :class="{ 'is-active': templatePanelActive }"
-          type="button"
+          native-type="button"
           title="打开左侧插入面板"
           @click="openTemplatePanel"
         >
-          <el-icon><CollectionTag /></el-icon>
+          <template #icon><PdIcon><CollectionTag /></PdIcon></template>
           插入
-        </button>
-        <button class="header-bar__chip" :class="{ 'is-active': pagePanelActive }" type="button" title="打开页面设置" @click="openPagesPanel">
-          <el-icon><Document /></el-icon>
+        </PdButton>
+        <PdButton class="header-bar__chip" :class="{ 'is-active': pagePanelActive }" native-type="button" title="打开页面设置" @click="openPagesPanel">
+          <template #icon><PdIcon><Document /></PdIcon></template>
           页面
-        </button>
-        <button class="header-bar__chip" :class="{ 'is-active': viewPanelActive }" type="button" title="打开视图设置" @click="openViewPanel">
-          <el-icon><View /></el-icon>
+        </PdButton>
+        <PdButton class="header-bar__chip" :class="{ 'is-active': viewPanelActive }" native-type="button" title="打开视图设置" @click="openViewPanel">
+          <template #icon><PdIcon><View /></PdIcon></template>
           视图
-        </button>
-        <button class="header-bar__chip" :class="{ 'is-active': propertiesPanelActive }" type="button" title="打开元素属性" @click="openPropertiesPanel">
-          <el-icon><Setting /></el-icon>
+        </PdButton>
+        <PdButton class="header-bar__chip" :class="{ 'is-active': propertiesPanelActive }" native-type="button" title="打开元素属性" @click="openPropertiesPanel">
+          <template #icon><PdIcon><Setting /></PdIcon></template>
           属性
-        </button>
+        </PdButton>
       </section>
 
       <div class="header-bar__spacer"></div>
@@ -58,35 +58,35 @@
 
       <section class="header-bar__tool-group" aria-label="文件命令">
         <span class="header-bar__group-label">文件</span>
-        <button class="header-bar__chip" type="button" title="从起始模板创建新文档" @click="emit('new-template')">
-          <el-icon><DocumentAdd /></el-icon>
+        <PdButton class="header-bar__chip" native-type="button" title="从起始模板创建新文档" @click="emit('new-template')">
+          <template #icon><PdIcon><DocumentAdd /></PdIcon></template>
           新建
-        </button>
-        <button class="header-bar__chip" type="button" title="打开已保存模板" @click="emit('open-template')">
-          <el-icon><FolderOpened /></el-icon>
+        </PdButton>
+        <PdButton class="header-bar__chip" native-type="button" title="打开已保存模板" @click="emit('open-template')">
+          <template #icon><PdIcon><FolderOpened /></PdIcon></template>
           打开
-        </button>
-        <button class="header-bar__chip" type="button" title="导入模板 JSON" @click="emit('import-template')">导入</button>
-        <button class="header-bar__chip" type="button" title="导出模板 JSON" @click="emit('export-template')">
-          <el-icon><Download /></el-icon>
+        </PdButton>
+        <PdButton class="header-bar__chip" native-type="button" title="导入模板 JSON" @click="emit('import-template')">导入</PdButton>
+        <PdButton class="header-bar__chip" native-type="button" title="导出模板 JSON" @click="emit('export-template')">
+          <template #icon><PdIcon><Download /></PdIcon></template>
           导出
-        </button>
-        <button class="header-bar__chip" type="button" title="管理元素预设" @click="emit('open-presets')">预设</button>
+        </PdButton>
+        <PdButton class="header-bar__chip" native-type="button" title="管理元素预设" @click="emit('open-presets')">预设</PdButton>
       </section>
 
       <section class="header-bar__tool-group header-bar__tool-group--primary" aria-label="输出命令">
-        <button class="header-bar__chip is-primary" type="button" title="保存当前模板" @click="emit('save-template')">
-          <el-icon><Check /></el-icon>
+        <PdButton class="header-bar__chip is-primary" native-type="button" title="保存当前模板" @click="emit('save-template')">
+          <template #icon><PdIcon><Check /></PdIcon></template>
           保存
-        </button>
-        <button class="header-bar__chip" type="button" title="预览运行时输出" @click="emit('preview')">
-          <el-icon><View /></el-icon>
+        </PdButton>
+        <PdButton class="header-bar__chip" native-type="button" title="预览运行时输出" @click="emit('preview')">
+          <template #icon><PdIcon><View /></PdIcon></template>
           预览
-        </button>
-        <button class="header-bar__chip is-emphasis" type="button" title="打开浏览器打印" @click="emit('print')">
-          <el-icon><Printer /></el-icon>
+        </PdButton>
+        <PdButton class="header-bar__chip is-emphasis" native-type="button" title="打开浏览器打印" @click="emit('print')">
+          <template #icon><PdIcon><Printer /></PdIcon></template>
           打印
-        </button>
+        </PdButton>
       </section>
     </div>
 
@@ -108,7 +108,9 @@ import {
   RefreshRight,
   Setting,
   View,
-} from "@element-plus/icons-vue";
+} from "../../ui/icons.js";
+import PdButton from "../../ui/primitives/PdButton.vue";
+import PdIcon from "../../ui/primitives/PdIcon.vue";
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import TextFormatToolbar from "./TextFormatToolbar.vue";

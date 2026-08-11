@@ -6,7 +6,7 @@ import {
   Picture,
   Postcard,
   Tickets,
-} from "@element-plus/icons-vue";
+} from "../ui/icons.js";
 import { markRaw } from "vue";
 import { ELEMENT_PALETTE } from "../core/elementFactory";
 

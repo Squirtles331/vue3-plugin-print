@@ -1,6 +1,6 @@
 import "../styles/library.scss";
 import PrintTemplateStudio from "../print-designer/index.vue";
-import { registerElementPlusComponents } from "../print-designer/ui/elementPlus.js";
+import { registerPrintDesignerUi } from "../print-designer/ui/index.js";
 
 export { PrintTemplateStudio };
 export { createLocalTemplateRepository, createRestTemplateRepository } from "../print-designer/template/templateRepository.js";
@@ -15,7 +15,7 @@ export {
 
 const PrintTemplateStudioPlugin = {
   install(app) {
-    registerElementPlusComponents(app);
+    registerPrintDesignerUi(app);
     app.component("PrintTemplateStudio", PrintTemplateStudio);
   },
 };
