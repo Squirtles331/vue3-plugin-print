@@ -9,7 +9,7 @@
     <template v-else-if="isTableObject">
       <section class="element-properties-panel__summary">
         <div class="element-properties-panel__summary-head">
-          <el-input
+          <PdInput
             :model-value="selectedObject.name"
             placeholder="元素名称"
             @input="setRootValue('name', $event)"
@@ -50,7 +50,7 @@
             <div class="element-properties-panel__section-body is-grid-2">
               <label class="element-properties-panel__field">
                 <span>X (mm)</span>
-                <el-input-number
+                <PdInputNumber
                   :model-value="numberValue(selectedObject.x)"
                   controls-position="right"
                   @change="setRootValue('x', numberValue($event))"
@@ -58,7 +58,7 @@
               </label>
               <label class="element-properties-panel__field">
                 <span>Y (mm)</span>
-                <el-input-number
+                <PdInputNumber
                   :model-value="numberValue(selectedObject.y)"
                   controls-position="right"
                   @change="setRootValue('y', numberValue($event))"
@@ -66,7 +66,7 @@
               </label>
               <label class="element-properties-panel__field">
                 <span>宽度 (mm)</span>
-                <el-input-number
+                <PdInputNumber
                   :model-value="numberValue(selectedObject.width)"
                   :min="0"
                   controls-position="right"
@@ -75,7 +75,7 @@
               </label>
               <label class="element-properties-panel__field">
                 <span>高度 (mm)</span>
-                <el-input-number
+                <PdInputNumber
                   :model-value="numberValue(selectedObject.height)"
                   :min="0"
                   controls-position="right"
@@ -92,7 +92,7 @@
             <div class="element-properties-panel__section-body is-stack">
               <label class="element-properties-panel__field">
                 <span>层级</span>
-                <el-input-number
+                <PdInputNumber
                   :model-value="numberValue(selectedObject.zIndex)"
                   controls-position="right"
                   @change="setRootValue('zIndex', numberValue($event))"
@@ -138,42 +138,42 @@
             <div class="element-properties-panel__section-body is-stack">
               <label class="element-properties-panel__field element-properties-panel__field--switch">
                 <span>自动分页</span>
-                <el-switch
+                <PdSwitch
                   :model-value="!!tablePropValue('autoPaginate', true)"
                   @change="setTablePropValue('autoPaginate', !!$event)"
                 />
               </label>
               <label class="element-properties-panel__field element-properties-panel__field--switch">
                 <span>重复表脚</span>
-                <el-switch
+                <PdSwitch
                   :model-value="!!tablePropValue('tfootRepeat', true)"
                   @change="setTablePropValue('tfootRepeat', !!$event)"
                 />
               </label>
               <label class="element-properties-panel__field element-properties-panel__field--switch">
                 <span>显示表头</span>
-                <el-switch
+                <PdSwitch
                   :model-value="!!tablePropValue('showHeader', true)"
                   @change="setTablePropValue('showHeader', !!$event)"
                 />
               </label>
               <label class="element-properties-panel__field element-properties-panel__field--switch">
                 <span>显示表脚</span>
-                <el-switch
+                <PdSwitch
                   :model-value="!!tablePropValue('showFooter', true)"
                   @change="setTablePropValue('showFooter', !!$event)"
                 />
               </label>
               <label class="element-properties-panel__field element-properties-panel__field--switch">
                 <span>设计行省略</span>
-                <el-switch
+                <PdSwitch
                   :model-value="!!tablePropValue('designOmitRows', true)"
                   @change="setTablePropValue('designOmitRows', !!$event)"
                 />
               </label>
               <label class="element-properties-panel__field">
                 <span>设计行数</span>
-                <el-input-number
+                <PdInputNumber
                   :model-value="tableDesignRowCountValue()"
                   :min="1"
                   controls-position="right"
@@ -182,7 +182,7 @@
               </label>
               <label class="element-properties-panel__field">
                 <span>数据变量</span>
-                <el-input
+                <PdInput
                   :model-value="tableStringPropValue('dataVariable')"
                   placeholder="@dataVariable"
                   @input="setTablePropValue('dataVariable', $event)"
@@ -190,7 +190,7 @@
               </label>
               <label class="element-properties-panel__field">
                 <span>表脚数据变量</span>
-                <el-input
+                <PdInput
                   :model-value="tableStringPropValue('footerDataVariable')"
                   placeholder="@footerDataVariable"
                   @input="setTablePropValue('footerDataVariable', $event)"
@@ -268,7 +268,7 @@
 
               <label class="element-properties-panel__field element-properties-panel__field--switch">
                 <span>是否打印</span>
-                <el-switch
+                <PdSwitch
                   :model-value="selectedObject.printable !== false"
                   @change="setRootValue('printable', !!$event)"
                 />
@@ -285,7 +285,7 @@
             <div class="element-properties-panel__section-body is-stack">
               <label class="element-properties-panel__field">
                 <span>表头高度 (mm)</span>
-                <el-input-number
+                <PdInputNumber
                   :model-value="tableNumberPropValue('headerHeight')"
                   :min="0"
                   controls-position="right"
@@ -294,7 +294,7 @@
               </label>
               <label class="element-properties-panel__field">
                 <span>行高 (mm)</span>
-                <el-input-number
+                <PdInputNumber
                   :model-value="tableNumberPropValue('rowHeight')"
                   :min="0"
                   controls-position="right"
@@ -303,7 +303,7 @@
               </label>
               <label class="element-properties-panel__field">
                 <span>表脚高度 (mm)</span>
-                <el-input-number
+                <PdInputNumber
                   :model-value="tableNumberPropValue('footerHeight')"
                   :min="0"
                   controls-position="right"
@@ -343,7 +343,7 @@
               </label>
               <label class="element-properties-panel__field">
                 <span>字号 (mm)</span>
-                <el-input-number
+                <PdInputNumber
                   :model-value="tableFontSizeMmValue('fontSize')"
                   :min="0"
                   :step="0.1"
@@ -353,12 +353,12 @@
               </label>
               <label class="element-properties-panel__field">
                 <span>对齐方式</span>
-                <el-select
+                <PdSelect
                   :model-value="tableStringStyleValue('textAlign', 'left')"
                   @change="setTableStyleValue('textAlign', $event)"
                 >
-                  <el-option v-for="option in TABLE_TEXT_ALIGN_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
-                </el-select>
+                  <PdOption v-for="option in TABLE_TEXT_ALIGN_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
+                </PdSelect>
               </label>
             </div>
           </section>
@@ -393,7 +393,7 @@
               </label>
               <label class="element-properties-panel__field">
                 <span>字号</span>
-                <el-input-number
+                <PdInputNumber
                   :model-value="tableFontSizeMmValue('headerFontSize', 'fontSize')"
                   :min="0"
                   :step="0.1"
@@ -403,12 +403,12 @@
               </label>
               <label class="element-properties-panel__field">
                 <span>对齐方式</span>
-                <el-select
+                <PdSelect
                   :model-value="tableStringStyleValue('headerTextAlign', 'left')"
                   @change="setTableStyleValue('headerTextAlign', $event)"
                 >
-                  <el-option v-for="option in TABLE_TEXT_ALIGN_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
-                </el-select>
+                  <PdOption v-for="option in TABLE_TEXT_ALIGN_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
+                </PdSelect>
               </label>
             </div>
           </section>
@@ -443,7 +443,7 @@
               </label>
               <label class="element-properties-panel__field">
                 <span>字号</span>
-                <el-input-number
+                <PdInputNumber
                   :model-value="tableFontSizeMmValue('footerFontSize', 'fontSize')"
                   :min="0"
                   :step="0.1"
@@ -453,12 +453,12 @@
               </label>
               <label class="element-properties-panel__field">
                 <span>对齐方式</span>
-                <el-select
+                <PdSelect
                   :model-value="tableStringStyleValue('footerTextAlign', 'left')"
                   @change="setTableStyleValue('footerTextAlign', $event)"
                 >
-                  <el-option v-for="option in TABLE_TEXT_ALIGN_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
-                </el-select>
+                  <PdOption v-for="option in TABLE_TEXT_ALIGN_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
+                </PdSelect>
               </label>
             </div>
           </section>
@@ -470,16 +470,16 @@
             <div class="element-properties-panel__section-body is-stack">
               <label class="element-properties-panel__field">
                 <span>边框样式</span>
-                <el-select
+                <PdSelect
                   :model-value="tableStringStyleValue('borderStyle', 'solid')"
                   @change="setTableStyleValue('borderStyle', $event)"
                 >
-                  <el-option v-for="option in TABLE_BORDER_STYLE_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
-                </el-select>
+                  <PdOption v-for="option in TABLE_BORDER_STYLE_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
+                </PdSelect>
               </label>
               <label class="element-properties-panel__field">
                 <span>边框宽度 (mm)</span>
-                <el-input-number
+                <PdInputNumber
                   :model-value="tableBorderWidthMmValue()"
                   :min="0"
                   :step="0.1"
@@ -543,7 +543,7 @@
     <template v-else>
       <section class="element-properties-panel__summary">
         <div class="element-properties-panel__summary-head">
-          <el-input
+          <PdInput
             :model-value="selectedObject.name"
             placeholder="元素名称"
             @input="setRootValue('name', $event)"
@@ -598,13 +598,13 @@
                 >
                   <span>{{ field.label }}</span>
 
-                  <el-input
+                  <PdInput
                     v-if="field.control === FIELD_CONTROL.INPUT"
                     :model-value="stringFieldValue(field)"
                     @input="setFieldValue(field, $event)"
                   />
 
-                  <el-input
+                  <PdInput
                     v-else-if="field.control === FIELD_CONTROL.TEXTAREA"
                     type="textarea"
                     :rows="textareaRows(field)"
@@ -612,7 +612,7 @@
                     @input="setFieldValue(field, $event)"
                   />
 
-                  <el-input
+                  <PdInput
                     v-else-if="field.control === FIELD_CONTROL.CODE"
                     type="textarea"
                     :rows="textareaRows(field)"
@@ -621,7 +621,7 @@
                     @change="setFieldValue(field, $event)"
                   />
 
-                  <el-input-number
+                  <PdInputNumber
                     v-else-if="field.control === FIELD_CONTROL.NUMBER"
                     :model-value="numberFieldValue(field)"
                     :min="field.min"
@@ -631,20 +631,20 @@
                     @change="setFieldValue(field, numberValue($event))"
                   />
 
-                  <el-select
+                  <PdSelect
                     v-else-if="field.control === FIELD_CONTROL.SELECT"
                     :model-value="selectFieldValue(field)"
                     @change="setFieldValue(field, $event)"
                   >
-                    <el-option
+                    <PdOption
                       v-for="option in field.options || []"
                       :key="option.value"
                       :label="option.label"
                       :value="option.value"
                     />
-                  </el-select>
+                  </PdSelect>
 
-                  <el-switch
+                  <PdSwitch
                     v-else-if="field.control === FIELD_CONTROL.SWITCH"
                     :model-value="!!getFieldValue(field)"
                     @change="setFieldValue(field, !!$event)"
@@ -659,7 +659,7 @@
                   />
 
                   <div v-else-if="field.control === FIELD_CONTROL.IMAGE" class="element-properties-panel__image-field">
-                    <el-input
+                    <PdInput
                       :model-value="stringFieldValue(field)"
                       :placeholder="imageFieldPlaceholder(field)"
                       @input="setFieldValue(field, $event)"
@@ -739,7 +739,7 @@
                     <div class="element-properties-panel__table-column-grid">
                       <label class="element-properties-panel__field">
                         <span>标题</span>
-                        <el-input
+                        <PdInput
                           :model-value="column.title"
                           @input="updateTableColumn(field, index, 'title', $event)"
                         />
@@ -747,7 +747,7 @@
 
                       <label class="element-properties-panel__field">
                         <span>字段 key</span>
-                        <el-input
+                        <PdInput
                           :model-value="column.key"
                           @input="updateTableColumn(field, index, 'key', $event)"
                         />
@@ -755,7 +755,7 @@
 
                       <label class="element-properties-panel__field">
                         <span>数据路径</span>
-                        <el-input
+                        <PdInput
                           :model-value="column.valuePath"
                           placeholder="lineItem.amount"
                           @input="updateTableColumn(field, index, 'valuePath', $event)"
@@ -764,7 +764,7 @@
 
                       <label class="element-properties-panel__field">
                         <span>宽度权重</span>
-                        <el-input-number
+                        <PdInputNumber
                           :model-value="column.width"
                           :step="1"
                           controls-position="right"
@@ -774,32 +774,32 @@
 
                       <label class="element-properties-panel__field">
                         <span>对齐方式</span>
-                        <el-select
+                        <PdSelect
                           :model-value="column.align"
                           @change="updateTableColumn(field, index, 'align', $event)"
                         >
-                          <el-option
+                          <PdOption
                             v-for="option in TABLE_ALIGN_OPTIONS"
                             :key="option.value"
                             :label="option.label"
                             :value="option.value"
                           />
-                        </el-select>
+                        </PdSelect>
                       </label>
 
                       <label class="element-properties-panel__field">
                         <span>格式化</span>
-                        <el-select
+                        <PdSelect
                           :model-value="column.formatter?.type || ''"
                           @change="updateTableColumnFormatter(field, index, 'type', $event)"
                         >
-                          <el-option v-for="option in TABLE_FORMATTER_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
-                        </el-select>
+                          <PdOption v-for="option in TABLE_FORMATTER_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
+                        </PdSelect>
                       </label>
 
                       <label v-if="column.formatter?.type === 'number' || column.formatter?.type === 'currency'" class="element-properties-panel__field">
                         <span>小数位</span>
-                        <el-input-number
+                        <PdInputNumber
                           :model-value="Number(column.formatter?.decimals) || 0"
                           :min="0"
                           :max="8"
@@ -810,7 +810,7 @@
 
                       <label v-if="column.formatter?.type === 'currency'" class="element-properties-panel__field">
                         <span>货币符号</span>
-                        <el-input
+                        <PdInput
                           :model-value="column.formatter?.symbol || ''"
                           @input="updateTableColumnFormatter(field, index, 'symbol', $event)"
                         />
@@ -853,7 +853,7 @@
                       :key="`row-${rowIndex}`"
                       class="element-properties-panel__table-rows-row"
                     >
-                      <el-input
+                      <PdInput
                         v-for="column in tableColumnsValue(tableColumnsField)"
                         :key="`${rowIndex}-${column.key}`"
                         :model-value="tableSampleCellValue(row, column.key)"
@@ -918,7 +918,7 @@
                             class="element-properties-panel__field"
                           >
                             <span>{{ column.title }} / {{ column.key }}</span>
-                            <el-input
+                            <PdInput
                               :model-value="tableFooterCellValue(field, rowIndex, column.key)"
                               @input="updateTableFooterCell(field, rowIndex, column.key, $event)"
                             />
@@ -984,7 +984,7 @@
                       <div class="element-properties-panel__multi-label-card-body">
                         <label class="element-properties-panel__field">
                           <span>主标题</span>
-                          <el-input
+                          <PdInput
                             :model-value="item.title"
                             @input="updateMultiLabelSampleCell(field, index, 'title', $event)"
                           />
@@ -992,7 +992,7 @@
 
                         <label class="element-properties-panel__field">
                           <span>编码</span>
-                          <el-input
+                          <PdInput
                             :model-value="item.code"
                             @input="updateMultiLabelSampleCell(field, index, 'code', $event)"
                           />
@@ -1000,7 +1000,7 @@
 
                         <label class="element-properties-panel__field">
                           <span>说明</span>
-                          <el-input
+                          <PdInput
                             :model-value="item.detail"
                             @input="updateMultiLabelSampleCell(field, index, 'detail', $event)"
                           />
@@ -1069,7 +1069,12 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { ElMessage, ElMessageBox } from "../../ui/elementPlus.js";
+import { PdMessage, PdMessageBox } from "../../ui/feedback.js";
+import PdInput from "../../ui/primitives/PdInput.vue";
+import PdInputNumber from "../../ui/primitives/PdInputNumber.vue";
+import PdOption from "../../ui/primitives/PdOption.vue";
+import PdSelect from "../../ui/primitives/PdSelect.vue";
+import PdSwitch from "../../ui/primitives/PdSwitch.vue";
 import InspectorEmpty from "../../components/inspector/InspectorEmpty.vue";
 import TableCodeEditorDialog from "../components/TableCodeEditorDialog.vue";
 import { FIELD_CONTROL, INSPECTOR_TABS, TAB_LABELS, SECTION_LAYOUT } from "../../core/elementInspectorSchemas";
@@ -1858,13 +1863,13 @@ async function onImageFileChange(field, event) {
   }
 
   if (!file.type.startsWith("image/")) {
-    ElMessage.error("请选择图片文件");
+    PdMessage.error("请选择图片文件");
     input.value = "";
     return;
   }
 
   if (file.size > 2 * 1024 * 1024) {
-    ElMessage.error("图片大小不能超过 2MB");
+    PdMessage.error("图片大小不能超过 2MB");
     input.value = "";
     return;
   }
@@ -1873,7 +1878,7 @@ async function onImageFileChange(field, event) {
     const dataUrl = await readImageFileAsDataUrl(file);
     setFieldValue(field, dataUrl);
   } catch {
-    ElMessage.error("图片读取失败，请重试");
+    PdMessage.error("图片读取失败，请重试");
   } finally {
     input.value = "";
   }
@@ -2118,7 +2123,7 @@ function setTableJsonPropValue(key, value, label) {
       const parsed = JSON.parse(source);
 
       if (!Array.isArray(parsed)) {
-        ElMessage.error("列定义必须是数组 JSON");
+        PdMessage.error("列定义必须是数组 JSON");
         return false;
       }
 
@@ -2129,7 +2134,7 @@ function setTableJsonPropValue(key, value, label) {
         footerData: normalizeTableFooterData(selectedObject.value?.props?.footerData, nextColumns),
       });
     } catch {
-      ElMessage.error(`${label} 不是有效 JSON`);
+      PdMessage.error(`${label} 不是有效 JSON`);
       return false;
     }
 
@@ -2142,7 +2147,7 @@ function setTableJsonPropValue(key, value, label) {
     try {
       JSON.parse(source);
     } catch {
-      ElMessage.error(`${label} 不是有效 JSON`);
+      PdMessage.error(`${label} 不是有效 JSON`);
       return false;
     }
   }
@@ -2207,7 +2212,7 @@ function reorderSelectedObject(action) {
   }
 
   if (!documentStore.reorderObject(selectedObject.value.id, action)) {
-    ElMessage.warning("当前元素已锁定，无法调整层级。");
+    PdMessage.warning("当前元素已锁定，无法调整层级。");
   }
 }
 
@@ -2218,9 +2223,9 @@ async function copySelectedObjectId() {
 
   try {
     await navigator.clipboard.writeText(selectedObject.value.id);
-    ElMessage.success("ID 已复制");
+    PdMessage.success("ID 已复制");
   } catch {
-    ElMessage.error("复制失败");
+    PdMessage.error("复制失败");
   }
 }
 
@@ -2516,7 +2521,7 @@ function updateTableColumn(field, index, prop, value) {
     const duplicated = columns.some((column, columnIndex) => columnIndex !== index && column.key === candidateKey);
 
     if (duplicated) {
-      ElMessage.error("字段 key 不能重复");
+      PdMessage.error("字段 key 不能重复");
       return;
     }
 
@@ -2862,7 +2867,7 @@ function normalizeFieldValue(field, value) {
   try {
     return JSON.parse(source);
   } catch (error) {
-    ElMessage.error(`${field.label} 不是有效 JSON`);
+    PdMessage.error(`${field.label} 不是有效 JSON`);
     return Symbol.for("invalid-json");
   }
 }
@@ -2901,7 +2906,7 @@ function updateSelectedObject(field, patch) {
   const updated = documentStore.updateObjectProps(selectedObject.value.id, patch);
   if (!updated) {
     setFieldError(field, "当前元素已锁定，请先解除锁定后再编辑。");
-    ElMessage.warning("当前元素已锁定，请先解除锁定后再编辑。");
+    PdMessage.warning("当前元素已锁定，请先解除锁定后再编辑。");
   }
   return updated;
 }
@@ -3006,21 +3011,21 @@ async function runFieldAction(action) {
       if (executeDeleteSelectedObjects([objectId])) {
         selectionStore.clearSelection();
       } else {
-        ElMessage.warning("当前元素已锁定，无法删除。");
+        PdMessage.warning("当前元素已锁定，无法删除。");
       }
       break;
     case "saveAsTemplate":
       try {
-        const { value } = await ElMessageBox.prompt("输入元素预设名称", "保存为元素预设", {
+        const { value } = await PdMessageBox.prompt("输入元素预设名称", "保存为元素预设", {
           inputValue: selectedObject.value.name || "元素预设",
           inputPattern: /\S/,
           inputErrorMessage: "请输入预设名称",
         });
         await presetRepository.create({ name: value, element: selectedObject.value });
-        ElMessage.success("元素预设已保存，可从顶部“预设”打开并插入。");
+        PdMessage.success("元素预设已保存，可从顶部“预设”打开并插入。");
       } catch (error) {
         if (error !== "cancel" && error !== "close") {
-          ElMessage.error(error?.message || "保存元素预设失败");
+          PdMessage.error(error?.message || "保存元素预设失败");
         }
       }
       break;
@@ -3579,31 +3584,28 @@ function executeDeleteSelectedObjects(objectIds) {
   border-radius: 6px;
 }
 
-:deep(.element-properties-panel .el-input-number),
-:deep(.element-properties-panel .el-input),
-:deep(.element-properties-panel .el-textarea),
-:deep(.element-properties-panel .el-select) {
+.element-properties-panel :deep(.pd-input-number),
+.element-properties-panel :deep(.pd-input),
+.element-properties-panel :deep(.pd-select) {
   width: 100%;
 }
 
-:deep(.element-properties-panel .el-input-number),
-:deep(.element-properties-panel .el-input__wrapper),
-:deep(.element-properties-panel .el-textarea__inner),
-:deep(.element-properties-panel .el-select__wrapper) {
+.element-properties-panel :deep(.pd-input-number),
+.element-properties-panel :deep(.pd-input),
+.element-properties-panel :deep(.pd-select) {
   border-radius: var(--pd-radius-control);
-  box-shadow: inset 0 0 0 1px var(--pd-border);
 }
 
-:deep(.element-properties-panel__code-input .el-textarea__inner) {
+.element-properties-panel__code-input :deep(.pd-input__control--textarea) {
   font-family: "Cascadia Code", "Consolas", "SFMono-Regular", monospace;
   line-height: 1.5;
 }
 
-:deep(.element-properties-panel--table .el-input-number),
-:deep(.element-properties-panel--table .el-input__wrapper),
-:deep(.element-properties-panel--table .el-textarea__inner),
-:deep(.element-properties-panel--table .el-select__wrapper) {
-  box-shadow: inset 0 0 0 1px #d1d5db;
+.element-properties-panel--table :deep(.pd-input-number),
+.element-properties-panel--table :deep(.pd-input),
+.element-properties-panel--table :deep(.pd-select) {
+  border-color: #d1d5db;
 }
 </style>
+
 

@@ -1,13 +1,9 @@
 <template>
-  <el-dialog
+  <PdDialog
     class="table-code-editor-dialog"
     :model-value="visible"
-    :append-to-body="true"
     :close-on-click-modal="false"
-    :destroy-on-close="true"
     width="min(1280px, calc(100vw - 48px))"
-    top="24px"
-    @closed="emit('cancel')"
     @update:model-value="onDialogVisibleChange"
   >
     <template #header>
@@ -26,15 +22,17 @@
 
     <template #footer>
       <div class="table-code-editor-dialog__footer">
-        <el-button @click="emit('cancel')">取消</el-button>
-        <el-button type="primary" @click="emit('save')">保存</el-button>
+        <PdButton @click="emit('cancel')">取消</PdButton>
+        <PdButton type="primary" @click="emit('save')">保存</PdButton>
       </div>
     </template>
-  </el-dialog>
+  </PdDialog>
 </template>
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import PdButton from "../../ui/primitives/PdButton.vue";
+import PdDialog from "../../ui/primitives/PdDialog.vue";
 import { basicSetup } from "codemirror";
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
@@ -245,20 +243,6 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-}
-
-:deep(.table-code-editor-dialog .el-dialog) {
-  border-radius: 18px;
-}
-
-:deep(.table-code-editor-dialog .el-dialog__header) {
-  margin-right: 0;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #edf2f7;
-}
-
-:deep(.table-code-editor-dialog .el-dialog__body) {
-  padding-top: 18px;
 }
 
 :deep(.table-code-editor-dialog .cm-editor) {

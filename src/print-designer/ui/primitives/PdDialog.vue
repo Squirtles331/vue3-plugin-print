@@ -56,7 +56,9 @@ onBeforeUnmount(() => {
     <div v-if="modelValue" class="pd-dialog" role="dialog" aria-modal="true" @click.self="onBackdropClick">
       <section class="pd-dialog__panel" :style="panelStyle">
         <header class="pd-dialog__header">
-          <h2 class="pd-dialog__title">{{ title }}</h2>
+          <slot name="header">
+            <h2 class="pd-dialog__title">{{ title }}</h2>
+          </slot>
           <PdButton text size="small" aria-label="关闭" @click="closeDialog">x</PdButton>
         </header>
         <div class="pd-dialog__body">

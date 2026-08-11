@@ -18,8 +18,8 @@
 
 ## 4. Migrate panels and dense controls
 
-- [ ] 4.1 Replace Element Plus usage in the pages, layers, insert, data, view settings, history, page settings, and inspector panels.
-- [ ] 4.2 Replace Element Plus usage in the element properties, table editor, and other form-heavy editor dialogs.
+- [x] 4.1 Replace Element Plus usage in the pages, layers, insert, data, view settings, history, page settings, and inspector panels.
+- [x] 4.2 Replace Element Plus usage in the element properties, table editor, and other form-heavy editor dialogs.
 - [ ] 4.3 Remove `@element-plus/icons-vue` imports from all source modules and swap them to the internal icon system.
 
 ## 5. Package, tests, and release contract

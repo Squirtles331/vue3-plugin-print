@@ -1,11 +1,9 @@
 <template>
-  <el-dialog
+  <PdDialog
     class="create-table-dialog"
     :model-value="visible"
-    :append-to-body="true"
     :close-on-click-modal="false"
     width="384px"
-    top="12vh"
     @update:model-value="onDialogVisibleChange"
   >
     <template #header>
@@ -17,34 +15,39 @@
     <div class="create-table-dialog__body">
       <div class="create-table-dialog__field">
         <span>表格类型</span>
-        <el-radio-group v-model="mode" class="create-table-dialog__radio-group">
-          <el-radio :value="TABLE_INSERT_MODES.SAMPLE">使用带测试数据的表格</el-radio>
-          <el-radio :value="TABLE_INSERT_MODES.CUSTOM">自定义表格</el-radio>
-        </el-radio-group>
+        <PdRadioGroup v-model="mode" class="create-table-dialog__radio-group">
+          <PdRadio :value="TABLE_INSERT_MODES.SAMPLE">使用带测试数据的表格</PdRadio>
+          <PdRadio :value="TABLE_INSERT_MODES.CUSTOM">自定义表格</PdRadio>
+        </PdRadioGroup>
       </div>
 
       <label class="create-table-dialog__field">
         <span>列数</span>
-        <el-input-number v-model="columnCount" :min="1" :step="1" controls-position="right" />
+        <PdInputNumber v-model="columnCount" :min="1" :step="1" />
       </label>
 
       <label class="create-table-dialog__field">
         <span>行数</span>
-        <el-input-number v-model="rowCount" :min="1" :step="1" controls-position="right" />
+        <PdInputNumber v-model="rowCount" :min="1" :step="1" />
       </label>
     </div>
 
     <template #footer>
       <div class="create-table-dialog__footer">
-        <el-button @click="emit('cancel')">取消</el-button>
-        <el-button type="primary" @click="confirm">确认</el-button>
+        <PdButton @click="emit('cancel')">取消</PdButton>
+        <PdButton type="primary" @click="confirm">确认</PdButton>
       </div>
     </template>
-  </el-dialog>
+  </PdDialog>
 </template>
 
 <script setup>
 import { ref, watch } from "vue";
+import PdButton from "../../ui/primitives/PdButton.vue";
+import PdDialog from "../../ui/primitives/PdDialog.vue";
+import PdInputNumber from "../../ui/primitives/PdInputNumber.vue";
+import PdRadio from "../../ui/primitives/PdRadio.vue";
+import PdRadioGroup from "../../ui/primitives/PdRadioGroup.vue";
 import {
   DEFAULT_TABLE_INSERT_COLUMN_COUNT,
   DEFAULT_TABLE_INSERT_MODE,
@@ -140,20 +143,7 @@ watch(
   gap: 10px;
 }
 
-:deep(.create-table-dialog .el-dialog) {
-  border-radius: 12px;
-}
-
-:deep(.create-table-dialog .el-dialog__body) {
-  padding-top: 8px;
-}
-
-:deep(.create-table-dialog .el-input-number) {
-  width: 100%;
-}
-
-:deep(.create-table-dialog .el-input-number),
-:deep(.create-table-dialog .el-input__wrapper) {
+.create-table-dialog :deep(.pd-input-number) {
   width: 100%;
 }
 </style>
