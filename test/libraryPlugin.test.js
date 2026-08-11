@@ -43,6 +43,14 @@ test("isolates template state for multiple mounted designers", async () => {
   second.unmount();
 });
 
+test("exposes a readiness promise for host integration", async () => {
+  const wrapper = mount(PrintTemplateStudio, { props: { storageKey: "library-ready", height: 320 }, attachTo: document.body });
+  const editor = await wrapper.vm.whenReady();
+
+  assert.equal(typeof editor.getTemplateDocument, "function");
+  wrapper.unmount();
+});
+
 test("forwards repository failures through the component error event", async () => {
   const repository = {
     async list() { return []; },

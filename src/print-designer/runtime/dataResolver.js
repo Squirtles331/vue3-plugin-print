@@ -106,7 +106,10 @@ export function applyConstrainedTableTransform(rows, transform) {
     };
   }
 
-  return { rows: source, issues: [{ message: `Unsupported table transform: ${transform.type || "unknown"}.`, severity: "error" }] };
+  return {
+    rows: source,
+    issues: [{ code: "invalid-table-transform", message: `Unsupported table transform: ${transform.type || "unknown"}.`, severity: "error" }],
+  };
 }
 
 function resolveTable(element, runtimeData) {
@@ -118,6 +121,7 @@ function resolveTable(element, runtimeData) {
 
   if (props.customScript) {
     issues.push({
+      code: "disabled-table-script",
       message: "Custom table scripts are disabled at runtime. Use the declarative transform configuration instead.",
       severity: "error",
     });
@@ -141,6 +145,7 @@ function resolveMultiLabel(element, runtimeData) {
   return {
     rows: result.value,
     status: result.status,
+    path: result.path,
   };
 }
 
@@ -159,6 +164,7 @@ export function resolveRuntimeTemplate(document, runtimeData = {}) {
         next.runtime.value = resolveElementValue(element, runtimeData);
         if (next.runtime.value.status === "missing") {
           issues.push({
+            code: "missing-binding",
             path: `pages[${pageIndex}].elements[${elementIndex}].variable`,
             elementId: element.id,
             binding: next.runtime.value.path,
@@ -172,6 +178,7 @@ export function resolveRuntimeTemplate(document, runtimeData = {}) {
         next.runtime.table.issues.forEach((issue) => issues.push({ ...issue, path: `element:${element.id}` }));
         if (next.runtime.table.dataStatus === "missing") {
           issues.push({
+            code: "missing-table-data",
             path: `pages[${pageIndex}].elements[${elementIndex}].props.dataVariable`,
             elementId: element.id,
             binding: next.runtime.table.dataPath,
@@ -181,6 +188,7 @@ export function resolveRuntimeTemplate(document, runtimeData = {}) {
         }
         if (next.runtime.table.footerStatus === "missing") {
           issues.push({
+            code: "missing-table-footer-data",
             path: `pages[${pageIndex}].elements[${elementIndex}].props.footerDataVariable`,
             elementId: element.id,
             binding: next.runtime.table.footerPath,
@@ -193,6 +201,7 @@ export function resolveRuntimeTemplate(document, runtimeData = {}) {
         next.runtime.multiLabel = resolveMultiLabel(element, runtimeData);
         if (next.runtime.multiLabel.status === "missing") {
           issues.push({
+            code: "missing-label-data",
             path: `pages[${pageIndex}].elements[${elementIndex}].props.dataVariable`,
             elementId: element.id,
             binding: next.runtime.multiLabel.path,

@@ -43,6 +43,7 @@
             <li v-for="issue in issueList" :key="issue.key" :class="`is-${issue.tone}`">
               <strong>{{ issue.scope }}</strong>
               <span>{{ issue.message }}</span>
+              <PdButton v-if="issue.elementId" size="small" native-type="button" @click="emit('focus-issue', issue)">定位元素</PdButton>
             </li>
           </ul>
         </section>
@@ -90,8 +91,12 @@ const props = defineProps({
     type: Object,
     default: () => ({}),
   },
+  printPolicy: {
+    type: Object,
+    default: () => ({}),
+  },
 });
-const emit = defineEmits(["update:visible", "update:runtimeData", "print-error"]);
+const emit = defineEmits(["update:visible", "update:runtimeData", "print-error", "focus-issue"]);
 const runtimeDataText = ref("{}");
 
 watch(
@@ -116,10 +121,10 @@ const runtimeData = computed(() => parseResult.value.value);
 const parseError = computed(() => parseResult.value.error);
 const preflight = computed(() => {
   if (parseError.value) {
-    return validatePrintRuntime(props.document, {});
+    return validatePrintRuntime(props.document, {}, props.printPolicy);
   }
 
-  return validatePrintRuntime(props.document, runtimeData.value);
+  return validatePrintRuntime(props.document, runtimeData.value, props.printPolicy);
 });
 const documentValid = computed(() => preflight.value.templateIssues.every((issue) => issue.severity !== "error"));
 const validatedDocument = computed(() => preflight.value.document);
@@ -193,12 +198,14 @@ const issueList = computed(() => [
     scope: "模板",
     tone: issue.severity === "error" ? "danger" : "warning",
     message: issue.message,
+    elementId: issue.elementId,
   })),
   ...runtimeIssues.value.map((issue, index) => ({
     key: `runtime-${index}-${issue.path || ""}`,
     scope: "运行",
     tone: issue.severity === "error" ? "danger" : "warning",
     message: issue.message,
+    elementId: issue.elementId,
   })),
 ]);
 const printHint = computed(() => (canPrint.value ? "预检已通过，可以打开浏览器打印。" : "修复阻断项后即可打印。"));

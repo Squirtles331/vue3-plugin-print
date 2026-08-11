@@ -92,10 +92,7 @@
         </label>
         <label class="page-settings-panel__field">
           <span>单位</span>
-          <PdSelect :model-value="unit" @change="documentStore.setUnit">
-            <PdOption label="毫米" value="mm" />
-            <PdOption label="像素" value="px" />
-          </PdSelect>
+          <span class="page-settings-panel__unit">毫米 (mm)</span>
         </label>
       </div>
 
@@ -429,6 +426,15 @@ function onHeightChange(value) {
   font-size: 12px;
   font-weight: 500;
   color: #374151;
+}
+
+.page-settings-panel__unit {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  padding: 6px 8px;
+  border: 1px solid var(--pd-border);
+  background: #f8fafc;
 }
 
 .page-settings-panel__toggle,

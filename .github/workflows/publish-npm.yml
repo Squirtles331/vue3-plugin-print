@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - "v*"
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -27,6 +26,10 @@ jobs:
         run: npm ci
       - name: Verify package
         run: npm run verify
+      - name: Verify release tag matches package version
+        run: npm run verify:release-tag
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
       - name: Publish public package with npm token
         run: npm publish --access public
         env:

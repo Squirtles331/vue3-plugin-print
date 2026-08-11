@@ -43,7 +43,7 @@
             :selected-ids="selectedIds"
             @select="selectionStore.select($event)"
           />
-          <BindingPanel v-else-if="activeRightPanel === 'bindings'" :variables="variables" />
+          <BindingPanel v-else-if="activeRightPanel === 'bindings'" :variables="variables" @bind="emit('bind', $event)" />
           <HistoryPanel v-else />
         </div>
       </div>
@@ -67,6 +67,7 @@ import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorSelectionStore } from "../stores/selectionStore";
 import { useEditorShellStore } from "../stores/shellStore";
 
+const emit = defineEmits(["bind"]);
 const shellStore = useEditorShellStore();
 const documentStore = useEditorDocumentStore();
 const selectionStore = useEditorSelectionStore();

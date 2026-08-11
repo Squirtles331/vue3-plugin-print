@@ -1,20 +1,31 @@
-# v0.1 发布检查清单
+# v0.2 发布检查清单
 
-## 源码与合规
+本清单区分代码能自动证明的事项与必须由维护者承担的发布责任。全部项目完成前，不得创建发布标签。
 
-- [ ] 维护者已完成提交历史和来源复核，并确认仓库没有参考项目的源码、模板 JSON、文案、Logo、截图或其他品牌资产。
-- [ ] `LICENSE`、`package.json` 的仓库地址和 GitHub Pages 地址已在迁移后的 GitHub 仓库中复核；若 GitHub 所有者不是 `songtonngxue`，先更新这些地址。
-- [ ] 新增依赖已记录在 `THIRD_PARTY_NOTICES.md`，并完成许可证检查。
+## 版本、来源与合规（维护者）
 
-## 自动化检查
+- [ ] 确认 `package.json` 与 `package-lock.json` 版本均为本次发布版本（当前为 `0.2.0`），发布标签必须为 `v0.2.0`。
+- [ ] 复核提交历史、源码、模板、文案、Logo、截图和其他品牌资产的来源；不得包含未经授权的参考项目内容。
+- [ ] 复核 `LICENSE`、`THIRD_PARTY_NOTICES.md`、依赖许可证，以及 `package.json` 中的仓库、问题反馈和首页链接。
+- [ ] 确认本次变更已在 `CHANGELOG.md` 中说明，并包含严格打印预检与 `allowIncomplete` 的升级提示。
 
-- [ ] `npm ci`
-- [ ] `npm run verify`
-- [ ] GitHub Actions 的 Continuous Integration 工作流通过。
-- [ ] GitHub Actions 的 Deploy GitHub Pages 工作流通过，且仓库 Settings 中 Pages 的发布源设为 GitHub Actions。
+## 自动化证据（维护者执行，CI 必须通过）
 
-## 手工验收与发布
+- [ ] 在干净环境运行 `npm ci`。
+- [ ] 运行 `npm run verify`；它会执行代码规范、单元/性能测试、Pages 路径检查、演示与库构建、包内容检查、打包消费者检查和生产依赖审计。
+- [ ] 运行 `RELEASE_TAG=v0.2.0 npm run verify:release-tag`，确认标签与包版本一致；也确认错误标签会被拒绝。
+- [ ] Continuous Integration 工作流在待发布提交上通过。
+- [ ] Deploy GitHub Pages 工作流通过，且仓库 Pages 发布源已设为 GitHub Actions。
 
-- [ ] 按 [浏览器打印验收](browser-print-acceptance.md) 在 Chrome 和 Edge 完成验证。
-- [ ] 更新 `CHANGELOG.md` 的发布日期与 GitHub Release 说明。
-- [ ] 创建并推送 `v0.1.0` 标签，发布 GitHub Release，附上演示链接、支持范围、已知限制和反馈入口。
+## 浏览器与设备验收（维护者）
+
+- [ ] 按 [浏览器与打印机验收](browser-print-acceptance.md) 在 Chrome、Edge 和代表性物理打印机上完成验证并保存记录。
+- [ ] 确认模板安全区是作者约束，而不是绕过打印机物理不可打印边距的承诺；如需调整，已在模板中完成并记录。
+
+## 发布与发布后核验（维护者）
+
+- [ ] 确认 npm 发布账户拥有该公开包权限，`NPM_TOKEN` 已作为仓库机密配置；不得在日志、提交或文档中暴露令牌。
+- [ ] 从已验证的提交创建并推送 `v0.2.0` 标签。发布工作流会在发布前拒绝标签与 `package.json` 版本不一致的情况。
+- [ ] 监控 npm 发布工作流成功完成；安装已发布包到空项目中，验证 `import`、`require`、`style.css` 和类型声明入口。
+- [ ] 创建 GitHub Release，附演示链接、支持范围、已知限制、升级提示与反馈入口。
+- [ ] 更新 [预发布验证记录](release-validation.md)，写入发布日期、CI 链接和浏览器/设备验收结果。

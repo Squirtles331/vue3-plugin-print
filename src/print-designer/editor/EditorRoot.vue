@@ -14,11 +14,11 @@
       />
 
       <div class="editor-root__body">
-        <LeftDock />
+        <LeftDock @bind="onBindPath" />
         <div class="editor-root__workspace-shell">
           <WorkspaceRoot />
         </div>
-        <RightPanelDock />
+        <RightPanelDock @bind="onBindPath" />
       </div>
 
       <StatusBar v-if="statusbarVisible" />
@@ -49,7 +49,9 @@
       v-model:visible="previewVisible"
       :document="previewDocument"
       :initial-data="runtimeData"
+      :print-policy="activePrintPolicy"
       @update:runtime-data="setRuntimeData"
+      @focus-issue="onFocusIssue"
       @print-error="onPrintError"
     />
   </div>
@@ -74,7 +76,8 @@ import { instantiateStarterTemplate, listStarterTemplates } from "../template/te
 import { downloadTemplateInterchange, parseTemplateInterchange } from "../template/templateInterchange.js";
 import { createPublishReadyTemplatePayload, serializeTemplateDocument } from "../template/templateDocument.js";
 import { validatePrintRuntime } from "../runtime/preflight.js";
-import { createRemoveObjectsCommand } from "./commands/documentCommands.js";
+import { collectRuntimeBindingPaths } from "../runtime/bindingPaths.js";
+import { createRemoveObjectsCommand, createUpdateObjectPropsCommand } from "./commands/documentCommands.js";
 import { executeEditorCommand } from "./commands/executeCommand";
 import TemplateLibraryDialog from "../template/TemplateLibraryDialog.vue";
 import StarterTemplateDialog from "../template/StarterTemplateDialog.vue";
@@ -87,6 +90,7 @@ const RuntimePreviewDialog = defineAsyncComponent(() => import("../runtime/Runti
 const props = defineProps({
   repository: { type: Object, default: null },
   presetRepository: { type: Object, default: null },
+  printPolicy: { type: Object, default: () => ({}) },
 });
 const emit = defineEmits(["template-change", "update:runtimeData", "error"]);
 
@@ -99,6 +103,7 @@ const historyStore = useEditorHistoryStore();
 const selectionStore = useEditorSelectionStore();
 const repository = props.repository || createLocalTemplateRepository();
 const presetRepository = props.presetRepository || createLocalElementPresetRepository();
+const activePrintPolicy = ref(props.printPolicy);
 const templateLibraryVisible = ref(false);
 const templateLibraryLoading = ref(false);
 const savedTemplates = ref([]);
@@ -398,13 +403,25 @@ function onPreview() {
   previewVisible.value = true;
 }
 
+function onFocusIssue(issue) {
+  const elementId = issue?.elementId;
+  const element = elementId ? documentStore.objectsById[elementId] : null;
+  if (!element) {
+    return;
+  }
+  documentStore.setCurrentPage(element.pageId);
+  selectionStore.select(elementId);
+  selectionStore.focusedPageId = element.pageId;
+  shellStore.openRightDock("properties");
+}
+
 async function onPrint() {
   const result = currentTemplateResult();
   if (!result.valid) {
     PdMessage.error(result.issues[0]?.message || "模板校验失败");
     return;
   }
-  const preflight = validatePrintRuntime(result.document, runtimeData.value);
+  const preflight = validatePrintRuntime(result.document, runtimeData.value, activePrintPolicy.value);
   if (!preflight.valid) {
     const issue = preflight.issues.find((item) => item.severity === "error") || preflight.issues[0];
     const error = new Error(issue?.message || "打印预检失败");
@@ -430,7 +447,41 @@ function onExportPdf() {
 
 function setRuntimeData(data) {
   previewStore.setRuntimeData(data);
+  documentStore.setVariables(collectRuntimeBindingPaths(previewStore.runtimeData));
   emit("update:runtimeData", previewStore.runtimeData);
+}
+
+function setPrintPolicy(policy) {
+  activePrintPolicy.value = policy && typeof policy === "object" ? { ...policy } : {};
+}
+
+function bindingPatch(element, path) {
+  if (["text", "image", "barcode", "qrcode"].includes(element?.type)) {
+    return { variable: path };
+  }
+  if (["table", "multiLabel"].includes(element?.type)) {
+    return { props: { ...(element.props || {}), dataVariable: path } };
+  }
+  return null;
+}
+
+function onBindPath(path) {
+  const [selectedId] = selectedIds.value;
+  if (selectedIds.value.length !== 1 || !selectedId) {
+    PdMessage.warning("请先选择一个可绑定的元素。");
+    return;
+  }
+
+  const element = documentStore.objectsById[selectedId];
+  const patch = bindingPatch(element, path);
+  if (!patch) {
+    PdMessage.warning("当前元素不支持运行数据绑定。");
+    return;
+  }
+
+  executeEditorCommand(historyStore, createUpdateObjectPropsCommand(documentStore, selectedId, patch));
+  shellStore.openRightDock("properties");
+  PdMessage.success(`已绑定字段：${path}`);
 }
 
 function loadTemplateDocument(document) {
@@ -488,7 +539,7 @@ onBeforeUnmount(() => {
   window.removeEventListener("keydown", onWindowKeyDown);
 });
 
-defineExpose({ setRuntimeData, getTemplateDocument, getPublishReadyTemplatePayload, loadTemplateDocument, print: onPrint });
+defineExpose({ setRuntimeData, setPrintPolicy, getTemplateDocument, getPublishReadyTemplatePayload, loadTemplateDocument, print: onPrint });
 </script>
 
 <style scoped lang="scss">

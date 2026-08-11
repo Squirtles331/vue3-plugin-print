@@ -23,7 +23,7 @@
     </div>
 
     <div class="binding-panel__body">
-      <DataPanel :variables="variables" :search-query="searchQuery" variant="embedded" />
+      <DataPanel :variables="variables" :search-query="searchQuery" variant="embedded" @select="emit('bind', $event)" />
     </div>
   </div>
 </template>
@@ -40,6 +40,7 @@ const props = defineProps({
     default: () => [],
   },
 });
+const emit = defineEmits(["bind"]);
 
 const searchQuery = ref("");
 const variableCount = computed(() => props.variables.length);

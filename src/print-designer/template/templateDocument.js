@@ -263,7 +263,7 @@ function normalizeSource(source) {
     id: text(rawTemplate.id || meta.id, newId()),
     meta: {
       name: text(meta.name ?? rawTemplate.name, "Untitled print template"),
-      unit: text(meta.unit, "mm"),
+      unit: "mm",
       createdAt: text(meta.createdAt, now),
       updatedAt: text(meta.updatedAt, now),
     },
@@ -382,6 +382,10 @@ export function migrateTemplateDocument(source) {
   }
 
   const issues = version === TEMPLATE_SCHEMA_VERSION ? [] : [{ path: "schemaVersion", message: "A legacy template was normalized to schema version 1.", severity: "warning" }];
+  const rawTemplate = source?.template && typeof source.template === "object" ? source.template : source;
+  if (rawTemplate?.meta?.unit && rawTemplate.meta.unit !== "mm") {
+    issues.push({ path: "meta.unit", message: "Template geometry is stored in millimetres; the legacy unit metadata was normalized to mm.", severity: "warning" });
+  }
   findExecutableLegacyFields(source, issues);
   return {
     document: normalizeSource(source),

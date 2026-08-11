@@ -87,6 +87,7 @@ function handleError({ scope, error, message }) {
 | `repository` | 可选模板仓储，覆盖默认浏览器本地存储。 |
 | `storage-key` | 默认本地仓储的命名空间；同页多实例必须使用不同值。 |
 | `height` | 编辑器高度，默认 `720px`，宽度自动填满宿主容器。 |
+| `print-policy` | 严格打印预检策略，默认阻止不完整数据、空图片/码和越出安全边距的元素；仅在需要时传入 `{ allowIncomplete: true }` 放行。 |
 | `template-change` | 模板内容变化时触发。 |
 | `error` | 仓储、模板校验或打印预检失败时触发，载荷为 `{ scope, error, message }`。 |
 | `ready` | 编辑器实例挂载完成后触发。 |
@@ -100,6 +101,7 @@ function handleError({ scope, error, message }) {
 | `getPublishReadyTemplatePayload()` | 获取适合保存到业务系统的发布载荷。 |
 | `setRuntimeData(data)` | 设置预览和打印数据。 |
 | `print(data?)` | 使用当前模板和传入数据执行浏览器打印。 |
+| `whenReady()` | 返回编辑器挂载完成后的 Promise，适合需要在挂载前协调实例调用的宿主。 |
 
 ## 仓储与多实例
 

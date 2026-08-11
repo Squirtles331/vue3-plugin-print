@@ -1,26 +1,38 @@
-# v0.1 预发布验证记录
+# v0.2 预发布验证记录
 
-日期：2026-08-09
+日期：2026-08-11
 
-## 已通过的自动化检查
+## 本地自动化证据
 
-- 隔离临时目录中的 `npm ci --registry=https://registry.npmjs.org` 成功完成，验证当前 `package-lock.json` 可复现安装。
-- `npm run lint` 通过。
-- `npm test` 通过，覆盖本地模板删除/重置、组件确认事件、GitHub Pages 路径和打印 iframe 隔离等关键行为。
-- `npm run test:performance` 通过，长表格分页预计算满足当前性能门槛。
-- `npm run test:pages-build` 通过，GitHub Actions 环境下的构建产物使用项目 Pages 资源路径。
-- `npm run build` 通过。
-- `npm audit --omit=dev --audit-level=high --registry=https://registry.npmjs.org` 返回 0 个高危运行时漏洞。
-- 源码扫描未发现 `0ldFive`、`Vue-Print-Designer`、`printdot`、`AGPL-3.0` 标识，也未发现 `eval` 或 `new Function` 执行入口。
-- 本地 Markdown 链接检查与 `git diff --check` 通过。
+以下命令由本次发布候选在本地执行；发布前必须在干净 CI 环境复核。
 
-## 已知非阻塞事项
+- `npm run lint`
+- `npm test`
+- `npm run test:performance`
+- `npm run test:pages-build`
+- `npm run build:demo`
+- `npm run build:library`
+- `npm run test:package`
+- `npm run test:consumer`
+- `npm run docs:build`
+- `npm run verify`
+- `RELEASE_TAG=v0.2.0 npm run verify:release-tag`
 
-- 项目已经移除 Element Plus 等第三方 UI 组件库依赖；编辑器 UI 由内部 primitives 提供。后续仍需持续关注编辑器代码块体积和运行时依赖体积。
-- 当前工作区的直接 `npm ci` 可能因已有 esbuild 进程锁定 Windows 可执行文件而失败；隔离目录中的干净安装已通过。发布前请关闭本地开发服务器后再执行一次工作区 `npm ci`。
+结果：以上命令于 2026-08-11 在本工作区通过。`npm run verify` 的生产依赖审计报告 0 个漏洞；打包消费者检查会安装生成的 tarball，并验证 ESM、CommonJS、样式及类型声明入口。构建会提示编辑器代码块超过 500 kB，但不影响构建、打包或消费者安装；这是一项后续性能优化，不是本次发布阻塞。
 
-## 标签前仍需由维护者完成
+发布工作流在调用 `npm publish` 前执行同一版本标签校验；另已确认错误标签会在发布前被拒绝。
 
-- 在最终 GitHub 仓库启用 Pages 的 GitHub Actions 发布源，并确认 `Squirtles331/vue3-plugin-print` 地址；若所有者或仓库名不同，更新 `package.json` 和 README 中的链接。
-- 在最新桌面版 Chrome 和 Edge 完成 [浏览器打印验收](browser-print-acceptance.md)，包含实际打印机纸张校准。
-- 由有权审核者完成 [发布检查清单](release-checklist.md) 中的来源和许可证复核，然后创建 `v0.1.0` 标签与 GitHub Release。
+## 本次升级要点
+
+- 默认打印预检现在会阻止缺失数据绑定、越过模板安全区、空机器码和不可加载图片；旧模板必须修复问题，或仅在明确接受不完整输出时使用 `printPolicy: { allowIncomplete: true }`。
+- 打印 CSS 采用模板纸张尺寸；模板边距作为作者安全区，不能消除打印机物理不可打印边距。
+- 数据面板会展示运行时数据路径，可直接绑定到当前选中元素；预览问题可定位到对应元素。
+- 多页表格只会重复标记了 `repeatPerPage` 的元素，并会跳过没有行的后续表格片段。
+
+## 发布前仍需由维护者完成
+
+- 在待发布提交的 GitHub Actions 中确认 CI、Pages 和 npm 发布工作流权限配置。
+- 依照 [浏览器与打印机验收](browser-print-acceptance.md) 在当前桌面 Chrome、Edge 和代表性物理打印机完成验收；本地单元测试不能替代这一步。
+- 完成 [发布检查清单](release-checklist.md) 的来源、许可证、npm 权限、标签、GitHub Release 和发布后空项目安装检查。
+
+未完成上述人工事项前，本版本仅是“代码与自动化发布就绪”，尚不可声称已完成对外发布。

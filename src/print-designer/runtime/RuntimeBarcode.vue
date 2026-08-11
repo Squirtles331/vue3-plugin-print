@@ -1,7 +1,7 @@
 <template>
   <div class="runtime-barcode" :class="{ 'is-empty': !hasValue, 'has-error': error }" :data-runtime-status="runtimeStatus">
     <svg v-if="hasValue && !error" ref="svgRef" class="runtime-barcode__svg"></svg>
-    <span v-else>{{ error || placeholder }}</span>
+    <span v-else-if="mode !== 'print'">{{ error || placeholder }}</span>
     <small v-if="showValue && hasValue" :style="{ marginTop: `${Math.max(0, Math.min(40, Number(textMargin) || 0))}px`, fontSize: `${Math.max(6, Math.min(72, Number(textFontSize) || 10))}px` }">{{ value }}</small>
   </div>
 </template>
@@ -20,6 +20,7 @@ const props = defineProps({
   margin: { type: Number, default: 0 },
   textMargin: { type: Number, default: 2 },
   textFontSize: { type: Number, default: 10 },
+  mode: { type: String, default: "preview" },
 });
 
 const svgRef = ref(null);

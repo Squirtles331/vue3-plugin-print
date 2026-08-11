@@ -33,7 +33,7 @@
       @duplicate="onDuplicateLayer"
       @remove="onRemoveLayer"
     />
-    <DataPanel v-else :variables="variables" :search-query="searchQuery" />
+    <DataPanel v-else :variables="variables" :search-query="searchQuery" @select="emit('bind', $event)" />
   </section>
 </template>
 
@@ -73,6 +73,7 @@ const props = defineProps({
     default: "",
   },
 });
+const emit = defineEmits(["bind"]);
 
 const documentStore = useEditorDocumentStore();
 const dragStore = useEditorDragStore();

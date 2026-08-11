@@ -3,12 +3,20 @@
 import assert from "node:assert/strict";
 import { afterEach, test, vi } from "vitest";
 import { createElement } from "../src/print-designer/core/elementFactory.js";
-import { printRuntimeDocument } from "../src/print-designer/runtime/print.js";
+import { createPrintDocumentCss, printRuntimeDocument } from "../src/print-designer/runtime/print.js";
 import { createBlankTemplateDocument } from "../src/print-designer/template/templateDocument.js";
 
 afterEach(() => {
   vi.restoreAllMocks();
   document.querySelectorAll('iframe[title="Print template output"]').forEach((frame) => frame.remove());
+});
+
+test("print CSS uses the authored paper size with the full-sheet coordinate system", () => {
+  const template = createBlankTemplateDocument({
+    pageSettings: { paper: { widthMm: 100, heightMm: 150 } },
+  });
+
+  assert.match(createPrintDocumentCss(template), /@page \{ size: 100mm 150mm; margin: 0; \}/);
 });
 
 test("browser print prepares runtime-only output inside an isolated iframe", async () => {

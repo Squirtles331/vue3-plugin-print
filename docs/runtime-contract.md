@@ -14,6 +14,15 @@ Pass one JSON object through the exposed `setRuntimeData(data)` API. A binding p
 - `table.props.dataVariable` and `table.props.footerDataVariable` resolve row arrays. Column keys, widths, alignment, formatter descriptors, and all visual settings remain authored by the template and cannot be overwritten by runtime JSON.
 - `multiLabel.props.dataVariable` resolves an array into the configured grid.
 - Missing bindings render their token or an explicit missing-data message. Runtime never invents business rows or code values.
+- The editor derives searchable binding paths from the current runtime object, including sampled array-item paths. Select a compatible element and choose a path to create an undoable binding.
+
+## Print policy and geometry
+
+Browser output emits the authored global paper size through `@page` CSS. Template margins define the printable safe area rather than CSS content padding: absolute coordinates remain full-sheet coordinates, and strict preflight blocks printable elements that cross that area.
+
+`printPolicy.allowIncomplete` defaults to `false`. In the default strict mode, missing bound values or collections, empty printable images and machine codes, and safe-area violations block output. Set `allowIncomplete: true` only for intentionally incomplete stationery; print output remains blank rather than including authoring placeholders.
+
+The native browser dialog and printer driver still control physical non-printable margins, scale, and headers/footers. Use the authored paper size, 100%/actual size, and disabled browser headers/footers when calibrating a target device.
 
 ## Authoring capabilities
 
@@ -36,5 +45,7 @@ Pass one JSON object through the exposed `setRuntimeData(data)` API. A binding p
 
 - Arbitrary `customScript` execution is disabled at runtime. Supported declarative table transforms are `sort` and `filterEquals`; invalid transforms surface an error and do not fall back to mock data.
 - Preview and browser print share `RuntimeDocument` and the same pagination result. Browser print mounts this renderer in an isolated iframe.
+- Long-table fragments render the source page on the first page. Later fragments include the table and only elements marked `repeatPerPage`; shorter sibling tables are omitted rather than shown as empty placeholders.
+- The print iframe waits for copied stylesheets, fonts, machine codes, and image assets before opening the native dialog. Asset failures block the action.
 - PDF export, silent printing, cloud delivery, server rendering, and multi-user workflows are deliberately deferred from the first commercial release.
 - Release checks: run `npm test`, `npm run test:performance`, `npm run build`, scan dependencies/licenses, and complete legal provenance review described in `commercial-independence-audit.md`.

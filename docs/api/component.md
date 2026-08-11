@@ -11,6 +11,7 @@
 | `repository` | `object \| null` | `null` | 外部模板仓储。 |
 | `storageKey` | `string` | `default` | 本地仓储命名空间。 |
 | `height` | `string \| number` | `720` | 编辑器高度。 |
+| `printPolicy` | `object` | `{ allowIncomplete: false }` | 严格预检策略；仅在允许不完整输出时传入 `{ allowIncomplete: true }`。 |
 
 ### Emits
 
@@ -31,6 +32,7 @@
 | `getPublishReadyTemplatePayload()` | 获取发布载荷。 |
 | `setRuntimeData(data)` | 设置运行时数据。 |
 | `print(data?)` | 执行打印。 |
+| `whenReady()` | 返回编辑器挂载完成后的 Promise；宿主需要在挂载前调用实例方法时使用。 |
 
 ## 仓储接口
 

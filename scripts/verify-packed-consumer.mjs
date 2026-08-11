@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { resolve } from "node:path";
 
 const npmCli = process.env.npm_execpath;
@@ -47,6 +48,29 @@ try {
   assert.equal(existsSync(resolve(consumerRoot, "dist", "index.html")), true, "Packed consumer build did not produce index.html");
   const output = readFileSync(resolve(consumerRoot, "dist", "index.html"), "utf8");
   assert.match(output, /assets\//, "Packed consumer build did not emit application assets");
+
+  const installedPackageRoot = resolve(consumerRoot, "node_modules", "@squirtles331", "vue3-plugin-print");
+  const esmCheckFile = resolve(consumerRoot, "verify-esm-entry.mjs");
+  writeFileSync(esmCheckFile, [
+    'import plugin, { PrintTemplateStudio, createBlankTemplateDocument } from "@squirtles331/vue3-plugin-print";',
+    'if (typeof plugin !== "object" || typeof PrintTemplateStudio !== "object" || typeof createBlankTemplateDocument !== "function") {',
+    '  throw new Error("Packed ESM public entry is incomplete.");',
+    "}",
+  ].join("\n"));
+  execFileSync(process.execPath, [esmCheckFile], { cwd: consumerRoot, stdio: "inherit" });
+
+  const requireFromConsumer = createRequire(resolve(consumerRoot, "package.json"));
+  const cjsEntry = requireFromConsumer("@squirtles331/vue3-plugin-print");
+  for (const [format, entry] of [["CommonJS", cjsEntry]]) {
+    assert.equal(typeof entry.default, "object", `${format} entry must expose the plugin as its default export.`);
+    assert.equal(typeof entry.PrintTemplateStudio, "object", `${format} entry must expose PrintTemplateStudio.`);
+    assert.equal(typeof entry.createBlankTemplateDocument, "function", `${format} entry must expose createBlankTemplateDocument.`);
+  }
+
+  const declarations = readFileSync(resolve(installedPackageRoot, "dist", "index.d.ts"), "utf8");
+  for (const declaration of ["PrintTemplateStudio", "PrintPolicy", "whenReady", "allowIncomplete"]) {
+    assert.match(declarations, new RegExp(`\\b${declaration}\\b`), `Packed declarations must expose ${declaration}.`);
+  }
   console.log("Packed consumer build passed.");
 } finally {
   rmSync(temporaryRoot, { recursive: true, force: true });

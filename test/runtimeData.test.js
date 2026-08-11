@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "vitest";
 import { reactive } from "vue";
 import { applyConstrainedTableTransform, resolveDataPath, resolveRuntimeTemplate } from "../src/print-designer/runtime/dataResolver.js";
+import { collectRuntimeBindingPaths } from "../src/print-designer/runtime/bindingPaths.js";
 import { paginateRuntimeDocument } from "../src/print-designer/runtime/pagination.js";
 import { validatePrintRuntime } from "../src/print-designer/runtime/preflight.js";
 import { createBlankTemplateDocument } from "../src/print-designer/template/templateDocument.js";
@@ -121,4 +122,59 @@ test("table footer repeat is deterministic across generated pages", () => {
   assert.equal(result.pages.length, 2);
   assert.equal(result.pages[0].elements[0].runtime.table.footerRows.length, 1);
   assert.equal(result.pages[1].elements[0].runtime.table.footerRows.length, 0);
+});
+
+test("strict preflight blocks incomplete bindings and supports an explicit opt-out", () => {
+  const document = createBlankTemplateDocument({
+    pageSettings: { margin: { top: 0, right: 0, bottom: 0, left: 0 } },
+    pages: [{ id: "page-1", title: "Page 1", elements: [
+      { id: "order-number", type: "text", x: 10, y: 10, width: 50, height: 10, variable: "order.number", props: {}, style: {} },
+    ] }],
+  });
+
+  const strict = validatePrintRuntime(document, {});
+  const relaxed = validatePrintRuntime(document, {}, { allowIncomplete: true });
+
+  assert.equal(strict.valid, false);
+  assert.equal(strict.runtimeIssues.find((issue) => issue.code === "missing-binding").severity, "error");
+  assert.equal(relaxed.valid, true);
+  assert.equal(relaxed.runtimeIssues.find((issue) => issue.code === "missing-binding").severity, "warning");
+});
+
+test("strict preflight blocks printable elements outside the authored safe area", () => {
+  const document = createBlankTemplateDocument({
+    pages: [{ id: "page-1", title: "Page 1", elements: [
+      { id: "edge-title", type: "text", x: 0, y: 0, width: 20, height: 8, content: "At edge", props: {}, style: {} },
+    ] }],
+  });
+  const preflight = validatePrintRuntime(document, {});
+
+  assert.equal(preflight.valid, false);
+  assert.equal(preflight.runtimeIssues.find((issue) => issue.code === "outside-printable-area").elementId, "edge-title");
+});
+
+test("pagination keeps only marked elements and omits short table fragments", () => {
+  const tableProps = { columns: [{ key: "name" }], headerHeight: 8, rowHeight: 8, showFooter: false, autoPaginate: true };
+  const document = createBlankTemplateDocument({
+    pages: [{ id: "page-1", title: "Page 1", elements: [
+      { id: "long-table", type: "table", x: 10, y: 10, width: 80, height: 32, props: tableProps, runtime: { table: { rows: [{ name: "1" }, { name: "2" }, { name: "3" }, { name: "4" }], footerRows: [] } }, style: {} },
+      { id: "short-table", type: "table", x: 10, y: 50, width: 80, height: 32, props: tableProps, runtime: { table: { rows: [{ name: "only" }], footerRows: [] } }, style: {} },
+      { id: "first-page-note", type: "text", x: 10, y: 90, width: 40, height: 8, content: "First page", repeatPerPage: false, props: {}, style: {} },
+      { id: "repeated-header", type: "text", x: 10, y: 100, width: 40, height: 8, content: "Header", repeatPerPage: true, props: {}, style: {} },
+    ] }],
+  });
+  const result = paginateRuntimeDocument(document);
+  const secondPageIds = result.pages[1].elements.map((element) => element.id);
+
+  assert.equal(result.pages.length, 2);
+  assert.deepEqual(secondPageIds, ["long-table", "repeated-header"]);
+});
+
+test("derives safe binding paths from runtime JSON", () => {
+  const paths = collectRuntimeBindingPaths({ customer: { name: "Ada" }, items: [{ sku: "A-1" }] });
+
+  assert.ok(paths.includes("customer"));
+  assert.ok(paths.includes("customer.name"));
+  assert.ok(paths.includes("items"));
+  assert.ok(paths.includes("items[0].sku"));
 });

@@ -18,19 +18,27 @@ function tablePageCount(element) {
 
 function fragmentElement(element, fragmentIndex) {
   if (element.type !== "table") {
-    return element;
+    return fragmentIndex === 0 || element.repeatPerPage === true ? element : null;
+  }
+
+  if (fragmentIndex > 0 && element.props?.autoPaginate === false) {
+    return element.repeatPerPage === true ? element : null;
   }
 
   const capacity = rowsPerPage(element);
   const table = element.runtime?.table || { rows: [], footerRows: [] };
   const start = fragmentIndex * capacity;
+  const rows = table.rows.slice(start, start + capacity);
+  if (fragmentIndex > 0 && !rows.length) {
+    return null;
+  }
   return {
     ...element,
     runtime: {
       ...element.runtime,
       table: {
         ...table,
-        rows: table.rows.slice(start, start + capacity),
+        rows,
         footerRows: fragmentIndex > 0 && element.props?.tfootRepeat === false ? [] : table.footerRows,
       },
     },
@@ -50,7 +58,7 @@ export function paginateRuntimeDocument(document) {
         ...page,
         id: `${page.id}--${fragmentIndex + 1}`,
         sourcePageId: page.id,
-        elements: (page.elements || []).map((element) => fragmentElement(element, fragmentIndex)),
+        elements: (page.elements || []).map((element) => fragmentElement(element, fragmentIndex)).filter(Boolean),
       });
     }
   });

@@ -48,3 +48,7 @@ const runtimeData = ref({
 - `runtimeData` 只负责打印时的数据输入，不会修改模板布局。
 - `storage-key` 建议按业务场景区分，避免多个实例共享同一份本地缓存。
 - Nuxt 或 SSR 项目里，请把组件放在客户端区域。
+
+## Print policy
+
+Printing is strict by default: missing bound values, empty printable images or machine codes, and elements outside the configured printable safe area stop the action. For intentionally incomplete stationery only, pass `:print-policy="{ allowIncomplete: true }"`. Use `await designer.value.whenReady()` when calling exposed methods before the component has mounted.

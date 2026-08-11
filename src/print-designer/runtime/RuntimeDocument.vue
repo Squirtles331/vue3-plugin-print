@@ -18,14 +18,14 @@
           <span :class="valueClass(element.runtime.value)">{{ textValue(element.runtime.value, 'Unbound text') }}</span>
         </template>
         <template v-else-if="element.type === 'image'">
-          <img v-if="element.runtime.value?.status === 'resolved' || element.runtime.value?.status === 'authored'" :src="element.runtime.value.value" :style="{ objectFit: element.style?.objectFit || 'contain', objectPosition: imageObjectPosition(element.style) }" alt="" />
-          <span v-else class="runtime-placeholder">{{ textValue(element.runtime.value, element.props?.placeholder || 'Unbound image') }}</span>
+          <img v-if="imageSource(element)" :src="imageSource(element)" :style="{ objectFit: element.style?.objectFit || 'contain', objectPosition: imageObjectPosition(element.style) }" alt="" />
+          <span v-else-if="mode !== 'print'" class="runtime-placeholder">{{ textValue(element.runtime.value, element.props?.placeholder || 'Unbound image') }}</span>
         </template>
         <template v-else-if="element.type === 'barcode'">
-          <RuntimeBarcode :value="element.runtime.value?.value" :status="element.runtime.value?.status" :format="element.props?.format" :show-value="element.props?.displayValue !== false" :foreground="element.style?.color" :background="element.style?.backgroundColor" v-bind="machineCodeOptions(element.props)" />
+          <RuntimeBarcode :value="element.runtime.value?.value" :status="element.runtime.value?.status" :format="element.props?.format" :show-value="element.props?.displayValue !== false" :foreground="element.style?.color" :background="element.style?.backgroundColor" :mode="mode" v-bind="machineCodeOptions(element.props)" />
         </template>
         <template v-else-if="element.type === 'qrcode'">
-          <RuntimeQrCode :value="element.runtime.value?.value" :status="element.runtime.value?.status" :ecc-level="element.props?.eccLevel" :foreground="element.style?.color" :background="element.style?.backgroundColor" :margin="machineCodeOptions(element.props).margin" />
+          <RuntimeQrCode :value="element.runtime.value?.value" :status="element.runtime.value?.status" :ecc-level="element.props?.eccLevel" :foreground="element.style?.color" :background="element.style?.backgroundColor" :margin="machineCodeOptions(element.props).margin" :mode="mode" />
         </template>
         <template v-else-if="element.type === 'pageNumber'">
           <span>{{ pageNumberValue(element, page.runtime) }}</span>
@@ -41,7 +41,7 @@
             <thead v-if="element.props?.showHeader !== false" :style="tableHeaderStyle(element)"><tr><th v-for="column in tableColumns(element)" :key="columnKey(column)" :style="tableCellStyle(element, column, 'header')">{{ column.title || column.header || column.key || column.field }}</th></tr></thead>
             <tbody>
               <tr v-for="(row, rowIndex) in tableRows(element)" :key="rowIndex"><td v-for="column in tableColumns(element)" :key="columnKey(column)" :style="tableCellStyle(element, column, 'body')">{{ tableCellValue(row, column) }}</td></tr>
-              <tr v-if="!tableRows(element).length"><td :colspan="Math.max(1, tableColumns(element).length)" class="runtime-table__empty">{{ tableEmptyMessage(element) }}</td></tr>
+              <tr v-if="!tableRows(element).length && mode !== 'print'"><td :colspan="Math.max(1, tableColumns(element).length)" class="runtime-table__empty">{{ tableEmptyMessage(element) }}</td></tr>
             </tbody>
             <tfoot v-if="element.props?.showFooter !== false && tableFooterRows(element).length" :style="tableFooterStyle(element)"><tr v-for="(row, rowIndex) in tableFooterRows(element)" :key="rowIndex"><td v-for="column in tableColumns(element)" :key="columnKey(column)" :style="tableCellStyle(element, column, 'footer')">{{ tableCellValue(row, column) }}</td></tr></tfoot>
           </table>
@@ -74,8 +74,9 @@ const hasPrintMarks = computed(() => hasRuntimePrintMarks(props.document));
 
 function printableElements(page) { return (page.elements || []).filter((element) => element.visible !== false && element.printable !== false); }
 function elementStyle(element) { const style = element.style || {}; const autoHeight = element.type === 'text' && element.props?.autoHeight === true; const vertical = { top: 'flex-start', middle: 'center', bottom: 'flex-end' }[style.verticalAlign] || 'flex-start'; const horizontal = { left: 'flex-start', center: 'center', right: 'flex-end' }[style.textAlign] || 'flex-start'; return { left: `${element.x || 0}mm`, top: `${element.y || 0}mm`, width: `${element.width || 1}mm`, height: autoHeight ? 'auto' : `${element.height || 1}mm`, minHeight: autoHeight ? `${element.height || 1}mm` : undefined, overflow: autoHeight ? 'visible' : 'hidden', transform: `rotate(${Number(element.rotation) || 0}deg)`, zIndex: Number(element.zIndex) || 0, color: style.color || '#111827', background: style.backgroundColor || 'transparent', fontFamily: style.fontFamily || undefined, fontSize: `${Number(style.fontSize) || 12}px`, fontWeight: style.fontWeight || 'normal', fontStyle: style.fontStyle || 'normal', textDecoration: style.textDecoration || 'none', textAlign: style.textAlign || 'left', lineHeight: style.lineHeight || 1.4, letterSpacing: `${Number(style.letterSpacing) || 0}px`, border: `${Number(style.borderWidth) || 0}px ${style.borderStyle || 'solid'} ${style.borderColor || 'transparent'}`, borderRadius: `${Number(style.borderRadius) || 0}px`, padding: `${Number(style.padding) || 0}mm`, boxSizing: 'border-box', opacity: Number.isFinite(Number(style.opacity)) ? Number(style.opacity) : 1, alignItems: vertical, justifyContent: horizontal, whiteSpace: element.props?.whiteSpace || 'pre-wrap', writingMode: element.props?.writingMode || 'horizontal-tb' }; }
-function textValue(value, fallback) { return value?.value || fallback; }
+function textValue(value, fallback) { return value?.value || (props.mode === "print" ? "" : fallback); }
 function valueClass(value) { return value?.status === 'missing' || value?.status === 'empty' ? 'runtime-placeholder' : ''; }
+function imageSource(element) { return String(element.runtime?.value?.value || '').trim(); }
 function columnKey(column) { return column?.key || column?.field || ''; }
 function tableColumns(element) { return element.runtime?.table?.columns || []; }
 function tableRows(element) { return element.runtime?.table?.rows || []; }
@@ -87,8 +88,8 @@ function tableHeaderStyle(element) { const style = element.style || {}; return {
 function tableFooterStyle(element) { const style = element.style || {}; return { background: style.footerBackgroundColor || style.backgroundColor || 'transparent', color: style.footerColor || style.color || 'inherit', fontSize: `${Number(style.footerFontSize) || Number(style.fontSize) || 12}px`, textAlign: style.footerTextAlign || style.textAlign || 'left' }; }
 function multiLabelStyle(element) { return { gridTemplateColumns: `repeat(${Math.max(1, Number(element.props?.cols) || 1)}, 1fr)`, gridTemplateRows: `repeat(${Math.max(1, Number(element.props?.rows) || 1)}, 1fr)`, gridAutoFlow: element.props?.direction === 'column' ? 'column' : 'row', gap: `${Number(element.props?.gapY) || 0}mm ${Number(element.props?.gapX) || 0}mm` }; }
 function multiLabelItems(element) { const total = Math.max(1, Number(element.props?.rows) || 1) * Math.max(1, Number(element.props?.cols) || 1); const rows = element.runtime?.multiLabel?.rows || []; return Array.from({ length: total }, (_, index) => rows[index] ?? null); }
-function labelValue(item, path) { if (item == null) return ''; if (typeof item !== 'object') return path ? `{{${path}}}` : String(item); const result = resolveRelativeRecordPath(item, path); return result.found && result.value != null ? String(result.value) : path ? `{{${path}}}` : ''; }
-function labelPrimary(item, element, index) { if (item == null) return element.runtime?.multiLabel?.status === 'missing' ? `{{${element.props?.dataVariable}[${index}]}}` : 'Unbound label'; return labelValue(item, element.props?.primaryPath); }
+function labelValue(item, path) { if (item == null) return ''; if (typeof item !== 'object') return path ? (props.mode === 'print' ? '' : `{{${path}}}`) : String(item); const result = resolveRelativeRecordPath(item, path); return result.found && result.value != null ? String(result.value) : path ? (props.mode === 'print' ? '' : `{{${path}}}`) : ''; }
+function labelPrimary(item, element, index) { if (item == null) return props.mode === 'print' ? '' : element.runtime?.multiLabel?.status === 'missing' ? `{{${element.props?.dataVariable}[${index}]}}` : 'Unbound label'; return labelValue(item, element.props?.primaryPath); }
 function pageNumberValue(element, pageRuntime) { const current = pageRuntime?.pageNumber || 1; const total = pageRuntime?.pageCount || 1; const format = element.props?.format || '1'; if (format === '1') return String(current); return String(format).replaceAll('N', total).replaceAll('1', current); }
 </script>
 

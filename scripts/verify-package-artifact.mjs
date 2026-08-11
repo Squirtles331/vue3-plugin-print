@@ -12,6 +12,7 @@ assert.equal(manifest.name, "@squirtles331/vue3-plugin-print");
 assert.equal(manifest.private, undefined);
 assert.equal(manifest.exports["."].import, "./dist/index.js");
 assert.equal(manifest.exports["."].require, "./dist/index.cjs");
+assert.equal(manifest.exports["."].types, "./dist/index.d.ts");
 assert.equal(manifest.exports["./style.css"], "./dist/style.css");
 assert.deepEqual(manifest.peerDependencies, {
   vue: "^3.5.13",
@@ -28,6 +29,11 @@ assert.doesNotMatch(stylesheet, /\.el-[\w-]+/, "Package stylesheet must not cont
 for (const file of ["dist/index.js", "dist/index.cjs"]) {
   const source = readFileSync(file, "utf8");
   assert.doesNotMatch(source, /element-plus|@element-plus\/icons-vue/, `${file} must not reference Element Plus.`);
+}
+
+const declarations = readFileSync("dist/index.d.ts", "utf8");
+for (const publicType of ["PrintTemplateStudio", "PrintPolicy", "whenReady", "allowIncomplete"]) {
+  assert.match(declarations, new RegExp(`\\b${publicType}\\b`), `Type declarations must expose ${publicType}.`);
 }
 
 const npmCli = process.env.npm_execpath;

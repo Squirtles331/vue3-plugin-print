@@ -20,14 +20,21 @@ function getBrowserStorage() {
 
 function readCollection(storage, key) {
   if (!storage) {
-    return {};
+    throw new Error("Browser template storage is not available.");
   }
 
   try {
     const value = storage.getItem(key);
-    return value ? JSON.parse(value) : {};
-  } catch {
-    return {};
+    if (!value) {
+      return {};
+    }
+    const collection = JSON.parse(value);
+    if (!collection || typeof collection !== "object" || Array.isArray(collection)) {
+      throw new Error("Template collection must be a JSON object.");
+    }
+    return collection;
+  } catch (error) {
+    throw new Error(`Unable to read local template storage: ${error?.message || "stored templates are corrupted."}`, { cause: error });
   }
 }
 
@@ -36,7 +43,11 @@ function writeCollection(storage, key, collection) {
     throw new Error("Browser storage is not available.");
   }
 
-  storage.setItem(key, JSON.stringify(collection));
+  try {
+    storage.setItem(key, JSON.stringify(collection));
+  } catch (error) {
+    throw new Error(`Unable to save local template storage: ${error?.message || "storage write failed."}`, { cause: error });
+  }
 }
 
 export function createLocalTemplateRepository({ storage = getBrowserStorage(), key = DEFAULT_STORAGE_KEY } = {}) {
@@ -97,21 +108,37 @@ export function createRestTemplateRepository({ baseUrl, fetchImpl = globalThis.f
   }
 
   const request = async (path, options = {}) => {
-    const response = await fetchImpl(`${baseUrl.replace(/\/$/, "")}${path}`, {
-      ...options,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        ...getHeaders(),
-        ...(options.headers || {}),
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Template request failed (${response.status}).`);
+    let response;
+    try {
+      response = await fetchImpl(`${baseUrl.replace(/\/$/, "")}${path}`, {
+        ...options,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          ...getHeaders(),
+          ...(options.headers || {}),
+        },
+      });
+    } catch (error) {
+      throw new Error(`Template request could not reach the server: ${error?.message || "network error."}`, { cause: error });
     }
 
-    return response.status === 204 ? null : response.json();
+    if (!response.ok) {
+      if (response.status === 409 || response.status === 412) {
+        throw new Error(`Template update conflict (${response.status}). Refresh the template before saving again.`);
+      }
+      throw new Error(`Template request failed (${response.status} ${response.statusText || "".trim()}).`);
+    }
+
+    if (response.status === 204) {
+      return null;
+    }
+
+    try {
+      return await response.json();
+    } catch {
+      throw new Error("Template request returned invalid JSON.");
+    }
   };
 
   return {

@@ -29,6 +29,11 @@
         :key="variable"
         class="data-panel__card"
         :title="`绑定路径：${variable}`"
+        role="button"
+        tabindex="0"
+        @click="emit('select', variable)"
+        @keydown.enter.prevent="emit('select', variable)"
+        @keydown.space.prevent="emit('select', variable)"
       >
         <span class="data-panel__card-head">
           <span class="data-panel__index">#{{ index + 1 }}</span>
@@ -62,6 +67,7 @@ const props = defineProps({
     default: "panel",
   },
 });
+const emit = defineEmits(["select"]);
 
 const isEmbedded = computed(() => props.variant === "embedded");
 const normalizedQuery = computed(() => String(props.searchQuery || "").trim().toLowerCase());
@@ -208,6 +214,12 @@ const emptyDescription = computed(() =>
   border: 1px solid var(--pd-border);
   border-radius: var(--pd-radius-section);
   background: var(--pd-panel-bg);
+  cursor: pointer;
+}
+
+.data-panel__card:focus-visible {
+  outline: 2px solid var(--pd-accent-text, #1d4ed8);
+  outline-offset: 2px;
 }
 
 .data-panel__card-head {

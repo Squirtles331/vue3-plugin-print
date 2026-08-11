@@ -1,14 +1,86 @@
 import type { ComponentOptionsMixin, DefineComponent, Plugin } from "vue";
 
+export type PrintElementType = "text" | "image" | "table" | "barcode" | "qrcode" | "pageNumber" | "line" | "rect" | "circle" | "multiLabel";
+
+export interface TemplateMeta {
+  name: string;
+  unit: "mm";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TemplatePaperSettings {
+  preset: string;
+  widthMm: number;
+  heightMm: number;
+  orientation: "portrait" | "landscape";
+}
+
+export interface TemplateMarginSettings {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
+export interface TemplatePageSettings {
+  paper: TemplatePaperSettings;
+  margin: TemplateMarginSettings;
+  background: string;
+  cornerMarks?: { visible: boolean };
+  headerLine?: { visible: boolean; offsetMm: number };
+  footerLine?: { visible: boolean; offsetMm: number };
+  printMarks?: { visible: boolean };
+}
+
+export interface TemplateElementStyle {
+  fontFamily?: string;
+  fontSize?: number;
+  fontWeight?: "normal" | "bold";
+  fontStyle?: "normal" | "italic";
+  color?: string;
+  backgroundColor?: string;
+  textAlign?: "left" | "center" | "right";
+  [key: string]: unknown;
+}
+
+export interface TemplateElement {
+  id: string;
+  pageId: string;
+  type: PrintElementType;
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  content: string;
+  variable: string;
+  visible: boolean;
+  printable: boolean;
+  locked: boolean;
+  repeatPerPage: boolean;
+  rotation: number;
+  zIndex: number;
+  props: Record<string, unknown>;
+  style: TemplateElementStyle;
+}
+
+export interface TemplatePage {
+  id: string;
+  title: string;
+  elements: TemplateElement[];
+}
+
 export interface TemplateDocument {
   schemaVersion: number;
   id: string;
-  meta: { name: string; unit: string; createdAt: string; updatedAt: string };
-  pageSettings: Record<string, unknown>;
-  pages: Array<Record<string, unknown>>;
+  meta: TemplateMeta;
+  pageSettings: TemplatePageSettings;
+  pages: TemplatePage[];
 }
 
 export interface TemplateIssue {
+  code?: string;
   path: string;
   message: string;
   severity: "warning" | "error";
@@ -31,6 +103,11 @@ export interface TemplateRepository {
   clear?(): Promise<void>;
 }
 
+export interface PrintPolicy {
+  /** Allow missing business data and safe-area violations to print as warnings. */
+  allowIncomplete?: boolean;
+}
+
 export interface PrintTemplateStudioErrorPayload {
   scope: string;
   error?: unknown;
@@ -44,6 +121,7 @@ export interface PrintTemplateStudioProps {
   repository?: TemplateRepository | null;
   storageKey?: string;
   height?: string | number;
+  printPolicy?: PrintPolicy;
 }
 
 export interface PrintTemplateStudioEmitValidators {
@@ -55,11 +133,12 @@ export interface PrintTemplateStudioEmitValidators {
 }
 
 export interface PrintTemplateStudioInstance {
+  whenReady(): Promise<PrintTemplateStudioInstance>;
   loadTemplateDocument(document: TemplateDocument): TemplateResult | undefined;
   getTemplateDocument(): TemplateResult | undefined;
   getPublishReadyTemplatePayload(): TemplateResult & { payload?: TemplateDocument | null } | undefined;
   setRuntimeData(data: Record<string, unknown>): void;
-  print(data?: Record<string, unknown>): Promise<void> | undefined;
+  print(data?: Record<string, unknown>): Promise<void>;
 }
 
 export const PrintTemplateStudio: DefineComponent<

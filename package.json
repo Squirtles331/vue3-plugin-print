@@ -1,6 +1,6 @@
 {
   "name": "@squirtles331/vue3-plugin-print",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "An embeddable Vue 3 visual print-template designer for browser-native printing.",
   "license": "MIT",
@@ -63,6 +63,7 @@
     "test:pages-build": "node scripts/verify-github-pages-build.mjs",
     "test:package": "node scripts/verify-package-artifact.mjs",
     "test:consumer": "node scripts/verify-packed-consumer.mjs",
+    "verify:release-tag": "node scripts/verify-release-tag.mjs",
     "verify": "node scripts/verify-release.mjs"
   },
   "dependencies": {

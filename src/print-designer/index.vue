@@ -22,6 +22,7 @@ const props = defineProps({
   repository: { type: Object, default: null },
   storageKey: { type: String, default: "default" },
   height: { type: [String, Number], default: 720 },
+  printPolicy: { type: Object, default: () => ({}) },
 });
 
 const emit = defineEmits(["update:template", "update:runtimeData", "template-change", "error", "ready"]);
@@ -30,6 +31,10 @@ let editorApp = null;
 let editorRoot = null;
 let lastTemplateSignature = "";
 let lastRuntimeSignature = "";
+let resolveReady = null;
+const readyPromise = new Promise((resolve) => {
+  resolveReady = resolve;
+});
 
 const containerStyle = computed(() => ({
   height: typeof props.height === "number" ? `${props.height}px` : props.height || "720px",
@@ -85,6 +90,10 @@ function applyRuntimeData(value) {
   editorRoot.setRuntimeData(value);
 }
 
+function applyPrintPolicy(value) {
+  editorRoot?.setPrintPolicy(value);
+}
+
 function onTemplateChange(document) {
   lastTemplateSignature = templateSignature(document);
   emit("update:template", document);
@@ -107,6 +116,7 @@ onMounted(() => {
   editorApp = createApp(EditorRoot, {
     repository,
     presetRepository,
+    printPolicy: props.printPolicy,
     onTemplateChange,
     onUpdateRuntimeData: onRuntimeDataChange,
     onError,
@@ -117,6 +127,8 @@ onMounted(() => {
   applyTemplate(props.template);
   applyRuntimeData(props.runtimeData);
   emit("ready", editorRoot);
+  resolveReady?.(editorRoot);
+  resolveReady = null;
 });
 
 onBeforeUnmount(() => {
@@ -127,8 +139,12 @@ onBeforeUnmount(() => {
 
 watch(() => props.template, applyTemplate, { deep: true });
 watch(() => props.runtimeData, applyRuntimeData, { deep: true });
+watch(() => props.printPolicy, applyPrintPolicy, { deep: true });
 
 defineExpose({
+  whenReady() {
+    return readyPromise;
+  },
   loadTemplateDocument(document) {
     lastTemplateSignature = templateSignature(document);
     return editorRoot?.loadTemplateDocument(document);
@@ -143,12 +159,13 @@ defineExpose({
     lastRuntimeSignature = runtimeSignature(data);
     return editorRoot?.setRuntimeData(data);
   },
-  print(data) {
+  async print(data) {
+    const root = editorRoot || await readyPromise;
     if (data !== undefined) {
       lastRuntimeSignature = runtimeSignature(data);
-      editorRoot?.setRuntimeData(data);
+      root.setRuntimeData(data);
     }
-    return editorRoot?.print();
+    return root.print();
   },
 });
 </script>

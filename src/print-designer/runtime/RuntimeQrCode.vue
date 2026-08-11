@@ -1,7 +1,7 @@
 <template>
   <div class="runtime-qrcode" :class="{ 'is-empty': !hasValue, 'has-error': error }" :data-runtime-status="runtimeStatus">
     <img v-if="dataUrl" :src="dataUrl" alt="" />
-    <span v-else>{{ error || placeholder }}</span>
+    <span v-else-if="mode !== 'print'">{{ error || placeholder }}</span>
   </div>
 </template>
 
@@ -16,6 +16,7 @@ const props = defineProps({
   foreground: { type: String, default: "#111827" },
   background: { type: String, default: "#ffffff" },
   margin: { type: Number, default: 0 },
+  mode: { type: String, default: "preview" },
 });
 
 const dataUrl = ref("");

@@ -64,6 +64,13 @@ test("local repository deletes saved templates and clears only its own collectio
   assert.equal(storage.getItem("unrelated-preference"), "preserve-me");
 });
 
+test("local repository surfaces corrupt browser storage", async () => {
+  const storage = { getItem: () => "not-json", setItem: () => {} };
+  const repository = createLocalTemplateRepository({ storage });
+
+  await assert.rejects(() => repository.list(), /Unable to read local template storage/);
+});
+
 test("publish-ready payload only exposes runtime template fields", () => {
   const result = createPublishReadyTemplatePayload(createBlankTemplateDocument());
 
@@ -86,6 +93,17 @@ test("normalizes documented legacy page and element aliases into canonical field
   assert.equal("pageWidthMm" in result.document.pageSettings, false);
   assert.equal("left" in element, false);
   assert.equal("selected" in element, false);
+});
+
+test("normalizes legacy unit metadata to millimetres", () => {
+  const result = migrateTemplateDocument({
+    schemaVersion: 1,
+    meta: { name: "Legacy pixels", unit: "px" },
+    pages: [{ id: "page-1", elements: [] }],
+  });
+
+  assert.equal(result.document.meta.unit, "mm");
+  assert.ok(result.issues.some((issue) => issue.path === "meta.unit"));
 });
 
 test("reports bounded invalid values without serializing invalid output", () => {

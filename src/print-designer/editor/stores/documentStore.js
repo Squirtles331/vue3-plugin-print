@@ -236,6 +236,12 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     return loadTemplateDocument(createBlankTemplateDocument(overrides), { markAsDirty: true });
   }
 
+  function setVariables(nextVariables = []) {
+    variables.value = [...new Set((Array.isArray(nextVariables) ? nextVariables : [])
+      .map((value) => String(value || "").trim())
+      .filter(Boolean))];
+  }
+
   function addObject(object) {
     objectsById.value = {
       ...objectsById.value,
@@ -517,7 +523,10 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
   }
 
   function setUnit(nextUnit) {
-    unit.value = nextUnit;
+    if (nextUnit !== "mm" || unit.value === "mm") {
+      return;
+    }
+    unit.value = "mm";
     markDirty();
   }
 
@@ -704,6 +713,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     markSaved,
     loadTemplateDocument,
     createNewTemplate,
+    setVariables,
     addObject,
     addObjects,
     removeObject,
