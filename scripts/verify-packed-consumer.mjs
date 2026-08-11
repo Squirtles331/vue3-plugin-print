@@ -40,8 +40,6 @@ try {
     "--prefix",
     consumerRoot,
     "vue@^3.5.13",
-    "element-plus@^2.9.6",
-    "@element-plus/icons-vue@^2.3.1",
     tarball,
   ], { stdio: "inherit" });
   execFileSync(process.execPath, [viteCli, "build", consumerRoot, "--outDir", resolve(consumerRoot, "dist")], { stdio: "inherit" });

@@ -5,8 +5,6 @@ import vue from "@vitejs/plugin-vue";
 const externalPackages = [
   "vue",
   "pinia",
-  "element-plus",
-  "@element-plus/icons-vue",
   "jsbarcode",
   "qrcode",
   "codemirror",

@@ -14,13 +14,21 @@ assert.equal(manifest.exports["."].import, "./dist/index.js");
 assert.equal(manifest.exports["."].require, "./dist/index.cjs");
 assert.equal(manifest.exports["./style.css"], "./dist/style.css");
 assert.deepEqual(manifest.peerDependencies, {
-  "@element-plus/icons-vue": "^2.3.1",
-  "element-plus": "^2.9.6",
   vue: "^3.5.13",
 });
+assert.equal(manifest.dependencies?.["element-plus"], undefined);
+assert.equal(manifest.dependencies?.["@element-plus/icons-vue"], undefined);
+assert.equal(manifest.devDependencies?.["element-plus"], undefined);
+assert.equal(manifest.devDependencies?.["@element-plus/icons-vue"], undefined);
 
 const stylesheet = readFileSync("dist/style.css", "utf8");
 assert.doesNotMatch(stylesheet, /(^|[\n,])\s*(html|body|#app)\s*[,{]/m, "Package stylesheet must not target host page roots.");
+assert.doesNotMatch(stylesheet, /\.el-[\w-]+/, "Package stylesheet must not contain Element Plus selectors.");
+
+for (const file of ["dist/index.js", "dist/index.cjs"]) {
+  const source = readFileSync(file, "utf8");
+  assert.doesNotMatch(source, /element-plus|@element-plus\/icons-vue/, `${file} must not reference Element Plus.`);
+}
 
 const npmCli = process.env.npm_execpath;
 if (!npmCli) {

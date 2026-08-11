@@ -33,25 +33,8 @@ const PRINT_DESIGNER_COMPONENTS = [
   ["PdTabs", PdTabs],
 ];
 
-const LEGACY_ELEMENT_ALIASES = [
-  ["ElButton", PdButton],
-  ["ElDialog", PdDialog],
-  ["ElIcon", PdIcon],
-  ["ElInput", PdInput],
-  ["ElInputNumber", PdInputNumber],
-  ["ElOption", PdOption],
-  ["ElOptionGroup", PdOptionGroup],
-  ["ElPopconfirm", PdConfirm],
-  ["ElRadio", PdRadio],
-  ["ElRadioGroup", PdRadioGroup],
-  ["ElSelect", PdSelect],
-  ["ElSwitch", PdSwitch],
-  ["ElTabPane", PdTabPane],
-  ["ElTabs", PdTabs],
-];
-
 export function registerPrintDesignerUi(app) {
-  for (const [name, component] of [...PRINT_DESIGNER_COMPONENTS, ...LEGACY_ELEMENT_ALIASES]) {
+  for (const [name, component] of PRINT_DESIGNER_COMPONENTS) {
     if (app._context.components[name]) {
       continue;
     }

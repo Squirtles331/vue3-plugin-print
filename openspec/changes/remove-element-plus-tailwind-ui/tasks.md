@@ -20,10 +20,10 @@
 
 - [x] 4.1 Replace Element Plus usage in the pages, layers, insert, data, view settings, history, page settings, and inspector panels.
 - [x] 4.2 Replace Element Plus usage in the element properties, table editor, and other form-heavy editor dialogs.
-- [ ] 4.3 Remove `@element-plus/icons-vue` imports from all source modules and swap them to the internal icon system.
+- [x] 4.3 Remove `@element-plus/icons-vue` imports from all source modules and swap them to the internal icon system.
 
 ## 5. Package, tests, and release contract
 
-- [ ] 5.1 Remove Element Plus from package metadata, library externals, consumer verification, and release checks.
-- [ ] 5.2 Update plugin registration, demo bootstrap, and library entrypoints so the package no longer exposes Element Plus setup.
+- [x] 5.1 Remove Element Plus from package metadata, library externals, consumer verification, and release checks.
+- [x] 5.2 Update plugin registration, demo bootstrap, and library entrypoints so the package no longer exposes Element Plus setup.
 - [ ] 5.3 Rewrite tests and mocks that assert Element Plus components, then run lint, unit tests, build, and packed-consumer verification.
