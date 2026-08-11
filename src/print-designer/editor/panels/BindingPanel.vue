@@ -36,7 +36,7 @@
     </div>
 
     <div class="binding-panel__body">
-      <DataPanel :variables="variables" :search-query="searchQuery" />
+      <DataPanel :variables="variables" :search-query="searchQuery" variant="embedded" />
     </div>
   </div>
 </template>
