@@ -4,9 +4,7 @@
       <div>
         <p class="binding-panel__eyebrow">数据绑定</p>
         <h2 class="binding-panel__title">字段路径</h2>
-        <p class="binding-panel__description">
-          在这里快速查看可绑定字段，路径复制后可直接填入元素属性。
-        </p>
+        <p class="binding-panel__description">先找路径，再回到属性面板填入字段名，适合快速绑定文本、表格和标签网格。</p>
       </div>
       <div class="binding-panel__badge">
         <strong>{{ variableCount }}</strong>
@@ -15,24 +13,13 @@
     </header>
 
     <div class="binding-panel__summary">
-      <div class="binding-panel__summary-chip">
-        <strong>筛选</strong>
-        <span>{{ toolbarNote }}</span>
-      </div>
-      <div class="binding-panel__summary-chip">
-        <strong>用途</strong>
-        <span>表格、多标签、条码、二维码都依赖这些路径</span>
-      </div>
+      <span>筛选 {{ filteredCount }}</span>
+      <span>总计 {{ variableCount }}</span>
+      <span>{{ toolbarNote }}</span>
     </div>
 
     <div class="binding-panel__toolbar">
-      <el-input
-        v-model="searchQuery"
-        clearable
-        size="small"
-        :prefix-icon="Search"
-        placeholder="搜索字段路径"
-      />
+      <el-input v-model="searchQuery" clearable size="small" :prefix-icon="Search" placeholder="搜索字段路径" />
     </div>
 
     <div class="binding-panel__body">
@@ -42,7 +29,7 @@
 </template>
 
 <script setup>
-import { computed, shallowRef } from "vue";
+import { computed, ref } from "vue";
 import { Search } from "@element-plus/icons-vue";
 import DataPanel from "../../components/sidebar/DataPanel.vue";
 
@@ -53,13 +40,23 @@ const props = defineProps({
   },
 });
 
-const searchQuery = shallowRef("");
+const searchQuery = ref("");
 const variableCount = computed(() => props.variables.length);
+
+const filteredCount = computed(() => {
+  const query = String(searchQuery.value || "").trim().toLowerCase();
+
+  if (!query) {
+    return variableCount.value;
+  }
+
+  return props.variables.filter((variable) => String(variable).toLowerCase().includes(query)).length;
+});
 
 const toolbarNote = computed(() => {
   const query = String(searchQuery.value || "").trim();
 
-  return query ? `正在筛选：${query}` : "按字段路径查找可绑定数据";
+  return query ? `正在筛选 “${query}”` : "按字段路径快速查找";
 });
 </script>
 
@@ -70,8 +67,8 @@ const toolbarNote = computed(() => {
   min-width: 0;
   min-height: 0;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
+  gap: 10px;
+  padding: 14px;
   overflow: auto;
   background: #ffffff;
 }
@@ -95,25 +92,25 @@ const toolbarNote = computed(() => {
 .binding-panel__title {
   margin: 0;
   color: #0f172a;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.2;
 }
 
 .binding-panel__description {
-  margin: 6px 0 0;
+  margin: 5px 0 0;
   color: #64748b;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 .binding-panel__badge {
   display: flex;
-  min-width: 64px;
+  min-width: 62px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border: 1px solid var(--pd-border);
   background: #f8fafc;
   text-align: center;
@@ -132,30 +129,20 @@ const toolbarNote = computed(() => {
 
 .binding-panel__summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 
-.binding-panel__summary-chip {
-  display: flex;
-  min-height: 62px;
-  flex-direction: column;
+.binding-panel__summary span {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 10px 11px;
   border: 1px solid var(--pd-border);
   background: #f8fafc;
-}
-
-.binding-panel__summary-chip strong {
-  color: var(--pd-strong);
-  font-size: 12px;
-}
-
-.binding-panel__summary-chip span {
   color: var(--pd-muted);
   font-size: 12px;
-  line-height: 1.45;
+  font-weight: 700;
 }
 
 .binding-panel__toolbar {

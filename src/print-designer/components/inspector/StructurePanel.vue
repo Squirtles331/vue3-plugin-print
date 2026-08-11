@@ -1,12 +1,10 @@
 <template>
-  <div class="structure-panel">
+  <section class="structure-panel">
     <header class="structure-panel__header">
       <div>
         <p class="structure-panel__eyebrow">图层结构</p>
-        <h3 class="structure-panel__title">当前页面图层</h3>
-        <p class="structure-panel__description">
-          点击图层可直接定位到画布中的元素，右侧属性面板会同步到当前选择。
-        </p>
+        <h3 class="structure-panel__title">当前页元素</h3>
+        <p class="structure-panel__description">点选图层可以定位到画布，状态标签会提示隐藏和锁定情况。</p>
       </div>
       <div class="structure-panel__badge">
         <strong>{{ layers.length }}</strong>
@@ -15,20 +13,15 @@
     </header>
 
     <div class="structure-panel__summary">
-      <div class="structure-panel__summary-chip">
-        <strong>已选中</strong>
-        <span>{{ selectedIds.length ? `${selectedIds.length} 个` : "无" }}</span>
-      </div>
-      <div class="structure-panel__summary-chip">
-        <strong>可定位</strong>
-        <span>{{ layers.length ? "点击任意图层" : "先添加元素" }}</span>
-      </div>
+      <span :class="{ 'is-active': selectedIds.length }">已选 {{ selectedIds.length }}</span>
+      <span>可见 {{ visibleCount }}</span>
+      <span>锁定 {{ lockedCount }}</span>
     </div>
 
     <div class="structure-panel__stack">
       <div v-if="!layers.length" class="structure-panel__empty">
         <strong>当前页面还没有图层</strong>
-        <span>先从左侧插入元素，再回到这里查看结构和定位。</span>
+        <span>先从左侧插入元素，再回到这里查看结构和定位结果。</span>
       </div>
 
       <button
@@ -36,23 +29,30 @@
         :key="layer.id"
         type="button"
         class="structure-panel__card"
-        :class="{ 'is-active': selectedIds.includes(layer.id), 'is-first': index === 0 }"
+        :class="{ 'is-active': selectedIds.includes(layer.id), 'is-hidden': layer.visible === false, 'is-locked': layer.locked }"
         :aria-pressed="selectedIds.includes(layer.id)"
+        :title="layer.name"
         @click="emit('select', layer.id)"
       >
         <span class="structure-panel__index">#{{ layers.length - index }}</span>
         <div class="structure-panel__content">
-          <span class="structure-panel__title">{{ layer.name }}</span>
-          <span class="structure-panel__meta">{{ layer.type }}</span>
+          <span class="structure-panel__name">{{ layer.name }}</span>
+          <span class="structure-panel__meta">
+            {{ layer.type }}
+            <small v-if="layer.visible === false">隐藏</small>
+            <small v-if="layer.locked">锁定</small>
+          </span>
         </div>
         <span v-if="selectedIds.includes(layer.id)" class="structure-panel__state">已选中</span>
       </button>
     </div>
-  </div>
+  </section>
 </template>
 
 <script setup>
-defineProps({
+import { computed } from "vue";
+
+const props = defineProps({
   layers: {
     type: Array,
     default: () => [],
@@ -64,13 +64,16 @@ defineProps({
 });
 
 const emit = defineEmits(["select"]);
+
+const visibleCount = computed(() => props.layers.filter((layer) => layer.visible !== false).length);
+const lockedCount = computed(() => props.layers.filter((layer) => layer.locked).length);
 </script>
 
 <style scoped lang="scss">
 .structure-panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .structure-panel__header {
@@ -92,25 +95,25 @@ const emit = defineEmits(["select"]);
 .structure-panel__title {
   margin: 0;
   color: #0f172a;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.2;
 }
 
 .structure-panel__description {
-  margin: 6px 0 0;
+  margin: 5px 0 0;
   color: #64748b;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 .structure-panel__badge {
   display: flex;
-  min-width: 64px;
+  min-width: 62px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border: 1px solid var(--pd-border);
   background: #f8fafc;
   text-align: center;
@@ -129,60 +132,56 @@ const emit = defineEmits(["select"]);
 
 .structure-panel__summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 
-.structure-panel__summary-chip {
-  display: flex;
-  min-height: 62px;
-  flex-direction: column;
+.structure-panel__summary span {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 10px 11px;
   border: 1px solid var(--pd-border);
   background: #f8fafc;
-}
-
-.structure-panel__summary-chip strong {
-  color: var(--pd-strong);
-  font-size: 12px;
-}
-
-.structure-panel__summary-chip span {
   color: var(--pd-muted);
   font-size: 12px;
-  line-height: 1.45;
+  font-weight: 700;
+}
+
+.structure-panel__summary span.is-active {
+  border-color: var(--pd-accent-border);
+  background: var(--pd-accent-bg);
+  color: var(--pd-accent-text);
 }
 
 .structure-panel__stack {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .structure-panel__empty {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 18px;
+  gap: 5px;
+  padding: 14px;
   border: 1px dashed var(--pd-border);
   background: #f8fafc;
   color: var(--pd-muted);
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 .structure-panel__empty strong {
   color: var(--pd-strong);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .structure-panel__card {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1px solid var(--pd-border);
   border-radius: var(--pd-radius-section);
   background: var(--pd-panel-bg);
@@ -193,14 +192,24 @@ const emit = defineEmits(["select"]);
     background-color 0.18s ease;
 }
 
-.structure-panel__card:hover {
+.structure-panel__card:hover,
+.structure-panel__card:focus-visible {
   border-color: var(--pd-accent-border);
   background: #f8fafc;
+  outline: none;
 }
 
 .structure-panel__card.is-active {
   border-color: var(--pd-accent-border);
   background: var(--pd-accent-bg);
+}
+
+.structure-panel__card.is-hidden {
+  opacity: 0.72;
+}
+
+.structure-panel__card.is-locked .structure-panel__name {
+  color: #334155;
 }
 
 .structure-panel__index {
@@ -220,27 +229,50 @@ const emit = defineEmits(["select"]);
   gap: 4px;
 }
 
-.structure-panel__title {
-  font-size: 14px;
-  font-weight: 700;
+.structure-panel__name {
+  overflow: hidden;
   color: var(--pd-strong);
+  font-size: 13px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .structure-panel__meta {
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--pd-muted);
+  font-size: 12px;
 }
 
+.structure-panel__meta small,
 .structure-panel__state {
   display: inline-flex;
   align-items: center;
   height: 20px;
-  padding: 0 8px;
-  border: 1px solid var(--pd-accent-border);
-  background: #f5f9ff;
-  color: var(--pd-accent-text);
+  padding: 0 7px;
+  border: 1px solid var(--pd-border);
+  background: #ffffff;
+  color: var(--pd-muted);
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.structure-panel__state {
+  border-color: var(--pd-accent-border);
+  background: #f5f9ff;
+  color: var(--pd-accent-text);
+}
+
+@media (max-width: 480px) {
+  .structure-panel__summary {
+    grid-template-columns: 1fr;
+  }
+
+  .structure-panel__header {
+    flex-direction: column;
+  }
 }
 </style>

@@ -10,17 +10,15 @@
     <section class="right-panel-dock__surface">
       <header class="right-panel-dock__header">
         <div>
-          <p class="right-panel-dock__eyebrow">属性窗格</p>
+          <p class="right-panel-dock__eyebrow">右侧属性</p>
           <h2 class="right-panel-dock__title">{{ panelTitle }}</h2>
           <p class="right-panel-dock__description">{{ panelDescription }}</p>
         </div>
-        <button class="right-panel-dock__close" type="button" @click="shellStore.toggleRightDock()">
-          收起
-        </button>
+        <button class="right-panel-dock__close" type="button" @click="shellStore.toggleRightDock()">收起</button>
       </header>
 
       <div class="right-panel-dock__main">
-        <div class="right-panel-dock__tabs">
+        <nav class="right-panel-dock__tabs" aria-label="右侧面板">
           <button
             v-for="panel in panels"
             :key="panel.key"
@@ -33,7 +31,7 @@
             <span>{{ panel.label }}</span>
             <small v-if="panelBadges[panel.key]" class="right-panel-dock__tab-badge">{{ panelBadges[panel.key] }}</small>
           </button>
-        </div>
+        </nav>
 
         <div class="right-panel-dock__body">
           <ElementPropertiesPanel v-if="activeRightPanel === 'properties'" />
@@ -80,8 +78,8 @@ const panels = [
   { key: "properties", label: "属性", icon: Setting },
   { key: "page", label: "页面", icon: Setting },
   { key: "view", label: "视图", icon: View },
-  { key: "layers", label: "图层", icon: Files },
-  { key: "bindings", label: "数据", icon: DataLine },
+  { key: "layers", label: "结构", icon: Files },
+  { key: "bindings", label: "绑定", icon: DataLine },
   { key: "history", label: "历史", icon: Clock },
 ];
 
@@ -100,12 +98,14 @@ const panelTitle = computed(() => {
 
 const panelDescription = computed(() => {
   const map = {
-    properties: selectedIds.value.length ? `正在编辑 ${selectedIds.value.length} 个选中元素。` : "选中画布元素后在这里调整位置、样式和绑定。",
+    properties: selectedIds.value.length
+      ? `正在编辑 ${selectedIds.value.length} 个选中元素。`
+      : "选中画布元素后，可在这里修改位置、样式和绑定。",
     page: "设置纸张、方向、边距和打印标记。",
-    view: "控制辅助线、网格、吸附和编辑器显示偏好。",
-    layers: "查看当前页面图层，并快速定位元素。",
-    bindings: "查看可用字段，核对模板的数据绑定。",
-    history: "查看最近编辑动作，确认可撤销范围。",
+    view: "控制辅助线、网格、吸附和编辑器显示。",
+    layers: "查看当前页图层并定位到画布。",
+    bindings: "查看可用字段并核对绑定结果。",
+    history: "查看最近操作，确认可撤销范围。",
   };
 
   return map[activeRightPanel.value] || "";
@@ -188,11 +188,11 @@ onBeforeUnmount(() => {
 }
 
 .right-panel-dock__description {
-  margin: 6px 0 0;
+  margin: 5px 0 0;
   max-width: 260px;
   color: #64748b;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 .right-panel-dock__close {

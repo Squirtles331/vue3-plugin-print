@@ -8,17 +8,15 @@
     <section class="left-dock__surface">
       <header class="left-dock__header">
         <div>
-          <p class="left-dock__eyebrow">任务窗格</p>
+          <p class="left-dock__eyebrow">左侧工具</p>
           <h2 class="left-dock__title">{{ panelTitle }}</h2>
           <p class="left-dock__description">{{ panelDescription }}</p>
         </div>
-        <button class="left-dock__close" type="button" @click="shellStore.toggleLeftDock()">
-          收起
-        </button>
+        <button class="left-dock__close" type="button" @click="shellStore.toggleLeftDock()">收起</button>
       </header>
 
       <div class="left-dock__main">
-        <div class="left-dock__tabs">
+        <nav class="left-dock__tabs" aria-label="左侧面板">
           <button
             v-for="item in panelItems"
             :key="item.key"
@@ -32,7 +30,7 @@
             <span class="left-dock__tab-label">{{ item.label }}</span>
             <small class="left-dock__tab-count">{{ panelCounts[item.key] }}</small>
           </button>
-        </div>
+        </nav>
 
         <div class="left-dock__content">
           <div class="left-dock__tools">
@@ -59,7 +57,7 @@
 
 <script setup>
 import { CollectionTag, DataLine, Document, Files, Search } from "@element-plus/icons-vue";
-import { computed, onBeforeUnmount, shallowRef, ref } from "vue";
+import { computed, onBeforeUnmount, ref, shallowRef } from "vue";
 import { storeToRefs } from "pinia";
 import InsertAssetsPanel from "./InsertAssetsPanel.vue";
 import { useEditorDocumentStore } from "../stores/documentStore";
@@ -75,8 +73,8 @@ const searchQuery = shallowRef("");
 const panelItems = [
   { key: "pages", label: "页面", title: "管理模板页面", icon: Document },
   { key: "insert", label: "插入", title: "插入元素和常用控件", icon: CollectionTag },
-  { key: "layers", label: "图层", title: "查看并选择页面元素", icon: Files },
-  { key: "data", label: "数据", title: "查看可绑定的数据字段", icon: DataLine },
+  { key: "layers", label: "图层", title: "查看并定位页面元素", icon: Files },
+  { key: "data", label: "数据", title: "查看可绑定的字段路径", icon: DataLine },
 ];
 
 const panelTitle = computed(() => {
@@ -92,10 +90,10 @@ const panelTitle = computed(() => {
 
 const panelDescription = computed(() => {
   const map = {
-    pages: "切换页面并查看每页纸张信息。",
-    insert: "点击或拖拽元素到画布，开始搭建打印模板。",
-    layers: "定位当前页面的元素，后续可用于锁定、隐藏和排序。",
-    data: "查看模板可绑定的字段，快速确认打印数据来源。",
+    pages: "切换页面、重命名、复制或删除。",
+    insert: "拖入元素后继续排版和绑定。",
+    layers: "查看层级、状态和排序入口。",
+    data: "按字段路径查找可绑定数据。",
   };
 
   return map[activeLeftPanel.value] || "";
@@ -192,11 +190,11 @@ onBeforeUnmount(() => {
 }
 
 .left-dock__description {
-  margin: 6px 0 0;
+  margin: 5px 0 0;
   max-width: 240px;
   color: #64748b;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 .left-dock__close {

@@ -4,9 +4,7 @@
       <div>
         <p class="history-panel__eyebrow">编辑历史</p>
         <h2 class="history-panel__title">最近操作</h2>
-        <p class="history-panel__description">
-          查看当前会话的操作记录，确认哪些步骤可以撤销或重做。
-        </p>
+        <p class="history-panel__description">保留最近的编辑步骤，方便快速撤销、重做和确认修改范围。</p>
       </div>
       <div class="history-panel__badge">
         <strong>{{ historyEntries.length }}</strong>
@@ -14,15 +12,21 @@
       </div>
     </header>
 
+    <div class="history-panel__actions">
+      <el-button :disabled="!canUndo" size="small" plain @click="historyStore.undo">
+        <el-icon><RefreshLeft /></el-icon>
+        撤销
+      </el-button>
+      <el-button :disabled="!canRedo" size="small" plain @click="historyStore.redo">
+        <el-icon><RefreshRight /></el-icon>
+        重做
+      </el-button>
+      <span class="history-panel__hint">{{ historyHint }}</span>
+    </div>
+
     <div class="history-panel__summary">
-      <div class="history-panel__summary-chip" :class="{ 'is-active': canUndo }">
-        <strong>撤销</strong>
-        <span>{{ canUndo ? "可用" : "不可用" }}</span>
-      </div>
-      <div class="history-panel__summary-chip" :class="{ 'is-active': canRedo }">
-        <strong>重做</strong>
-        <span>{{ canRedo ? "可用" : "不可用" }}</span>
-      </div>
+      <span :class="{ 'is-active': canUndo }">撤销 {{ canUndo ? "可用" : "不可用" }}</span>
+      <span :class="{ 'is-active': canRedo }">重做 {{ canRedo ? "可用" : "不可用" }}</span>
     </div>
 
     <div class="history-panel__current">
@@ -32,7 +36,7 @@
 
     <div class="history-panel__stack">
       <div v-if="!historyEntries.length" class="history-panel__empty">
-        <strong>暂无可查看的编辑记录</strong>
+        <strong>暂无编辑记录</strong>
         <span>进行一次操作后，这里会开始记录。</span>
       </div>
 
@@ -45,11 +49,29 @@
 </template>
 
 <script setup>
+import { computed } from "vue";
 import { storeToRefs } from "pinia";
+import { RefreshLeft, RefreshRight } from "@element-plus/icons-vue";
 import { useEditorHistoryStore } from "../stores/historyStore";
 
 const historyStore = useEditorHistoryStore();
 const { canRedo, canUndo, historyEntries, lastCommandName } = storeToRefs(historyStore);
+
+const historyHint = computed(() => {
+  if (canUndo.value && canRedo.value) {
+    return "当前有前后两侧可回退步骤";
+  }
+
+  if (canUndo.value) {
+    return "可以撤销最近一步";
+  }
+
+  if (canRedo.value) {
+    return "可以重做已撤销步骤";
+  }
+
+  return "暂无可用历史";
+});
 </script>
 
 <style scoped lang="scss">
@@ -58,8 +80,8 @@ const { canRedo, canUndo, historyEntries, lastCommandName } = storeToRefs(histor
   min-width: 0;
   min-height: 0;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
+  gap: 10px;
+  padding: 14px;
   overflow: auto;
   background: #ffffff;
 }
@@ -83,25 +105,25 @@ const { canRedo, canUndo, historyEntries, lastCommandName } = storeToRefs(histor
 .history-panel__title {
   margin: 0;
   color: #0f172a;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.2;
 }
 
 .history-panel__description {
-  margin: 6px 0 0;
+  margin: 5px 0 0;
   color: #64748b;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 .history-panel__badge {
   display: flex;
-  min-width: 64px;
+  min-width: 62px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border: 1px solid var(--pd-border);
   background: #f8fafc;
   text-align: center;
@@ -118,44 +140,58 @@ const { canRedo, canUndo, historyEntries, lastCommandName } = storeToRefs(histor
   font-size: 11px;
 }
 
+.history-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.history-panel__actions :deep(.el-button) {
+  border-color: var(--pd-border);
+  color: #374151;
+}
+
+.history-panel__actions :deep(.el-button:hover:not(:disabled)) {
+  border-color: var(--pd-accent-border);
+  background: var(--pd-accent-bg);
+  color: var(--pd-accent-text);
+}
+
+.history-panel__hint {
+  color: var(--pd-muted);
+  font-size: 12px;
+}
+
 .history-panel__summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
 }
 
-.history-panel__summary-chip {
-  display: flex;
-  min-height: 62px;
-  flex-direction: column;
+.history-panel__summary span {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 10px 11px;
   border: 1px solid var(--pd-border);
   background: #f8fafc;
-}
-
-.history-panel__summary-chip.is-active {
-  border-color: var(--pd-accent-border);
-  background: var(--pd-accent-bg);
-}
-
-.history-panel__summary-chip strong {
-  color: var(--pd-strong);
-  font-size: 12px;
-}
-
-.history-panel__summary-chip span {
   color: var(--pd-muted);
   font-size: 12px;
-  line-height: 1.45;
+  font-weight: 700;
+}
+
+.history-panel__summary span.is-active {
+  border-color: var(--pd-accent-border);
+  background: var(--pd-accent-bg);
+  color: var(--pd-accent-text);
 }
 
 .history-panel__current {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1px solid var(--pd-border);
   background: #f8fafc;
 }
@@ -168,37 +204,37 @@ const { canRedo, canUndo, historyEntries, lastCommandName } = storeToRefs(histor
 .history-panel__current span {
   color: var(--pd-muted);
   font-size: 12px;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 .history-panel__stack {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .history-panel__empty {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 18px;
+  gap: 5px;
+  padding: 14px;
   border: 1px dashed var(--pd-border);
   background: #f8fafc;
   color: var(--pd-muted);
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 .history-panel__empty strong {
   color: var(--pd-strong);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .history-panel__card {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1px solid var(--pd-border);
   border-radius: var(--pd-radius-section);
   background: var(--pd-panel-bg);
