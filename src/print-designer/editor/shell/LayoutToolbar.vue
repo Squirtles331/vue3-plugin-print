@@ -101,10 +101,11 @@ function order(action) {
 .layout-toolbar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
-  padding: 6px 14px;
-  border-top: 1px solid var(--pd-divider);
+  min-height: 34px;
+  padding: 4px 12px;
+  border-top: 1px solid #edf1f5;
   background: #ffffff;
 }
 
@@ -115,21 +116,22 @@ function order(action) {
 }
 
 .layout-toolbar__label {
+  color: #64748b;
   font-weight: 700;
 }
 
 .layout-toolbar__group {
   display: flex;
-  gap: 4px;
-  padding-right: 8px;
-  border-right: 1px solid var(--pd-divider);
+  gap: 3px;
+  padding-right: 6px;
+  border-right: 1px solid #e1e7ef;
 }
 
 .layout-toolbar button {
-  height: 26px;
-  padding: 0 7px;
-  border: 1px solid var(--pd-border);
-  border-radius: var(--pd-radius-control);
+  height: 25px;
+  padding: 0 6px;
+  border: 1px solid #d9e1ea;
+  border-radius: 3px;
   background: #ffffff;
   color: #374151;
   font-size: 11px;
@@ -147,7 +149,7 @@ function order(action) {
   opacity: 0.46;
 }
 
-@media (max-width: 1800px) {
+@media (max-width: 1280px) {
   .layout-toolbar {
     flex-wrap: wrap;
   }

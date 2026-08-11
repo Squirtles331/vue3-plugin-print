@@ -1,4 +1,5 @@
 import { BARCODE_FORMATS, ElementType, PAGE_NUMBER_FORMATS, QRCODE_ECC_LEVELS } from "./constants";
+import { buildTableInsertOverrides } from "./tableInsertBuilder";
 import {
   BARCODE_INSPECTOR_SCHEMA,
   CIRCLE_INSPECTOR_SCHEMA,
@@ -12,33 +13,24 @@ import {
   TEXT_INSPECTOR_SCHEMA,
 } from "./elementInspectorSchemas";
 
-function defaultTableColumns() {
-  return Array.from({ length: 5 }, (_, index) => ({
-    key: `field${index + 1}`,
-    title: `列 ${index + 1}`,
-    width: 100,
-    align: index === 0 ? "center" : "left",
-  }));
-}
-
 const tableStyle = {
-  fontSize: 14,
-  color: "#172033",
+  fontSize: 12,
+  color: "#111827",
   backgroundColor: "transparent",
-  borderColor: "#64748b",
+  borderColor: "#111827",
   borderWidth: 1,
-  headerBackgroundColor: "#eef2ff",
-  headerColor: "#172033",
-  headerFontSize: 14,
+  headerBackgroundColor: "#f3f4f6",
+  headerColor: "#111827",
+  headerFontSize: 12,
   footerBackgroundColor: "#f8fafc",
-  footerColor: "#172033",
-  footerFontSize: 14,
+  footerColor: "#111827",
+  footerFontSize: 12,
   textAlign: "left",
   headerTextAlign: "left",
   footerTextAlign: "left",
   fontStyle: "normal",
-  lineHeight: 1.45,
-  padding: 1.2,
+  lineHeight: 1.35,
+  padding: 0.8,
 };
 
 export const ELEMENT_DEFINITIONS = {
@@ -55,9 +47,8 @@ export const ELEMENT_DEFINITIONS = {
   [ElementType.TABLE]: {
     label: "表格",
     createDefaults: () => ({
-      width: 180, height: 100,
-      props: { columns: defaultTableColumns(), sampleData: [], footerData: [], dataVariable: "", footerDataVariable: "", transform: {}, autoPaginate: true, tfootRepeat: true, showHeader: true, showFooter: false, headerHeight: 10, rowHeight: 8, footerHeight: 10, repeatPerPage: false },
-      editorHints: { omitRows: true, rowCount: 10 },
+      ...buildTableInsertOverrides(),
+      props: { ...buildTableInsertOverrides().props, dataVariable: "", footerDataVariable: "", transform: {}, autoPaginate: true, tfootRepeat: true, repeatPerPage: false },
       style: { ...tableStyle },
     }),
     renderer: "table", inspectorSchema: TABLE_INSPECTOR_SCHEMA, interactionPolicy: "box",

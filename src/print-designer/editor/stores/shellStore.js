@@ -5,6 +5,7 @@ const PANEL_MIN_WIDTH = 280;
 const PANEL_MIN_HEIGHT = 320;
 const PANEL_MIN_X = 26;
 const PANEL_MIN_Y = 26;
+const RIGHT_PANEL_MIN_WIDTH = 500;
 
 const TOP_PANEL_KEYS = ["template", "pages", "view", "properties"];
 
@@ -103,8 +104,8 @@ export const useEditorShellStore = defineStore("printDesignerShell", () => {
   const rightDockCollapsed = shallowRef(false);
   const activeLeftPanel = shallowRef("pages");
   const activeRightPanel = shallowRef("properties");
-  const leftPanelWidth = shallowRef(320);
-  const rightPanelWidth = shallowRef(360);
+  const leftPanelWidth = shallowRef(360);
+  const rightPanelWidth = shallowRef(500);
 
   function nextZIndex() {
     panelZSeed.value += 1;
@@ -306,7 +307,7 @@ export const useEditorShellStore = defineStore("printDesignerShell", () => {
       return;
     }
 
-    rightPanelWidth.value = clamp(nextWidth, PANEL_MIN_WIDTH, 560);
+    rightPanelWidth.value = clamp(nextWidth, RIGHT_PANEL_MIN_WIDTH, 760);
   }
 
   function toggleLeftDock() {

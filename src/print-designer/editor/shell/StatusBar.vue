@@ -65,10 +65,10 @@ const guideLabel = computed(() => {
 .status-bar {
   display: flex;
   align-items: center;
-  gap: 10px 14px;
-  min-height: 28px;
+  gap: 8px 12px;
+  min-height: 25px;
   padding: 0 12px;
-  border-top: 1px solid var(--pd-divider);
+  border-top: 1px solid #dce3ec;
   background: var(--pd-statusbar-bg);
   color: var(--pd-muted);
   font-size: 11px;
@@ -78,7 +78,7 @@ const guideLabel = computed(() => {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -93,10 +93,10 @@ const guideLabel = computed(() => {
 }
 
 .status-bar__state {
-  padding: 2px 7px;
-  border: 1px solid #bbf7d0;
-  border-radius: 999px;
-  background: #f0fdf4;
+  padding: 1px 5px;
+  border: 1px solid #c4e7cf;
+  border-radius: 3px;
+  background: #f2fbf4;
   color: #15803d;
   font-size: 11px;
   font-weight: 700;

@@ -254,10 +254,11 @@ function toggleUnderline() {
 .text-format-toolbar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
-  padding: 8px 14px;
-  border-top: 1px solid var(--pd-divider);
+  min-height: 42px;
+  padding: 5px 12px;
+  border-top: 1px solid #edf1f5;
   background: #f8fafc;
 }
 
@@ -277,8 +278,9 @@ function toggleUnderline() {
 }
 
 .text-format-toolbar__label {
-  color: var(--pd-muted);
+  color: #6b7789;
   font-size: 11px;
+  font-weight: 700;
 }
 
 .text-format-toolbar__preset,
@@ -303,19 +305,21 @@ function toggleUnderline() {
 
 .text-format-toolbar__divider {
   width: 1px;
-  align-self: stretch;
-  background: var(--pd-divider);
+  align-self: center;
+  height: 24px;
+  background: #e1e7ef;
 }
 
 .text-format-toolbar__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  min-height: 28px;
+  width: 27px;
+  height: 27px;
+  min-height: 27px;
   padding: 0;
-  border: 1px solid var(--pd-border);
+  border: 1px solid #d9e1ea;
+  border-radius: 3px;
   background: #ffffff;
   color: #374151;
   font-size: 12px;
@@ -343,10 +347,11 @@ function toggleUnderline() {
 }
 
 .text-format-toolbar__color {
-  width: 32px;
-  height: 28px;
+  width: 30px;
+  height: 27px;
   padding: 0;
-  border: 1px solid var(--pd-border);
+  border: 1px solid #d9e1ea;
+  border-radius: 3px;
   background: #ffffff;
   cursor: pointer;
 }
@@ -360,7 +365,7 @@ function toggleUnderline() {
   width: 100%;
 }
 
-@media (max-width: 1800px) {
+@media (max-width: 1280px) {
   .text-format-toolbar {
     flex-wrap: wrap;
   }

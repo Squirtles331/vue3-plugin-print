@@ -725,7 +725,7 @@ onBeforeUnmount(() => {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: #eef1f5;
+  background: #eef2f7;
 }
 
 .workspace-root__chrome {
@@ -740,9 +740,9 @@ onBeforeUnmount(() => {
 
 .workspace-root__corner {
   position: relative;
-  border-right: 1px solid #d9dee8;
-  border-bottom: 1px solid #d9dee8;
-  background: #fafbfd;
+  border-right: 1px solid #dce3ec;
+  border-bottom: 1px solid #dce3ec;
+  background: #f7f9fc;
 }
 
 .workspace-root__corner::before,
@@ -802,7 +802,7 @@ onBeforeUnmount(() => {
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
-  background: #eef1f5;
+  background: #eef2f7;
 }
 
 .workspace-root__guide-overlay {

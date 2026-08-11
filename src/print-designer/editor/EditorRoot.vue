@@ -544,19 +544,19 @@ defineExpose({ setRuntimeData, setPrintPolicy, getTemplateDocument, getPublishRe
 
 <style scoped lang="scss">
 .editor-root {
-  --pd-shell-bg: #f3f4f6;
+  --pd-shell-bg: #f1f4f8;
   --pd-surface-bg: #ffffff;
   --pd-panel-bg: #ffffff;
   --pd-toolbar-bg: #ffffff;
   --pd-statusbar-bg: #ffffff;
-  --pd-border: #dcdfe4;
-  --pd-divider: #dcdfe4;
-  --pd-muted: #6b7280;
+  --pd-border: #d7dee8;
+  --pd-divider: #dce3ec;
+  --pd-muted: #66758a;
   --pd-text: #1f2328;
   --pd-strong: #1f2328;
   --pd-soft: #f8fafc;
-  --pd-accent-bg: #e8f0fe;
-  --pd-accent-border: #b6c8f9;
+  --pd-accent-bg: #edf4ff;
+  --pd-accent-border: #c3d6f7;
   --pd-accent-text: #1d4ed8;
   --pd-radius-panel: 0;
   --pd-radius-section: 0;

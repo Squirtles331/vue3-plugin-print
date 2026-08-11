@@ -156,8 +156,8 @@ onBeforeUnmount(() => {
   display: flex;
   min-width: 0;
   min-height: 0;
-  border-right: 1px solid #dbe4ef;
-  background: #edf2f7;
+  border-right: 1px solid #dce3ec;
+  background: #ffffff;
 }
 
 .left-dock__surface {
@@ -173,41 +173,43 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
-  border-bottom: 1px solid #e6ebf2;
-  background: #fbfcfe;
+  gap: 8px;
+  min-height: 68px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e4eaf1;
+  background: #ffffff;
 }
 
 .left-dock__eyebrow {
-  margin: 0 0 4px;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: #94a3b8;
+  margin: 0 0 3px;
+  color: #7c8ca1;
+  font-size: 10px;
+  letter-spacing: 0.04em;
 }
 
 .left-dock__title {
   margin: 0;
-  color: #0f172a;
-  font-size: 16px;
-  line-height: 1.1;
+  color: #172033;
+  font-size: 14px;
+  line-height: 1.2;
 }
 
 .left-dock__description {
-  margin: 5px 0 0;
+  margin: 4px 0 0;
   max-width: 240px;
-  color: #64748b;
-  font-size: 12px;
-  line-height: 1.45;
+  color: #728096;
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .left-dock__close {
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid #d9dee8;
-  border-radius: 8px;
+  height: 27px;
+  padding: 0 8px;
+  border: 1px solid #d8e1ed;
+  border-radius: 3px;
   background: #ffffff;
-  color: #64748b;
+  color: #5d6b7e;
+  font-size: 11px;
   cursor: pointer;
   transition:
     border-color 0.18s ease,
@@ -230,30 +232,31 @@ onBeforeUnmount(() => {
 
 .left-dock__tabs {
   display: flex;
-  width: 112px;
+  width: 76px;
   flex-shrink: 0;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  border-right: 1px solid #e9eef5;
-  background: #f8fafd;
+  gap: 4px;
+  padding: 8px 5px;
+  border-right: 1px solid #e4eaf1;
+  background: #f7f9fc;
 }
 
 .left-dock__tab {
   display: flex;
   width: 100%;
   align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  min-height: 42px;
-  padding: 0 12px;
+  justify-content: center;
+  gap: 2px;
+  min-height: 54px;
+  padding: 5px 2px;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 4px;
   background: transparent;
-  color: #66758c;
-  font-size: 13px;
+  color: #6d7c91;
+  font-size: 10px;
   font-weight: 600;
-  white-space: nowrap;
+  line-height: 1.2;
+  white-space: normal;
   cursor: pointer;
   transition:
     border-color 0.18s ease,
@@ -263,35 +266,30 @@ onBeforeUnmount(() => {
 }
 
 .left-dock__tab-label {
-  min-width: 0;
-  flex: 1;
+  min-width: 36px;
   overflow: hidden;
+  text-align: center;
   text-overflow: ellipsis;
 }
 
 .left-dock__tab :deep(.pd-button__content) {
-  display: inline-flex;
-  min-width: 0;
-  flex: 1;
+  display: flex;
+  width: 100%;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 3px;
 }
 
 .left-dock__tab-count {
-  display: inline-flex;
-  min-width: 20px;
-  justify-content: center;
-  color: #94a3b8;
-  font-size: 11px;
-  font-weight: 700;
+  display: none;
 }
 
 .left-dock__tab:hover,
 .left-dock__tab.is-active {
-  border-color: #c8d9f5;
-  background: linear-gradient(180deg, #ffffff 0%, #eef5ff 100%);
-  color: #2456c7;
-  box-shadow: 0 8px 18px rgba(148, 163, 184, 0.12);
+  border-color: #c9daf6;
+  background: #eaf2ff;
+  color: #2563c8;
+  box-shadow: none;
 }
 
 .left-dock__tab-icon {
@@ -299,9 +297,9 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
-  font-size: 15px;
+  width: 17px;
+  height: 17px;
+  font-size: 16px;
   color: currentColor;
 }
 
@@ -317,16 +315,16 @@ onBeforeUnmount(() => {
 .left-dock__tools {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-bottom: 1px solid #e9eef5;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e4eaf1;
   background: #ffffff;
 }
 
 .left-dock__count {
   flex: 0 0 auto;
-  color: #64748b;
-  font-size: 12px;
+  color: #6e7d91;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -354,6 +352,10 @@ onBeforeUnmount(() => {
   bottom: 0;
   left: 3px;
   width: 1px;
-  background: #d2dbe8;
+  background: transparent;
+}
+
+.left-dock__resizer:hover::before {
+  background: #93b7ed;
 }
 </style>
