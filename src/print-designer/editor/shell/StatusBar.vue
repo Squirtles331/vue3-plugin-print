@@ -1,22 +1,26 @@
 <template>
   <footer class="status-bar">
     <div class="status-bar__section">
+      <span class="status-bar__label">状态</span>
       <span class="status-bar__state" :class="{ 'is-dirty': dirty }">{{ saveStatus }}</span>
       <span>{{ selectedHint }}</span>
     </div>
 
     <div class="status-bar__section">
-      <span>X：{{ coordinateXLabel }}</span>
-      <span>Y：{{ coordinateYLabel }}</span>
+      <span class="status-bar__label">坐标</span>
+      <span>X {{ coordinateXLabel }}</span>
+      <span>Y {{ coordinateYLabel }}</span>
       <span v-if="guideLabel">{{ guideLabel }}</span>
     </div>
 
     <div class="status-bar__section">
+      <span class="status-bar__label">画布</span>
       <span>缩放 {{ zoomLabel }}</span>
-      <span>页面 {{ currentPageNumber }}/{{ totalPages }}</span>
+      <span>页码 {{ currentPageNumber }}/{{ totalPages }}</span>
     </div>
 
-    <div class="status-bar__section">
+    <div class="status-bar__section status-bar__section--meta">
+      <span class="status-bar__label">输出</span>
       <span>吸附 {{ snapEnabled ? "开启" : "关闭" }}</span>
       <span>单位 {{ unit }}</span>
       <span>纸张 {{ currentPaperLabel }}</span>
@@ -46,14 +50,14 @@ function formatCoordinate(value) {
 const zoomLabel = computed(() => `${Math.round(zoom.value * 100)}%`);
 const coordinateXLabel = computed(() => formatCoordinate(coordinateReadout.value.x));
 const coordinateYLabel = computed(() => formatCoordinate(coordinateReadout.value.y));
-const selectedHint = computed(() => (selectedCount.value ? `已选 ${selectedCount.value} 个元素` : "未选中元素"));
+const selectedHint = computed(() => (selectedCount.value ? `已选中 ${selectedCount.value} 个元素` : "未选中元素"));
 const guideLabel = computed(() => {
   if (coordinateReadout.value.source !== "guide" || !coordinateReadout.value.guideOrientation) {
     return "";
   }
 
   const axis = coordinateReadout.value.guideOrientation === "vertical" ? "纵向参考线" : "横向参考线";
-  return `${axis}：${formatCoordinate(coordinateReadout.value.guidePosition)}`;
+  return `${axis} ${formatCoordinate(coordinateReadout.value.guidePosition)}`;
 });
 </script>
 
@@ -73,7 +77,20 @@ const guideLabel = computed(() => {
 .status-bar__section {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  min-width: 0;
+}
+
+.status-bar__section--meta {
+  margin-left: auto;
+}
+
+.status-bar__label {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .status-bar__state {
@@ -92,7 +109,14 @@ const guideLabel = computed(() => {
   color: #c2410c;
 }
 
-.status-bar__section:last-child {
-  margin-left: auto;
+@media (max-width: 1200px) {
+  .status-bar {
+    flex-wrap: wrap;
+    gap: 10px 16px;
+  }
+
+  .status-bar__section--meta {
+    margin-left: 0;
+  }
 }
 </style>

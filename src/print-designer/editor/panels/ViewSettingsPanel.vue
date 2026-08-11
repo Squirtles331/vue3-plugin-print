@@ -1,74 +1,79 @@
 <template>
   <div class="view-settings-panel">
-    <div class="view-settings-panel__modes">
-      <button type="button" class="view-settings-panel__mode" @click="applyMode('focus')">
-        <strong>专注编辑</strong>
-        <span>保留必要辅助线，减少干扰。</span>
-      </button>
-      <button type="button" class="view-settings-panel__mode" @click="applyMode('print')">
-        <strong>打印检查</strong>
-        <span>更接近实际输出时的视觉状态。</span>
-      </button>
-      <button type="button" class="view-settings-panel__mode" @click="applyMode('simple')">
-        <strong>简洁视图</strong>
-        <span>关闭大多数辅助层，适合快速浏览。</span>
-      </button>
-    </div>
+    <header class="view-settings-panel__header">
+      <div>
+        <p class="view-settings-panel__eyebrow">视图设置</p>
+        <h2 class="view-settings-panel__title">编辑视图</h2>
+        <p class="view-settings-panel__description">
+          这里只影响编辑器的显示方式，不会直接写入打印结果。
+        </p>
+      </div>
+      <div class="view-settings-panel__badge">
+        <strong>{{ activeOptionCount }}</strong>
+        <span>项开启</span>
+      </div>
+    </header>
 
-    <div class="view-settings-panel__section">
+    <section class="view-settings-panel__section">
+      <div class="view-settings-panel__section-title">模式预设</div>
+      <div class="view-settings-panel__modes">
+        <button type="button" class="view-settings-panel__mode" @click="applyMode('focus')">
+          <strong>专注编辑</strong>
+          <span>保留必要辅助线，减少干扰。</span>
+        </button>
+        <button type="button" class="view-settings-panel__mode" @click="applyMode('print')">
+          <strong>打印检查</strong>
+          <span>更接近最终输出时的视觉状态。</span>
+        </button>
+        <button type="button" class="view-settings-panel__mode" @click="applyMode('simple')">
+          <strong>简洁视图</strong>
+          <span>关闭大多数辅助层，便于快速浏览。</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="view-settings-panel__section">
       <div class="view-settings-panel__section-title">编辑辅助</div>
       <label class="view-settings-panel__toggle">
         <span>显示参考线</span>
         <el-switch :model-value="guidesVisible" @change="viewportStore.toggleGuides" />
       </label>
-
       <label class="view-settings-panel__toggle">
         <span>显示网格</span>
         <el-switch :model-value="gridVisible" @change="viewportStore.toggleGrid" />
       </label>
-
       <label class="view-settings-panel__toggle">
         <span>显示边距线</span>
         <el-switch :model-value="safeAreaVisible" @change="viewportStore.toggleSafeArea" />
       </label>
-
       <label class="view-settings-panel__toggle">
         <span>显示页面边框</span>
         <el-switch :model-value="pageOutlineVisible" @change="viewportStore.togglePageOutline" />
       </label>
-
       <label class="view-settings-panel__toggle">
         <span>吸附</span>
         <el-switch :model-value="snapEnabled" @change="viewportStore.toggleSnap" />
       </label>
-    </div>
+    </section>
 
-    <div class="view-settings-panel__separator"></div>
-
-    <div class="view-settings-panel__section">
+    <section class="view-settings-panel__section">
       <div class="view-settings-panel__section-title">交互偏好</div>
       <label class="view-settings-panel__toggle">
         <span>允许元素拖出画布</span>
-        <el-switch
-          :model-value="allowOverflowDrag"
-          @change="viewportStore.toggleAllowOverflowDrag"
-        />
+        <el-switch :model-value="allowOverflowDrag" @change="viewportStore.toggleAllowOverflowDrag" />
       </label>
-
       <label class="view-settings-panel__toggle">
-        <span>文本元素快捷操作栏</span>
-        <el-switch
-          :model-value="textQuickToolbarVisible"
-          @change="viewportStore.toggleTextQuickToolbar"
-        />
+        <span>文本快捷操作条</span>
+        <el-switch :model-value="textQuickToolbarVisible" @change="viewportStore.toggleTextQuickToolbar" />
       </label>
-    </div>
+    </section>
 
-    <p class="view-settings-panel__hint">这些设置只影响编辑视图，不会直接写入打印输出结果。</p>
+    <p class="view-settings-panel__hint">这些设置只影响编辑器视图，不会直接改写模板数据。</p>
   </div>
 </template>
 
 <script setup>
+import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useEditorViewportStore } from "../stores/viewportStore";
 
@@ -83,6 +88,20 @@ const {
   allowOverflowDrag,
   textQuickToolbarVisible,
 } = storeToRefs(viewportStore);
+
+const activeOptionCount = computed(() => {
+  const options = [
+    guidesVisible.value,
+    gridVisible.value,
+    safeAreaVisible.value,
+    pageOutlineVisible.value,
+    snapEnabled.value,
+    allowOverflowDrag.value,
+    textQuickToolbarVisible.value,
+  ];
+
+  return options.filter(Boolean).length;
+});
 
 function applyMode(mode) {
   if (mode === "focus") {
@@ -116,7 +135,76 @@ function applyMode(mode) {
   display: flex;
   min-width: 0;
   flex-direction: column;
+  gap: 12px;
+}
+
+.view-settings-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.view-settings-panel__eyebrow {
+  margin: 0 0 4px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.view-settings-panel__title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.view-settings-panel__description {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.view-settings-panel__badge {
+  display: flex;
+  min-width: 64px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--pd-border);
+  background: #f8fafc;
+  text-align: center;
+}
+
+.view-settings-panel__badge strong {
+  color: var(--pd-strong);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.view-settings-panel__badge span {
+  color: var(--pd-muted);
+  font-size: 11px;
+}
+
+.view-settings-panel__section {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--pd-border);
+  background: var(--pd-panel-bg);
+}
+
+.view-settings-panel__section-title {
+  color: var(--pd-strong);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .view-settings-panel__modes {
@@ -154,18 +242,6 @@ function applyMode(mode) {
   line-height: 1.45;
 }
 
-.view-settings-panel__section {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.view-settings-panel__section-title {
-  color: var(--pd-strong);
-  font-size: 12px;
-  font-weight: 700;
-}
-
 .view-settings-panel__toggle {
   display: flex;
   align-items: center;
@@ -179,16 +255,20 @@ function applyMode(mode) {
   color: #374151;
 }
 
-.view-settings-panel__separator {
-  height: 1px;
-  margin: 2px 0;
-  background: var(--pd-divider);
-}
-
 .view-settings-panel__hint {
   margin: 0;
   color: var(--pd-muted);
   font-size: 11px;
   line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+  .view-settings-panel__header {
+    flex-direction: column;
+  }
+
+  .view-settings-panel__modes {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

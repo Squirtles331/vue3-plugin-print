@@ -14,13 +14,13 @@
 
       <section class="header-bar__tool-group" aria-label="编辑命令">
         <span class="header-bar__group-label">编辑</span>
-        <button type="button" class="header-bar__chip" :disabled="!canUndo" title="撤销上一步编辑" @click="historyStore.undo()">
+        <button type="button" class="header-bar__chip" :disabled="!canUndo" title="撤销上一步操作" @click="historyStore.undo()">
           <el-icon><RefreshLeft /></el-icon>
           撤销
         </button>
-        <button type="button" class="header-bar__chip" :disabled="!canRedo" title="恢复已撤销的编辑" @click="historyStore.redo()">
+        <button type="button" class="header-bar__chip" :disabled="!canRedo" title="重做刚才撤销的操作" @click="historyStore.redo()">
           <el-icon><RefreshRight /></el-icon>
-          恢复
+          重做
         </button>
       </section>
 
@@ -32,7 +32,7 @@
           class="header-bar__chip"
           :class="{ 'is-active': templatePanelActive }"
           type="button"
-          title="打开插入面板"
+          title="打开左侧插入面板"
           @click="openTemplatePanel"
         >
           <el-icon><CollectionTag /></el-icon>
@@ -46,13 +46,7 @@
           <el-icon><View /></el-icon>
           视图
         </button>
-        <button
-          class="header-bar__chip"
-          :class="{ 'is-active': propertiesPanelActive }"
-          type="button"
-          title="打开元素属性"
-          @click="openPropertiesPanel"
-        >
+        <button class="header-bar__chip" :class="{ 'is-active': propertiesPanelActive }" type="button" title="打开元素属性" @click="openPropertiesPanel">
           <el-icon><Setting /></el-icon>
           属性
         </button>
@@ -64,32 +58,32 @@
 
       <section class="header-bar__tool-group" aria-label="文件命令">
         <span class="header-bar__group-label">文件</span>
-        <button class="header-bar__chip" type="button" title="从起始模板创建" @click="$emit('new-template')">
+        <button class="header-bar__chip" type="button" title="从起始模板创建新文档" @click="emit('new-template')">
           <el-icon><DocumentAdd /></el-icon>
           新建
         </button>
-        <button class="header-bar__chip" type="button" title="打开已保存模板" @click="$emit('open-template')">
+        <button class="header-bar__chip" type="button" title="打开已保存模板" @click="emit('open-template')">
           <el-icon><FolderOpened /></el-icon>
           打开
         </button>
-        <button class="header-bar__chip" type="button" title="导入模板 JSON" @click="$emit('import-template')">导入</button>
-        <button class="header-bar__chip" type="button" title="导出模板 JSON" @click="$emit('export-template')">
+        <button class="header-bar__chip" type="button" title="导入模板 JSON" @click="emit('import-template')">导入</button>
+        <button class="header-bar__chip" type="button" title="导出模板 JSON" @click="emit('export-template')">
           <el-icon><Download /></el-icon>
           导出
         </button>
-        <button class="header-bar__chip" type="button" title="管理元素预设" @click="$emit('open-presets')">预设</button>
+        <button class="header-bar__chip" type="button" title="管理元素预设" @click="emit('open-presets')">预设</button>
       </section>
 
       <section class="header-bar__tool-group header-bar__tool-group--primary" aria-label="输出命令">
-        <button class="header-bar__chip is-primary" type="button" title="保存当前模板" @click="$emit('save-template')">
+        <button class="header-bar__chip is-primary" type="button" title="保存当前模板" @click="emit('save-template')">
           <el-icon><Check /></el-icon>
           保存
         </button>
-        <button class="header-bar__chip" type="button" title="预览运行时打印效果" @click="$emit('preview')">
+        <button class="header-bar__chip" type="button" title="预览运行时输出" @click="emit('preview')">
           <el-icon><View /></el-icon>
           预览
         </button>
-        <button class="header-bar__chip is-emphasis" type="button" title="打开浏览器打印" @click="$emit('print')">
+        <button class="header-bar__chip is-emphasis" type="button" title="打开浏览器打印" @click="emit('print')">
           <el-icon><Printer /></el-icon>
           打印
         </button>
@@ -124,7 +118,7 @@ import { useEditorHistoryStore } from "../stores/historyStore";
 import { useEditorSelectionStore } from "../stores/selectionStore";
 import { useEditorShellStore } from "../stores/shellStore";
 
-defineEmits(["new-template", "open-template", "import-template", "export-template", "open-presets", "save-template", "preview", "print", "export-pdf"]);
+const emit = defineEmits(["new-template", "open-template", "import-template", "export-template", "open-presets", "save-template", "preview", "print", "export-pdf"]);
 
 const historyStore = useEditorHistoryStore();
 const shellStore = useEditorShellStore();
@@ -140,17 +134,19 @@ const templatePanelActive = computed(() => !leftDockCollapsed.value && activeLef
 const pagePanelActive = computed(() => !rightDockCollapsed.value && activeRightPanel.value === "page");
 const viewPanelActive = computed(() => !rightDockCollapsed.value && activeRightPanel.value === "view");
 const propertiesPanelActive = computed(() => !rightDockCollapsed.value && activeRightPanel.value === "properties");
+
 const documentMeta = computed(() => `${currentPaperLabel.value} · 第 ${currentPageNumber.value}/${totalPages.value} 页`);
 const saveStatusClass = computed(() => ({
   "is-dirty": dirty.value,
   "is-saved": !dirty.value,
 }));
+
 const workflowHint = computed(() => {
   if (selectedCount.value > 0) {
-    return `已选中 ${selectedCount.value} 个元素，可在右侧属性窗格编辑。`;
+    return `已选中 ${selectedCount.value} 个元素，可在右侧属性面板继续调整。`;
   }
 
-  return "从左侧插入元素，绑定数据后先预览再打印。";
+  return "从左侧插入元素，完成绑定后先预览，再决定是否打印。";
 });
 
 function openTemplatePanel() {
