@@ -1,5 +1,5 @@
 <template>
-  <div class="runtime-qrcode" :class="{ 'is-empty': !hasValue, 'has-error': error }">
+  <div class="runtime-qrcode" :class="{ 'is-empty': !hasValue, 'has-error': error }" :data-runtime-status="runtimeStatus">
     <img v-if="dataUrl" :src="dataUrl" alt="" />
     <span v-else>{{ error || placeholder }}</span>
   </div>
@@ -20,6 +20,7 @@ const props = defineProps({
 
 const dataUrl = ref("");
 const error = ref("");
+const runtimeStatus = ref("empty");
 const hasValue = computed(() => !!props.value && !["empty", "missing"].includes(props.status));
 const placeholder = computed(() => (props.status === "missing" ? props.value : "Unbound QR code"));
 function machineColor(value, fallback) { return typeof value === "string" && /^#[\da-f]{3,8}$/i.test(value) ? value : fallback; }
@@ -28,13 +29,17 @@ async function render() {
   dataUrl.value = "";
   error.value = "";
   if (!hasValue.value) {
+    runtimeStatus.value = "empty";
     return;
   }
 
+  runtimeStatus.value = "pending";
   try {
     dataUrl.value = await QRCode.toDataURL(props.value, { errorCorrectionLevel: props.eccLevel, margin: Math.max(0, Math.min(40, Number(props.margin) || 0)), width: 320, color: { dark: machineColor(props.foreground, "#111827"), light: machineColor(props.background, "#ffffff") } });
+    runtimeStatus.value = "ready";
   } catch {
     error.value = "Invalid QR code value";
+    runtimeStatus.value = "error";
   }
 }
 

@@ -73,8 +73,7 @@ import { computed, ref, watch } from "vue";
 import PdButton from "../ui/primitives/PdButton.vue";
 import PdDialog from "../ui/primitives/PdDialog.vue";
 import PdInput from "../ui/primitives/PdInput.vue";
-import { validateTemplateDocument } from "../template/templateDocument.js";
-import { resolveRuntimeTemplate } from "./dataResolver.js";
+import { validatePrintRuntime } from "./preflight.js";
 import { printRuntimeDocument } from "./print.js";
 import RuntimeDocument from "./RuntimeDocument.vue";
 
@@ -115,17 +114,17 @@ const parseResult = computed(() => {
 });
 const runtimeData = computed(() => parseResult.value.value);
 const parseError = computed(() => parseResult.value.error);
-const validation = computed(() => validateTemplateDocument(props.document));
-const documentValid = computed(() => validation.value.valid);
-const validatedDocument = computed(() => validation.value.document);
-const validationIssues = computed(() => validation.value.issues || []);
-const resolvedRuntime = computed(() => {
-  if (!documentValid.value || parseError.value) {
-    return { document: null, issues: [] };
+const preflight = computed(() => {
+  if (parseError.value) {
+    return validatePrintRuntime(props.document, {});
   }
 
-  return resolveRuntimeTemplate(validatedDocument.value, runtimeData.value);
+  return validatePrintRuntime(props.document, runtimeData.value);
 });
+const documentValid = computed(() => preflight.value.templateIssues.every((issue) => issue.severity !== "error"));
+const validatedDocument = computed(() => preflight.value.document);
+const validationIssues = computed(() => preflight.value.templateIssues || []);
+const resolvedRuntime = computed(() => ({ document: preflight.value.runtimeDocument, issues: preflight.value.runtimeIssues }));
 const runtimeIssues = computed(() => resolvedRuntime.value.issues || []);
 const runtimeErrors = computed(() => runtimeIssues.value.filter((issue) => issue.severity === "error"));
 const bindingStats = computed(() => collectBindingStats(resolvedRuntime.value.document));

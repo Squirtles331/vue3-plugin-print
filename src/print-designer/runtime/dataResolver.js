@@ -128,7 +128,9 @@ function resolveTable(element, runtimeData) {
     rows: transformed.rows,
     footerRows: footer.value,
     dataStatus: data.status,
+    dataPath: data.path,
     footerStatus: footer.status,
+    footerPath: footer.path,
     issues,
   };
 }
@@ -149,19 +151,55 @@ export function resolveRuntimeTemplate(document, runtimeData = {}) {
   }
 
   const issues = [];
-  const pages = (input.pages || []).map((page) => ({
+  const pages = (input.pages || []).map((page, pageIndex) => ({
     ...page,
-    elements: (page.elements || []).map((element) => {
+    elements: (page.elements || []).map((element, elementIndex) => {
       const next = { ...element, runtime: {} };
       if (["text", "image", "barcode", "qrcode"].includes(element.type)) {
         next.runtime.value = resolveElementValue(element, runtimeData);
+        if (next.runtime.value.status === "missing") {
+          issues.push({
+            path: `pages[${pageIndex}].elements[${elementIndex}].variable`,
+            elementId: element.id,
+            binding: next.runtime.value.path,
+            message: `Missing binding value: ${bindingToken(next.runtime.value.path)}`,
+            severity: "warning",
+          });
+        }
       }
       if (element.type === "table") {
         next.runtime.table = resolveTable(element, runtimeData);
         next.runtime.table.issues.forEach((issue) => issues.push({ ...issue, path: `element:${element.id}` }));
+        if (next.runtime.table.dataStatus === "missing") {
+          issues.push({
+            path: `pages[${pageIndex}].elements[${elementIndex}].props.dataVariable`,
+            elementId: element.id,
+            binding: next.runtime.table.dataPath,
+            message: `Missing table data: ${bindingToken(next.runtime.table.dataPath)}`,
+            severity: "warning",
+          });
+        }
+        if (next.runtime.table.footerStatus === "missing") {
+          issues.push({
+            path: `pages[${pageIndex}].elements[${elementIndex}].props.footerDataVariable`,
+            elementId: element.id,
+            binding: next.runtime.table.footerPath,
+            message: `Missing table footer data: ${bindingToken(next.runtime.table.footerPath)}`,
+            severity: "warning",
+          });
+        }
       }
       if (element.type === "multiLabel") {
         next.runtime.multiLabel = resolveMultiLabel(element, runtimeData);
+        if (next.runtime.multiLabel.status === "missing") {
+          issues.push({
+            path: `pages[${pageIndex}].elements[${elementIndex}].props.dataVariable`,
+            elementId: element.id,
+            binding: next.runtime.multiLabel.path,
+            message: `Missing label data: ${bindingToken(next.runtime.multiLabel.path)}`,
+            severity: "warning",
+          });
+        }
       }
       return next;
     }),

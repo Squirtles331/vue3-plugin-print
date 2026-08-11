@@ -73,6 +73,7 @@ import { createLocalElementPresetRepository, instantiateElementPreset } from "..
 import { instantiateStarterTemplate, listStarterTemplates } from "../template/templateCatalog.js";
 import { downloadTemplateInterchange, parseTemplateInterchange } from "../template/templateInterchange.js";
 import { createPublishReadyTemplatePayload, serializeTemplateDocument } from "../template/templateDocument.js";
+import { validatePrintRuntime } from "../runtime/preflight.js";
 import { createRemoveObjectsCommand } from "./commands/documentCommands.js";
 import { executeEditorCommand } from "./commands/executeCommand";
 import TemplateLibraryDialog from "../template/TemplateLibraryDialog.vue";
@@ -116,7 +117,12 @@ const { selectedIds } = storeToRefs(selectionStore);
 function reportError(scope, error, fallback) {
   const message = error?.message || fallback;
   PdMessage.error(message);
-  emit("error", { scope, error, message });
+  emit("error", {
+    scope,
+    error,
+    message,
+    ...(Array.isArray(error?.issues) ? { issues: error.issues } : {}),
+  });
 }
 
 function currentTemplateResult() {
@@ -398,9 +404,17 @@ async function onPrint() {
     PdMessage.error(result.issues[0]?.message || "模板校验失败");
     return;
   }
+  const preflight = validatePrintRuntime(result.document, runtimeData.value);
+  if (!preflight.valid) {
+    const issue = preflight.issues.find((item) => item.severity === "error") || preflight.issues[0];
+    const error = new Error(issue?.message || "打印预检失败");
+    error.issues = preflight.issues;
+    onPrintError(error);
+    return;
+  }
   try {
     const { printRuntimeDocument } = await import("../runtime/print.js");
-    await printRuntimeDocument({ document: result.document, runtimeData: runtimeData.value });
+    await printRuntimeDocument({ document: preflight.document, runtimeData: runtimeData.value });
   } catch (error) {
     onPrintError(error);
   }

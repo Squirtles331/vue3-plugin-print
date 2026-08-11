@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "vitest";
+import { reactive } from "vue";
 import { createElement } from "../src/print-designer/core/elementFactory.js";
 import { createBlankTemplateDocument, createPublishReadyTemplatePayload, migrateTemplateDocument, serializeTemplateDocument, validateTemplateDocument } from "../src/print-designer/template/templateDocument.js";
 import { getElementPropertyCapability, validateElementProperty } from "../src/print-designer/core/propertyCapabilities.js";
@@ -101,4 +102,14 @@ test("property capability registry declares runtime-backed type-specific fields"
   assert.equal(getElementPropertyCapability("image", "style", "objectFit")?.runtimeEffect, "image");
   assert.match(validateElementProperty("qrcode", "props", "eccLevel", "invalid"), /eccLevel/);
   assert.equal(validateElementProperty("table", "props", "transform", { type: "sort", by: "sku" }), null);
+});
+
+test("reports unsupported reactive elements without throwing clone errors", () => {
+  const template = reactive(createBlankTemplateDocument({
+    pages: [{ id: "page-1", title: "Page 1", elements: [{ id: "unsupported", type: "unsupported", props: {}, style: {} }] }],
+  }));
+  const result = validateTemplateDocument(template);
+
+  assert.equal(result.valid, false);
+  assert.match(result.issues.find((issue) => issue.path.endsWith(".type")).message, /Unsupported element type/);
 });

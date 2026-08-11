@@ -79,7 +79,9 @@ test("unresolved bindings stay explicit and arbitrary table scripts are never pe
   assert.equal(byId.qrcode.runtime.value.status, "missing");
   assert.equal(byId.table.runtime.table.dataStatus, "missing");
   assert.equal(byId.labels.runtime.multiLabel.status, "missing");
-  assert.match(resolved.issues[0].message, /disabled/);
+  assert.ok(resolved.issues.some((issue) => /Missing binding value/.test(issue.message)));
+  assert.ok(resolved.issues.some((issue) => /Missing table data/.test(issue.message)));
+  assert.ok(resolved.issues.some((issue) => /disabled/.test(issue.message)));
   assert.equal(serialized.valid, true);
   assert.equal("customScript" in serialized.document.pages[0].elements.find((element) => element.id === "table").props, false);
 });

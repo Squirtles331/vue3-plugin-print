@@ -1,3 +1,4 @@
+import { toRaw } from "vue";
 import { createElement, getElementSizeRule, isElementType } from "../core/elementFactory.js";
 import { validateElementProperties } from "../core/propertyCapabilities.js";
 
@@ -21,11 +22,17 @@ const DEFAULT_PAPER = {
 const DEFAULT_MARGIN = { top: 8, right: 8, bottom: 8, left: 8 };
 
 function clone(value) {
+  const rawValue = toRaw(value);
+
   if (typeof structuredClone === "function") {
-    return structuredClone(value);
+    try {
+      return structuredClone(rawValue);
+    } catch {
+      // JSON template data should still serialize even if a reactive proxy leaks in.
+    }
   }
 
-  return JSON.parse(JSON.stringify(value));
+  return JSON.parse(JSON.stringify(rawValue));
 }
 
 function text(value, fallback = "") {

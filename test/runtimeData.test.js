@@ -3,6 +3,7 @@ import { test } from "vitest";
 import { reactive } from "vue";
 import { applyConstrainedTableTransform, resolveDataPath, resolveRuntimeTemplate } from "../src/print-designer/runtime/dataResolver.js";
 import { paginateRuntimeDocument } from "../src/print-designer/runtime/pagination.js";
+import { validatePrintRuntime } from "../src/print-designer/runtime/preflight.js";
 import { createBlankTemplateDocument } from "../src/print-designer/template/templateDocument.js";
 
 test("resolves nested runtime JSON paths", () => {
@@ -22,6 +23,8 @@ test("resolves bound elements and does not substitute sample rows for a missing 
   assert.equal(resolved.document.pages[0].elements[0].runtime.value.value, "Ada");
   assert.equal(resolved.document.pages[0].elements[1].runtime.table.dataStatus, "missing");
   assert.deepEqual(resolved.document.pages[0].elements[1].runtime.table.rows, []);
+  assert.match(resolved.issues[0].message, /Missing table data/);
+  assert.equal(resolved.issues[0].binding, "items");
 });
 
 test("resolves a reactive template without mutating the source document", () => {
@@ -70,6 +73,19 @@ test("only executes declarative table transforms and reports invalid transforms"
   assert.deepEqual(sorted.rows.map((row) => row.value), ["a", "b"]);
   assert.equal(sorted.issues.length, 0);
   assert.equal(invalid.issues[0].severity, "error");
+});
+
+test("validates print runtime with the same blocking issues used by preview", () => {
+  const document = createBlankTemplateDocument({
+    pages: [{ id: "page-1", title: "Page 1", elements: [
+      { id: "items", type: "table", x: 0, y: 0, width: 80, height: 32, props: { columns: [{ key: "name" }], dataVariable: "items", transform: { type: "javascript" } }, style: {} },
+    ] }],
+  });
+  const preflight = validatePrintRuntime(document, { items: [{ name: "Ada" }] });
+  const blockingIssue = preflight.issues.find((issue) => issue.severity === "error");
+
+  assert.equal(preflight.valid, false);
+  assert.match(blockingIssue.message, /supported declarative transform/);
 });
 
 test("runtime data cannot replace authored table columns or presentation", () => {

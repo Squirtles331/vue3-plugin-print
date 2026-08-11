@@ -1,4 +1,4 @@
-import type { DefineComponent, Plugin } from "vue";
+import type { ComponentOptionsMixin, DefineComponent, Plugin } from "vue";
 
 export interface TemplateDocument {
   schemaVersion: number;
@@ -12,6 +12,8 @@ export interface TemplateIssue {
   path: string;
   message: string;
   severity: "warning" | "error";
+  elementId?: string;
+  binding?: string;
 }
 
 export interface TemplateResult {
@@ -21,11 +23,35 @@ export interface TemplateResult {
 }
 
 export interface TemplateRepository {
+  create?(overrides?: Partial<TemplateDocument>): Promise<TemplateDocument>;
   list(): Promise<Array<{ id: string; name: string; updatedAt: string }>>;
   get(id: string): Promise<TemplateDocument | null>;
   save(document: TemplateDocument): Promise<TemplateDocument>;
   delete(id: string): Promise<boolean>;
   clear?(): Promise<void>;
+}
+
+export interface PrintTemplateStudioErrorPayload {
+  scope: string;
+  error?: unknown;
+  message: string;
+  issues?: TemplateIssue[];
+}
+
+export interface PrintTemplateStudioProps {
+  template?: TemplateDocument | null;
+  runtimeData?: Record<string, unknown>;
+  repository?: TemplateRepository | null;
+  storageKey?: string;
+  height?: string | number;
+}
+
+export interface PrintTemplateStudioEmitValidators {
+  "update:template": (template: TemplateDocument) => boolean;
+  "update:runtimeData": (runtimeData: Record<string, unknown>) => boolean;
+  "template-change": (template: TemplateDocument) => boolean;
+  error: (payload: PrintTemplateStudioErrorPayload) => boolean;
+  ready: (instance: PrintTemplateStudioInstance) => boolean;
 }
 
 export interface PrintTemplateStudioInstance {
@@ -36,13 +62,16 @@ export interface PrintTemplateStudioInstance {
   print(data?: Record<string, unknown>): Promise<void> | undefined;
 }
 
-export const PrintTemplateStudio: DefineComponent<{
-  template?: TemplateDocument | null;
-  runtimeData?: Record<string, unknown>;
-  repository?: TemplateRepository | null;
-  storageKey?: string;
-  height?: string | number;
-}>;
+export const PrintTemplateStudio: DefineComponent<
+  PrintTemplateStudioProps,
+  {},
+  {},
+  {},
+  {},
+  ComponentOptionsMixin,
+  ComponentOptionsMixin,
+  PrintTemplateStudioEmitValidators
+>;
 
 export const TEMPLATE_SCHEMA_VERSION: number;
 export function createBlankTemplateDocument(overrides?: Partial<TemplateDocument>): TemplateDocument;

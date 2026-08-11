@@ -1,5 +1,5 @@
 <template>
-  <div class="runtime-barcode" :class="{ 'is-empty': !hasValue, 'has-error': error }">
+  <div class="runtime-barcode" :class="{ 'is-empty': !hasValue, 'has-error': error }" :data-runtime-status="runtimeStatus">
     <svg v-if="hasValue && !error" ref="svgRef" class="runtime-barcode__svg"></svg>
     <span v-else>{{ error || placeholder }}</span>
     <small v-if="showValue && hasValue" :style="{ marginTop: `${Math.max(0, Math.min(40, Number(textMargin) || 0))}px`, fontSize: `${Math.max(6, Math.min(72, Number(textFontSize) || 10))}px` }">{{ value }}</small>
@@ -24,6 +24,7 @@ const props = defineProps({
 
 const svgRef = ref(null);
 const error = ref("");
+const runtimeStatus = ref("empty");
 const hasValue = computed(() => !!props.value && !["empty", "missing"].includes(props.status));
 const placeholder = computed(() => (props.status === "missing" ? props.value : "Unbound barcode"));
 function machineColor(value, fallback) { return typeof value === "string" && /^#[\da-f]{3,8}$/i.test(value) ? value : fallback; }
@@ -31,9 +32,11 @@ function machineColor(value, fallback) { return typeof value === "string" && /^#
 async function render() {
   error.value = "";
   if (!hasValue.value) {
+    runtimeStatus.value = "empty";
     return;
   }
 
+  runtimeStatus.value = "pending";
   await nextTick();
   try {
     JsBarcode(svgRef.value, props.value, {
@@ -45,8 +48,10 @@ async function render() {
       lineColor: machineColor(props.foreground, "#111827"),
       background: machineColor(props.background, "#ffffff"),
     });
+    runtimeStatus.value = "ready";
   } catch {
     error.value = "Invalid barcode value";
+    runtimeStatus.value = "error";
   }
 }
 
