@@ -109,7 +109,9 @@ const activeMode = computed(() => {
     gridVisible.value &&
     !safeAreaVisible.value &&
     pageOutlineVisible.value &&
-    snapEnabled.value
+    snapEnabled.value &&
+    !allowOverflowDrag.value &&
+    !textQuickToolbarVisible.value
   ) {
     return "focus";
   }
@@ -119,7 +121,9 @@ const activeMode = computed(() => {
     !gridVisible.value &&
     !safeAreaVisible.value &&
     pageOutlineVisible.value &&
-    snapEnabled.value
+    snapEnabled.value &&
+    !allowOverflowDrag.value &&
+    !textQuickToolbarVisible.value
   ) {
     return "print";
   }
@@ -129,7 +133,9 @@ const activeMode = computed(() => {
     !gridVisible.value &&
     !safeAreaVisible.value &&
     !pageOutlineVisible.value &&
-    snapEnabled.value
+    snapEnabled.value &&
+    !allowOverflowDrag.value &&
+    !textQuickToolbarVisible.value
   ) {
     return "simple";
   }

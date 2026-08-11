@@ -276,13 +276,16 @@ function openPropertiesPanel() {
 }
 
 .header-bar__hint {
-  max-width: 240px;
+  display: -webkit-box;
+  max-width: 320px;
   margin: 0;
   overflow: hidden;
   color: #64748b;
   font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
 }
 
 .header-bar button {

@@ -65,7 +65,7 @@ const guideLabel = computed(() => {
 .status-bar {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px 14px;
   min-height: 28px;
   padding: 0 12px;
   border-top: 1px solid var(--pd-divider);
@@ -77,9 +77,9 @@ const guideLabel = computed(() => {
 .status-bar__section {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   min-width: 0;
-  white-space: nowrap;
 }
 
 .status-bar__section--meta {
@@ -111,7 +111,8 @@ const guideLabel = computed(() => {
 @media (max-width: 1200px) {
   .status-bar {
     flex-wrap: wrap;
-    gap: 10px 16px;
+    align-items: flex-start;
+    gap: 8px 14px;
   }
 
   .status-bar__section--meta {
