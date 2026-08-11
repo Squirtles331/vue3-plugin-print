@@ -3,10 +3,29 @@
     <InspectorEmpty
       v-if="!selectedObject"
       title="未选中元素"
-      description="Only element properties are shown here. Configure page settings in the page panel."
+      description="选中画布中的元素后，这里会显示位置、样式、绑定和运行时属性。页面级设置请到右侧页面面板。"
     />
 
     <template v-else-if="isTableObject">
+      <section class="element-properties-panel__summary">
+        <div class="element-properties-panel__summary-head">
+          <el-input
+            :model-value="selectedObject.name"
+            placeholder="元素名称"
+            @input="setRootValue('name', $event)"
+          />
+          <span class="element-properties-panel__type-tag">{{ typeLabel }}</span>
+        </div>
+
+        <div class="element-properties-panel__summary-meta">
+          <span>分组 {{ tabs.length }}</span>
+          <span>属性 {{ propertyCapabilities.length }}</span>
+          <span>状态 {{ selectedObject.locked ? "已锁定" : "可编辑" }}</span>
+        </div>
+
+        <p class="element-properties-panel__summary-hint">{{ panelHint }}</p>
+      </section>
+
       <nav class="element-properties-panel__tabs">
         <button
           v-for="tab in tabs"
@@ -112,7 +131,7 @@
 
           <section class="element-properties-panel__section">
             <header class="element-properties-panel__section-head">
-              <h3>数据 & 行为</h3>
+              <h3>数据连接</h3>
             </header>
             <div class="element-properties-panel__section-body is-stack">
               <label class="element-properties-panel__field element-properties-panel__field--switch">
@@ -179,7 +198,7 @@
 
               <div class="element-properties-panel__code-card">
                 <div class="element-properties-panel__code-card-head">
-                  <span>列定义</span>
+                  <span>列配置</span>
                   <div class="element-properties-panel__code-card-actions">
                     <strong>JSON</strong>
                     <button
@@ -196,7 +215,7 @@
 
               <div class="element-properties-panel__code-card">
                 <div class="element-properties-panel__code-card-head">
-                  <span>数据</span>
+                  <span>示例数据</span>
                   <div class="element-properties-panel__code-card-actions">
                     <strong>JSON</strong>
                     <button
@@ -213,7 +232,7 @@
 
               <div class="element-properties-panel__code-card">
                 <div class="element-properties-panel__code-card-head">
-                  <span>表脚数据</span>
+                  <span>页脚数据</span>
                   <div class="element-properties-panel__code-card-actions">
                     <strong>JSON</strong>
                     <button
@@ -230,7 +249,7 @@
 
               <div class="element-properties-panel__code-card">
                 <div class="element-properties-panel__code-card-head">
-                  <span>数据转换</span>
+                  <span>转换规则</span>
                   <div class="element-properties-panel__code-card-actions">
                     <strong>JSON</strong>
                     <button
@@ -259,7 +278,7 @@
         <template v-else-if="activeTab === INSPECTOR_TABS.STYLE">
           <section class="element-properties-panel__section">
             <header class="element-properties-panel__section-head">
-              <h3>布局 & 尺寸</h3>
+              <h3>表格尺寸</h3>
             </header>
             <div class="element-properties-panel__section-body is-stack">
               <label class="element-properties-panel__field">
@@ -294,7 +313,7 @@
 
           <section class="element-properties-panel__section">
             <header class="element-properties-panel__section-head">
-              <h3>外观</h3>
+              <h3>主体样式</h3>
             </header>
             <div class="element-properties-panel__section-body is-stack">
               <label class="element-properties-panel__field">
@@ -344,7 +363,7 @@
 
           <section class="element-properties-panel__section">
             <header class="element-properties-panel__section-head">
-              <h3>表头样式</h3>
+              <h3>表头</h3>
             </header>
             <div class="element-properties-panel__section-body is-stack">
               <label class="element-properties-panel__field">
@@ -394,7 +413,7 @@
 
           <section class="element-properties-panel__section">
             <header class="element-properties-panel__section-head">
-              <h3>表脚样式</h3>
+              <h3>表脚</h3>
             </header>
             <div class="element-properties-panel__section-body is-stack">
               <label class="element-properties-panel__field">
@@ -535,7 +554,10 @@
           <span>Y {{ displayNumber(selectedObject.y) }}</span>
           <span>W {{ displayNumber(selectedObject.width) }}</span>
           <span>H {{ displayNumber(selectedObject.height) }}</span>
+          <span>状态 {{ selectedObject.locked ? "已锁定" : "可编辑" }}</span>
         </div>
+
+        <p class="element-properties-panel__summary-hint">{{ panelHint }}</p>
       </section>
 
       <template v-if="selectedSchema">
@@ -1165,6 +1187,16 @@ const activeTableEditor = ref({
 });
 */
 const typeLabel = computed(() => selectedDefinition.value?.label || selectedObject.value?.type || "");
+const panelHint = computed(() => {
+  if (!selectedObject.value) {
+    return "选中画布中的元素后，这里会显示位置、样式、绑定和运行时属性。";
+  }
+
+  const label = typeLabel.value || "元素";
+  const status = selectedObject.value.locked ? "当前元素已锁定，部分字段只读。" : "当前元素可编辑。";
+
+  return `正在编辑 ${label}。${status}`;
+});
 
 watch(
   tabs,
@@ -3056,6 +3088,13 @@ function executeDeleteSelectedObjects(objectIds) {
   gap: 10px;
   color: var(--pd-muted);
   font-size: 12px;
+}
+
+.element-properties-panel__summary-hint {
+  margin: 0;
+  color: var(--pd-muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .element-properties-panel__tabs {

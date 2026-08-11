@@ -34,7 +34,7 @@ export function createTemplateModel({
   pages,
   pageObjectMap,
   objectsById,
-}) {
+  }) {
   return {
     meta: {
       name: documentName,
@@ -69,10 +69,14 @@ export function createTemplateModel({
         visible: printMarksVisible,
       },
     },
-    pages: (pages || []).map((page) => ({
-      ...page,
-      elements: buildPageElements(page.id, pageObjectMap, objectsById),
-    })),
+    pages: (pages || []).map((page) => {
+      const { isCurrent, ...pageData } = page || {};
+
+      return {
+        ...pageData,
+        elements: buildPageElements(page.id, pageObjectMap, objectsById),
+      };
+    }),
   };
 }
 

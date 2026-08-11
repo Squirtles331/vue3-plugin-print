@@ -24,7 +24,7 @@
           :palette="palette"
           @palette-dragstart="$emit('palette-dragstart', $event[0], $event[1])"
         />
-        <PagesPanel v-else-if="activeTab === 'pages'" :pages="pages" />
+        <PagesPanel v-else-if="activeTab === 'pages'" :pages="pages" @select="onPageSelect" />
         <LayersPanel v-else-if="activeTab === 'layers'" :layers="layers" />
         <DataPanel v-else :variables="variables" />
       </div>
@@ -34,6 +34,8 @@
 
 <script setup>
 import { computed, ref, watch } from "vue";
+import { useEditorDocumentStore } from "../../editor/stores/documentStore";
+import { useEditorSelectionStore } from "../../editor/stores/selectionStore";
 import DataPanel from "../sidebar/DataPanel.vue";
 import InsertPanel from "../sidebar/InsertPanel.vue";
 import LayersPanel from "../sidebar/LayersPanel.vue";
@@ -72,6 +74,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["palette-dragstart", "tab-change"]);
+const documentStore = useEditorDocumentStore();
+const selectionStore = useEditorSelectionStore();
 
 const activeTab = ref(props.initialTab);
 
@@ -89,6 +93,22 @@ watch(activeTab, (value) => {
 const currentSection = computed(
   () => props.sections.find((item) => item.key === activeTab.value) || props.sections[0] || {}
 );
+
+function onPageSelect(page) {
+  if (!page?.id) {
+    return;
+  }
+
+  const switched = documentStore.setCurrentPage(page.id);
+
+  if (!switched) {
+    return;
+  }
+
+  selectionStore.clearSelection();
+  selectionStore.focusedPageId = page.id;
+  selectionStore.hoverObjectId = null;
+}
 </script>
 
 <style scoped lang="scss">

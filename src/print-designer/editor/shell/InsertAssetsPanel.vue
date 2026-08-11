@@ -8,7 +8,12 @@
       @palette-dragstart="onPaletteDragStart"
       @palette-dragend="onPaletteDragEnd"
     />
-    <PagesPanel v-else-if="resolvedPanelKey === 'pages'" :pages="pages" :search-query="searchQuery" />
+    <PagesPanel
+      v-else-if="resolvedPanelKey === 'pages'"
+      :pages="pages"
+      :search-query="searchQuery"
+      @select="onPageSelect"
+    />
     <LayersPanel v-else-if="resolvedPanelKey === 'layers'" :layers="layers" :search-query="searchQuery" />
     <DataPanel v-else :variables="variables" :search-query="searchQuery" />
   </section>
@@ -92,6 +97,22 @@ function onPaletteInsert(item) {
   selectionStore.focusedPageId = pageId;
   selectionStore.hoverObjectId = null;
   shellStore.openRightDock("properties");
+}
+
+function onPageSelect(page) {
+  if (!page?.id) {
+    return;
+  }
+
+  const switched = documentStore.setCurrentPage(page.id);
+
+  if (!switched) {
+    return;
+  }
+
+  selectionStore.clearSelection();
+  selectionStore.focusedPageId = page.id;
+  selectionStore.hoverObjectId = null;
 }
 
 onBeforeUnmount(() => {

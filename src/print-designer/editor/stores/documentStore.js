@@ -41,6 +41,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
   const pageObjectMap = ref(Object.fromEntries(pages.value.map((page) => [page.id, []])));
   const dirty = ref(false);
   const currentPaperPresetKey = ref(DEFAULT_PAPER_KEY);
+  const currentPageId = ref(initialDocument.pages?.find((page) => page.isCurrent)?.id || pageCards[0]?.id || "page-1");
   const pageWidthMm = ref(DEFAULT_PAPER_PRESET?.widthMm || 210);
   const pageHeightMm = ref(DEFAULT_PAPER_PRESET?.heightMm || 297);
   const marginTopMm = ref(8);
@@ -56,11 +57,11 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
   const printMarksVisible = ref(false);
 
   const totalPages = computed(() => pages.value.length);
-  const currentPage = computed(() => pages.value.find((page) => page.isCurrent) || pages.value[0] || null);
+  const currentPage = computed(() => pages.value.find((page) => page.id === currentPageId.value) || pages.value[0] || null);
   const currentPageNumber = computed(() =>
     currentPage.value ? pages.value.findIndex((page) => page.id === currentPage.value.id) + 1 : 1
   );
-  const orderedObjectIds = computed(() => pageObjectMap.value[currentPage.value?.id || "page-1"] || []);
+  const orderedObjectIds = computed(() => pageObjectMap.value[currentPage.value?.id || currentPageId.value || "page-1"] || []);
   const layers = computed(() =>
     orderedObjectIds.value
       .map((id) => {
@@ -175,6 +176,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
         isCurrent: index === 0,
       };
     });
+    currentPageId.value = pages.value.find((page) => page.isCurrent)?.id || pages.value[0]?.id || "page-1";
     objectsById.value = nextObjects;
     pageObjectMap.value = nextPageObjectMap;
     variables.value = [];
@@ -495,6 +497,27 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     markDirty();
   }
 
+  function setCurrentPage(pageId) {
+    const nextPageId = String(pageId || "").trim();
+
+    if (!nextPageId || nextPageId === currentPageId.value) {
+      return false;
+    }
+
+    const hasPage = pages.value.some((page) => page.id === nextPageId);
+
+    if (!hasPage) {
+      return false;
+    }
+
+    currentPageId.value = nextPageId;
+    pages.value = pages.value.map((page) => ({
+      ...page,
+      isCurrent: page.id === nextPageId,
+    }));
+    return true;
+  }
+
   function setOrientation(orientation) {
     if (!['portrait', 'landscape'].includes(orientation)) {
       return;
@@ -565,6 +588,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     pageObjectMap,
     dirty,
     currentPaperPresetKey,
+    currentPageId,
     currentPaperPreset,
     currentPaperLabel,
     pageWidthMm,
@@ -610,6 +634,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     setUnit,
     setDocumentName,
     setCurrentPageTitle,
+    setCurrentPage,
     setPageBackground,
     togglePageCorner,
     toggleHeaderLine,
