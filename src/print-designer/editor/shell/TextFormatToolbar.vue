@@ -1,3 +1,80 @@
+<script setup lang="ts">
+import { FONT_FAMILY_OPTIONS, FONT_SIZE_OPTIONS, LINE_HEIGHT_OPTIONS, TEXT_PRESET_OPTIONS } from '../../core/textFormatting'
+import PdButton from '../../ui/primitives/PdButton.vue'
+import PdOption from '../../ui/primitives/PdOption.vue'
+import PdSelect from '../../ui/primitives/PdSelect.vue'
+import { executeEditorCommand } from '../commands/executeCommand'
+import { createApplyTextPresetCommand, createUpdateTextFormattingCommand } from '../commands/textCommands'
+import { useEditorDocumentStore } from '../stores/documentStore'
+import { useEditorHistoryStore } from '../stores/historyStore'
+import { useEditorSelectionStore } from '../stores/selectionStore'
+
+const TYPOGRAPHY_TYPES = new Set(['text', 'pageNumber', 'barcode', 'table', 'multiLabel'])
+const documentStore = useEditorDocumentStore()
+const historyStore = useEditorHistoryStore()
+const selectionStore = useEditorSelectionStore()
+const { objectsById } = storeToRefs(documentStore)
+const { selectedIds, selectedCount } = storeToRefs(selectionStore)
+const selectedTypographyObject = computed(() => {
+  if (selectedCount.value !== 1) {
+    return null
+  }
+  const object = objectsById.value[selectedIds.value[0]]
+  return TYPOGRAPHY_TYPES.has(object?.type) ? object : null
+})
+const toolbarDisabled = computed(() => !selectedTypographyObject.value)
+const presetEnabled = computed(() => selectedTypographyObject.value?.type === 'text')
+const activePreset = computed(() => selectedTypographyObject.value?.props?.textPreset || '')
+const fontFamilyValue = computed(() => selectedTypographyObject.value?.style?.fontFamily || '')
+const fontSizeValue = computed(() => selectedTypographyObject.value?.style?.fontSize || 14)
+const textColorValue = computed(() => selectedTypographyObject.value?.style?.color || '#000000')
+const textAlignValue = computed(() => selectedTypographyObject.value?.style?.textAlign || 'left')
+const verticalAlignValue = computed(() => selectedTypographyObject.value?.style?.verticalAlign || 'top')
+const lineHeightValue = computed(() => selectedTypographyObject.value?.style?.lineHeight || 1.4)
+const isBold = computed(() => selectedTypographyObject.value?.style?.fontWeight === 'bold')
+const isItalic = computed(() => selectedTypographyObject.value?.style?.fontStyle === 'italic')
+const isUnderline = computed(() => selectedTypographyObject.value?.style?.textDecoration === 'underline')
+const horizontalAlignButtons = [
+  { label: '左', value: 'left' },
+  { label: '中', value: 'center' },
+  { label: '右', value: 'right' },
+]
+const verticalAlignButtons = [
+  { label: '上', value: 'top' },
+  { label: '中', value: 'middle' },
+  { label: '下', value: 'bottom' },
+]
+function runTextCommand(command) {
+  if (!command) {
+    return
+  }
+  executeEditorCommand(historyStore, command)
+}
+function applyPreset(preset) {
+  if (!presetEnabled.value || !preset) {
+    return
+  }
+  runTextCommand(createApplyTextPresetCommand(documentStore, selectedTypographyObject.value.id, preset))
+}
+function setStyleValue(key, value) {
+  if (!selectedTypographyObject.value) {
+    return
+  }
+  runTextCommand(createUpdateTextFormattingCommand(documentStore, selectedTypographyObject.value.id, {
+    [key]: value,
+  }))
+}
+function toggleFontWeight() {
+  setStyleValue('fontWeight', isBold.value ? 'normal' : 'bold')
+}
+function toggleFontStyle() {
+  setStyleValue('fontStyle', isItalic.value ? 'normal' : 'italic')
+}
+function toggleUnderline() {
+  setStyleValue('textDecoration', isUnderline.value ? 'none' : 'underline')
+}
+</script>
+
 <template>
   <section class="text-format-toolbar" :class="{ 'is-disabled': toolbarDisabled }">
     <div class="text-format-toolbar__group">
@@ -19,7 +96,7 @@
       </PdSelect>
     </div>
 
-    <div class="text-format-toolbar__divider"></div>
+    <div class="text-format-toolbar__divider" />
 
     <div class="text-format-toolbar__group">
       <PdSelect
@@ -53,7 +130,7 @@
       </PdSelect>
     </div>
 
-    <div class="text-format-toolbar__divider"></div>
+    <div class="text-format-toolbar__divider" />
 
     <div class="text-format-toolbar__group text-format-toolbar__group--icons">
       <PdButton
@@ -85,7 +162,7 @@
       </PdButton>
     </div>
 
-    <div class="text-format-toolbar__divider"></div>
+    <div class="text-format-toolbar__divider" />
 
     <div class="text-format-toolbar__group">
       <input
@@ -94,10 +171,10 @@
         :value="textColorValue"
         :disabled="toolbarDisabled"
         @input="setStyleValue('color', ($event.target as HTMLInputElement).value)"
-      />
+      >
     </div>
 
-    <div class="text-format-toolbar__divider"></div>
+    <div class="text-format-toolbar__divider" />
 
     <div class="text-format-toolbar__group text-format-toolbar__group--icons">
       <PdButton
@@ -127,7 +204,7 @@
       </PdButton>
     </div>
 
-    <div class="text-format-toolbar__divider"></div>
+    <div class="text-format-toolbar__divider" />
 
     <div class="text-format-toolbar__group">
       <PdSelect
@@ -147,83 +224,6 @@
     </div>
   </section>
 </template>
-
-<script setup lang="ts">import { computed } from "vue";
-import { storeToRefs } from "pinia";
-import PdButton from "../../ui/primitives/PdButton.vue";
-import PdOption from "../../ui/primitives/PdOption.vue";
-import PdSelect from "../../ui/primitives/PdSelect.vue";
-import { FONT_FAMILY_OPTIONS, FONT_SIZE_OPTIONS, LINE_HEIGHT_OPTIONS, TEXT_PRESET_OPTIONS, } from "../../core/textFormatting";
-import { executeEditorCommand } from "../commands/executeCommand";
-import { createApplyTextPresetCommand, createUpdateTextFormattingCommand } from "../commands/textCommands";
-import { useEditorDocumentStore } from "../stores/documentStore";
-import { useEditorHistoryStore } from "../stores/historyStore";
-import { useEditorSelectionStore } from "../stores/selectionStore";
-const TYPOGRAPHY_TYPES = new Set(["text", "pageNumber", "barcode", "table", "multiLabel"]);
-const documentStore = useEditorDocumentStore();
-const historyStore = useEditorHistoryStore();
-const selectionStore = useEditorSelectionStore();
-const { objectsById } = storeToRefs(documentStore);
-const { selectedIds, selectedCount } = storeToRefs(selectionStore);
-const selectedTypographyObject = computed(() => {
-    if (selectedCount.value !== 1) {
-        return null;
-    }
-    const object = objectsById.value[selectedIds.value[0]];
-    return TYPOGRAPHY_TYPES.has(object?.type) ? object : null;
-});
-const toolbarDisabled = computed(() => !selectedTypographyObject.value);
-const presetEnabled = computed(() => selectedTypographyObject.value?.type === "text");
-const activePreset = computed(() => selectedTypographyObject.value?.props?.textPreset || "");
-const fontFamilyValue = computed(() => selectedTypographyObject.value?.style?.fontFamily || "");
-const fontSizeValue = computed(() => selectedTypographyObject.value?.style?.fontSize || 14);
-const textColorValue = computed(() => selectedTypographyObject.value?.style?.color || "#000000");
-const textAlignValue = computed(() => selectedTypographyObject.value?.style?.textAlign || "left");
-const verticalAlignValue = computed(() => selectedTypographyObject.value?.style?.verticalAlign || "top");
-const lineHeightValue = computed(() => selectedTypographyObject.value?.style?.lineHeight || 1.4);
-const isBold = computed(() => selectedTypographyObject.value?.style?.fontWeight === "bold");
-const isItalic = computed(() => selectedTypographyObject.value?.style?.fontStyle === "italic");
-const isUnderline = computed(() => selectedTypographyObject.value?.style?.textDecoration === "underline");
-const horizontalAlignButtons = [
-    { label: "左", value: "left" },
-    { label: "中", value: "center" },
-    { label: "右", value: "right" },
-];
-const verticalAlignButtons = [
-    { label: "上", value: "top" },
-    { label: "中", value: "middle" },
-    { label: "下", value: "bottom" },
-];
-function runTextCommand(command) {
-    if (!command) {
-        return;
-    }
-    executeEditorCommand(historyStore, command);
-}
-function applyPreset(preset) {
-    if (!presetEnabled.value || !preset) {
-        return;
-    }
-    runTextCommand(createApplyTextPresetCommand(documentStore, selectedTypographyObject.value.id, preset));
-}
-function setStyleValue(key, value) {
-    if (!selectedTypographyObject.value) {
-        return;
-    }
-    runTextCommand(createUpdateTextFormattingCommand(documentStore, selectedTypographyObject.value.id, {
-        [key]: value,
-    }));
-}
-function toggleFontWeight() {
-    setStyleValue("fontWeight", isBold.value ? "normal" : "bold");
-}
-function toggleFontStyle() {
-    setStyleValue("fontStyle", isItalic.value ? "normal" : "italic");
-}
-function toggleUnderline() {
-    setStyleValue("textDecoration", isUnderline.value ? "none" : "underline");
-}
-</script>
 
 <style scoped lang="scss">
 .text-format-toolbar {

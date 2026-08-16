@@ -1,3 +1,21 @@
+<script setup lang="ts">
+import { imageObjectPosition } from '../../runtime/propertySemantics.js'
+import { bindingLabel, previewPanelStyle } from './elementPreview.js'
+
+const props = defineProps({
+  object: {
+    type: Object,
+    required: true,
+  },
+})
+const frameStyle = computed(() => previewPanelStyle(props.object, '#f8fafc'))
+const imageStyle = computed(() => ({
+  objectFit: props.object.style?.objectFit || 'contain',
+  objectPosition: imageObjectPosition(props.object.style),
+}))
+const placeholder = computed(() => bindingLabel(props.object) || props.object.props?.placeholder || '未绑定图片')
+</script>
+
 <template>
   <div class="pd-image-element" :style="frameStyle">
     <img
@@ -6,33 +24,16 @@
       :src="object.props.src"
       alt=""
       :style="imageStyle"
-    />
+    >
     <div v-else class="pd-image-element__placeholder">
       <span class="pd-image-element__art" aria-hidden="true">
-        <i></i><b></b>
+        <i /><b />
       </span>
       <strong>图片</strong>
       <small>{{ placeholder }}</small>
     </div>
   </div>
 </template>
-
-<script setup lang="ts">import { computed } from "vue";
-import { imageObjectPosition } from "../../runtime/propertySemantics.js";
-import { bindingLabel, previewPanelStyle } from "./elementPreview.js";
-const props = defineProps({
-    object: {
-        type: Object,
-        required: true,
-    },
-});
-const frameStyle = computed(() => previewPanelStyle(props.object, "#f8fafc"));
-const imageStyle = computed(() => ({
-    objectFit: props.object.style?.objectFit || "contain",
-    objectPosition: imageObjectPosition(props.object.style),
-}));
-const placeholder = computed(() => bindingLabel(props.object) || props.object.props?.placeholder || "未绑定图片");
-</script>
 
 <style scoped lang="scss">
 .pd-image-element {

@@ -1,3 +1,127 @@
+<script setup lang="ts">
+import { javascript } from '@codemirror/lang-javascript'
+import { json } from '@codemirror/lang-json'
+import { EditorState } from '@codemirror/state'
+import { oneDark } from '@codemirror/theme-one-dark'
+import { EditorView } from '@codemirror/view'
+import { basicSetup } from 'codemirror'
+import PdButton from '../../ui/primitives/PdButton.vue'
+import PdDialog from '../../ui/primitives/PdDialog.vue'
+
+const props = defineProps({
+  visible: {
+    type: Boolean,
+    default: false,
+  },
+  modelValue: {
+    type: String,
+    default: '',
+  },
+  title: {
+    type: String,
+    default: '',
+  },
+  language: {
+    type: String,
+    default: 'json',
+  },
+})
+const emit = defineEmits(['update:modelValue', 'update:visible', 'save', 'cancel'])
+const editorHost = ref(null)
+const languageLabel = computed(() => (props.language === 'javascript' ? 'JAVASCRIPT' : 'JSON'))
+let editorView = null
+function languageExtension() {
+  return props.language === 'javascript' ? javascript() : json()
+}
+function buildEditorState(doc = '') {
+  return EditorState.create({
+    doc,
+    extensions: [
+      basicSetup,
+      EditorView.lineWrapping,
+      oneDark,
+      languageExtension(),
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged) {
+          emit('update:modelValue', update.state.doc.toString())
+        }
+      }),
+    ],
+  })
+}
+async function ensureEditor() {
+  if (!props.visible) {
+    return
+  }
+  await nextTick()
+  if (!editorHost.value) {
+    return
+  }
+  if (!editorView) {
+    editorView = new EditorView({
+      state: buildEditorState(props.modelValue),
+      parent: editorHost.value,
+    })
+    return
+  }
+  syncEditorContent(props.modelValue)
+}
+function syncEditorContent(value) {
+  if (!editorView) {
+    return
+  }
+  const current = editorView.state.doc.toString()
+  if (current === value) {
+    return
+  }
+  editorView.dispatch({
+    changes: {
+      from: 0,
+      to: current.length,
+      insert: value,
+    },
+  })
+}
+function recreateEditor() {
+  if (editorView) {
+    editorView.destroy()
+    editorView = null
+  }
+  if (props.visible) {
+    ensureEditor()
+  }
+}
+function onDialogVisibleChange(value) {
+  if (!value) {
+    emit('cancel')
+    return
+  }
+  emit('update:visible', true)
+}
+watch(() => props.visible, (visible) => {
+  if (!visible) {
+    if (editorView) {
+      editorView.destroy()
+      editorView = null
+    }
+    return
+  }
+  ensureEditor()
+}, { immediate: true })
+watch(() => props.modelValue, (value) => {
+  syncEditorContent(value)
+})
+watch(() => props.language, () => {
+  recreateEditor()
+})
+onBeforeUnmount(() => {
+  if (editorView) {
+    editorView.destroy()
+    editorView = null
+  }
+})
+</script>
+
 <template>
   <PdDialog
     class="table-code-editor-dialog"
@@ -12,145 +136,28 @@
           <strong>{{ title }}</strong>
           <span>{{ languageLabel }}</span>
         </div>
-        <button type="button" class="table-code-editor-dialog__mode">读写</button>
+        <button type="button" class="table-code-editor-dialog__mode">
+          读写
+        </button>
       </div>
     </template>
 
     <div class="table-code-editor-dialog__body">
-      <div ref="editorHost" class="table-code-editor-dialog__editor"></div>
+      <div ref="editorHost" class="table-code-editor-dialog__editor" />
     </div>
 
     <template #footer>
       <div class="table-code-editor-dialog__footer">
-        <PdButton @click="emit('cancel')">取消</PdButton>
-        <PdButton type="primary" @click="emit('save')">保存</PdButton>
+        <PdButton @click="emit('cancel')">
+          取消
+        </PdButton>
+        <PdButton type="primary" @click="emit('save')">
+          保存
+        </PdButton>
       </div>
     </template>
   </PdDialog>
 </template>
-
-<script setup lang="ts">import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
-import PdButton from "../../ui/primitives/PdButton.vue";
-import PdDialog from "../../ui/primitives/PdDialog.vue";
-import { basicSetup } from "codemirror";
-import { EditorState } from "@codemirror/state";
-import { EditorView } from "@codemirror/view";
-import { json } from "@codemirror/lang-json";
-import { javascript } from "@codemirror/lang-javascript";
-import { oneDark } from "@codemirror/theme-one-dark";
-const props = defineProps({
-    visible: {
-        type: Boolean,
-        default: false,
-    },
-    modelValue: {
-        type: String,
-        default: "",
-    },
-    title: {
-        type: String,
-        default: "",
-    },
-    language: {
-        type: String,
-        default: "json",
-    },
-});
-const emit = defineEmits(["update:modelValue", "update:visible", "save", "cancel"]);
-const editorHost = ref(null);
-const languageLabel = computed(() => (props.language === "javascript" ? "JAVASCRIPT" : "JSON"));
-let editorView = null;
-function languageExtension() {
-    return props.language === "javascript" ? javascript() : json();
-}
-function buildEditorState(doc = "") {
-    return EditorState.create({
-        doc,
-        extensions: [
-            basicSetup,
-            EditorView.lineWrapping,
-            oneDark,
-            languageExtension(),
-            EditorView.updateListener.of((update) => {
-                if (update.docChanged) {
-                    emit("update:modelValue", update.state.doc.toString());
-                }
-            }),
-        ],
-    });
-}
-async function ensureEditor() {
-    if (!props.visible) {
-        return;
-    }
-    await nextTick();
-    if (!editorHost.value) {
-        return;
-    }
-    if (!editorView) {
-        editorView = new EditorView({
-            state: buildEditorState(props.modelValue),
-            parent: editorHost.value,
-        });
-        return;
-    }
-    syncEditorContent(props.modelValue);
-}
-function syncEditorContent(value) {
-    if (!editorView) {
-        return;
-    }
-    const current = editorView.state.doc.toString();
-    if (current === value) {
-        return;
-    }
-    editorView.dispatch({
-        changes: {
-            from: 0,
-            to: current.length,
-            insert: value,
-        },
-    });
-}
-function recreateEditor() {
-    if (editorView) {
-        editorView.destroy();
-        editorView = null;
-    }
-    if (props.visible) {
-        ensureEditor();
-    }
-}
-function onDialogVisibleChange(value) {
-    if (!value) {
-        emit("cancel");
-        return;
-    }
-    emit("update:visible", true);
-}
-watch(() => props.visible, (visible) => {
-    if (!visible) {
-        if (editorView) {
-            editorView.destroy();
-            editorView = null;
-        }
-        return;
-    }
-    ensureEditor();
-}, { immediate: true });
-watch(() => props.modelValue, (value) => {
-    syncEditorContent(value);
-});
-watch(() => props.language, () => {
-    recreateEditor();
-});
-onBeforeUnmount(() => {
-    if (editorView) {
-        editorView.destroy();
-        editorView = null;
-    }
-});
-</script>
 
 <style scoped lang="scss">
 .table-code-editor-dialog__header {

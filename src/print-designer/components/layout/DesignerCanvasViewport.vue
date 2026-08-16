@@ -1,6 +1,54 @@
+<script setup lang="ts">
+import PaperCanvas from './PaperCanvas.vue'
+
+const props = defineProps({
+  zoom: {
+    type: Number,
+    default: 1,
+  },
+  scaledPaperWidth: {
+    type: Number,
+    default: 0,
+  },
+  scaledPaperHeight: {
+    type: Number,
+    default: 0,
+  },
+  pageWidthPx: {
+    type: Number,
+    default: 0,
+  },
+  pageHeightPx: {
+    type: Number,
+    default: 0,
+  },
+  pagePixelsPerUnit: {
+    type: Number,
+    default: 1,
+  },
+})
+const paperShellRef = ref(null)
+const paperShellStyle = computed(() => ({
+  width: `${props.scaledPaperWidth}px`,
+  minHeight: `${props.scaledPaperHeight}px`,
+}))
+const pageStackStyle = computed(() => ({
+  width: `${props.pageWidthPx}px`,
+  minHeight: `${props.pageHeightPx}px`,
+  transform: `scale(${props.zoom})`,
+  transformOrigin: 'top left',
+}))
+function getPageStackShellElement() {
+  return paperShellRef.value
+}
+defineExpose({
+  getPageStackShellElement,
+})
+</script>
+
 <template>
   <div class="designer-canvas-viewport">
-    <div class="designer-canvas-viewport__paper-shadow"></div>
+    <div class="designer-canvas-viewport__paper-shadow" />
     <div ref="paperShellRef" class="designer-canvas-viewport__page-stack-shell" :style="paperShellStyle">
       <div class="designer-canvas-viewport__page-stack" :style="pageStackStyle">
         <PaperCanvas class="designer-canvas-viewport__page-view" :pixels-per-unit="pagePixelsPerUnit" :zoom="zoom" />
@@ -8,53 +56,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">import { computed, ref } from "vue";
-import PaperCanvas from "./PaperCanvas.vue";
-const props = defineProps({
-    zoom: {
-        type: Number,
-        default: 1,
-    },
-    scaledPaperWidth: {
-        type: Number,
-        default: 0,
-    },
-    scaledPaperHeight: {
-        type: Number,
-        default: 0,
-    },
-    pageWidthPx: {
-        type: Number,
-        default: 0,
-    },
-    pageHeightPx: {
-        type: Number,
-        default: 0,
-    },
-    pagePixelsPerUnit: {
-        type: Number,
-        default: 1,
-    },
-});
-const paperShellRef = ref(null);
-const paperShellStyle = computed(() => ({
-    width: `${props.scaledPaperWidth}px`,
-    minHeight: `${props.scaledPaperHeight}px`,
-}));
-const pageStackStyle = computed(() => ({
-    width: `${props.pageWidthPx}px`,
-    minHeight: `${props.pageHeightPx}px`,
-    transform: `scale(${props.zoom})`,
-    transformOrigin: "top left",
-}));
-function getPageStackShellElement() {
-    return paperShellRef.value;
-}
-defineExpose({
-    getPageStackShellElement,
-});
-</script>
 
 <style scoped lang="scss">
 .designer-canvas-viewport {

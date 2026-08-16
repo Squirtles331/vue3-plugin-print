@@ -1,40 +1,36 @@
-import js from "@eslint/js";
-import vue from "eslint-plugin-vue";
-import globals from "globals";
-import tseslint from "typescript-eslint";
+import antfu from '@antfu/eslint-config'
 
-export default [
+export default antfu(
   {
-    ignores: ["dist/**", "node_modules/**", ".tmp/**", "openspec/**"],
+    type: 'lib',
+    stylistic: true,
+    typescript: true,
+    vue: true,
+    ignores: ['.tmp/**', 'openspec/**'],
   },
-  js.configs.recommended,
-  ...tseslint.configs.recommended,
-  ...vue.configs["flat/essential"],
   {
-    files: ["**/*.{ts,vue}"],
-    languageOptions: {
-      parserOptions: {
-        parser: tseslint.parser,
-        extraFileExtensions: [".vue"],
-      },
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-      },
-    },
+    files: ['**/*.{ts,vue}'],
     rules: {
-      "no-console": "off",
-      "no-unused-vars": "off",
-      "@typescript-eslint/no-unused-vars": "off",
-      "@typescript-eslint/no-explicit-any": "error",
-      "@typescript-eslint/ban-ts-comment": ["error", {
-        "ts-check": true,
-        "ts-expect-error": true,
-        "ts-ignore": true,
-        "ts-nocheck": true,
+      'no-console': 'off',
+      'node/prefer-global/process': 'off',
+      'prefer-promise-reject-errors': 'off',
+      'regexp/no-unused-capturing-group': 'off',
+      'style/max-statements-per-line': 'off',
+      'style/no-mixed-operators': 'off',
+      'ts/ban-ts-comment': ['error', {
+        'ts-check': true,
+        'ts-expect-error': true,
+        'ts-ignore': true,
+        'ts-nocheck': true,
       }],
-      "vue/multi-word-component-names": "off",
-      "vue/require-default-prop": "off",
+      'ts/no-explicit-any': 'error',
+      'ts/explicit-function-return-type': 'off',
+      'ts/no-use-before-define': 'off',
+      'unused-imports/no-unused-vars': 'off',
+      'vue/custom-event-name-casing': 'off',
+      'vue/multi-word-component-names': 'off',
+      'vue/prop-name-casing': 'off',
+      'vue/require-default-prop': 'off',
     },
   },
-];
+)

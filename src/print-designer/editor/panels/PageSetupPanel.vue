@@ -1,3 +1,7 @@
+<script setup lang="ts">
+import PageSettingsPanel from './PageSettingsPanel.vue'
+</script>
+
 <template>
   <div class="page-setup-panel">
     <div class="page-setup-panel__intro">
@@ -8,9 +12,6 @@
     <PageSettingsPanel />
   </div>
 </template>
-
-<script setup lang="ts">import PageSettingsPanel from "./PageSettingsPanel.vue";
-</script>
 
 <style scoped lang="scss">
 .page-setup-panel {

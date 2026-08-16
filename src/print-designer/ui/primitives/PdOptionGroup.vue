@@ -1,6 +1,7 @@
-<script setup lang="ts">defineProps({
-    label: { type: String, default: "" },
-});
+<script setup lang="ts">
+defineProps({
+  label: { type: String, default: '' },
+})
 </script>
 
 <template>

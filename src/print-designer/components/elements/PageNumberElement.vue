@@ -1,20 +1,21 @@
+<script setup lang="ts">
+import { pageNumberValue, textStyle } from './elementPreview.js'
+
+const props = defineProps({
+  object: {
+    type: Object,
+    required: true,
+  },
+})
+const value = computed(() => pageNumberValue(props.object))
+const contentStyle = computed(() => textStyle(props.object))
+</script>
+
 <template>
   <div class="pd-page-number-element" :style="contentStyle">
     <span class="pd-page-number-element__value">{{ value }}</span>
   </div>
 </template>
-
-<script setup lang="ts">import { computed } from "vue";
-import { pageNumberValue, textStyle } from "./elementPreview.js";
-const props = defineProps({
-    object: {
-        type: Object,
-        required: true,
-    },
-});
-const value = computed(() => pageNumberValue(props.object));
-const contentStyle = computed(() => textStyle(props.object));
-</script>
 
 <style scoped lang="scss">
 .pd-page-number-element {

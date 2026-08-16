@@ -1,8 +1,59 @@
+<script setup lang="ts">
+import { Check, CollectionTag, Document, DocumentAdd, Download, FolderOpened, Printer, RefreshLeft, RefreshRight, Setting, View } from '../../ui/icons.js'
+import PdButton from '../../ui/primitives/PdButton.vue'
+import PdIcon from '../../ui/primitives/PdIcon.vue'
+import { useEditorDocumentStore } from '../stores/documentStore'
+import { useEditorHistoryStore } from '../stores/historyStore'
+import { useEditorSelectionStore } from '../stores/selectionStore'
+import { useEditorShellStore } from '../stores/shellStore'
+import LayoutToolbar from './LayoutToolbar.vue'
+import TextFormatToolbar from './TextFormatToolbar.vue'
+
+const emit = defineEmits(['new-template', 'open-template', 'import-template', 'export-template', 'open-presets', 'save-template', 'preview', 'print', 'export-pdf'])
+const historyStore = useEditorHistoryStore()
+const shellStore = useEditorShellStore()
+const documentStore = useEditorDocumentStore()
+const selectionStore = useEditorSelectionStore()
+const { currentPageNumber, currentPaperLabel, dirty, documentName, saveStatus, totalPages } = storeToRefs(documentStore)
+const { canUndo, canRedo } = storeToRefs(historyStore)
+const { selectedCount } = storeToRefs(selectionStore)
+const { activeLeftPanel, activeRightPanel, leftDockCollapsed, rightDockCollapsed } = storeToRefs(shellStore)
+const templatePanelActive = computed(() => !leftDockCollapsed.value && activeLeftPanel.value === 'insert')
+const pagePanelActive = computed(() => !rightDockCollapsed.value && activeRightPanel.value === 'page')
+const viewPanelActive = computed(() => !rightDockCollapsed.value && activeRightPanel.value === 'view')
+const propertiesPanelActive = computed(() => !rightDockCollapsed.value && activeRightPanel.value === 'properties')
+const documentMeta = computed(() => `${currentPaperLabel.value} · 第 ${currentPageNumber.value}/${totalPages.value} 页`)
+const saveStatusClass = computed(() => ({
+  'is-dirty': dirty.value,
+  'is-saved': !dirty.value,
+}))
+const workflowHint = computed(() => {
+  if (selectedCount.value > 0) {
+    return `已选中 ${selectedCount.value} 个元素，可继续在右侧调整属性。`
+  }
+  return '从左侧插入元素，完成后先预览，再决定是否打印。'
+})
+function openTemplatePanel() {
+  shellStore.toggleLeftDockPanel('insert')
+}
+function openPagesPanel() {
+  shellStore.toggleLeftDockPanel('pages')
+}
+function openViewPanel() {
+  shellStore.toggleRightDockPanel('view')
+}
+function openPropertiesPanel() {
+  shellStore.toggleRightDockPanel('properties')
+}
+</script>
+
 <template>
   <header class="header-bar">
     <div class="header-bar__row">
       <div class="header-bar__brand">
-        <div class="header-bar__logo">PD</div>
+        <div class="header-bar__logo">
+          PD
+        </div>
         <div class="header-bar__title-group">
           <strong class="header-bar__title">{{ documentName }}</strong>
           <span class="header-bar__meta">{{ documentMeta }}</span>
@@ -10,21 +61,25 @@
         </div>
       </div>
 
-      <div class="header-bar__divider"></div>
+      <div class="header-bar__divider" />
 
       <section class="header-bar__tool-group" aria-label="编辑命令">
         <span class="header-bar__group-label">编辑</span>
         <PdButton native-type="button" class="header-bar__chip" :disabled="!canUndo" title="撤销上一步操作" @click="historyStore.undo()">
-          <template #icon><PdIcon><RefreshLeft /></PdIcon></template>
+          <template #icon>
+            <PdIcon><RefreshLeft /></PdIcon>
+          </template>
           撤销
         </PdButton>
         <PdButton native-type="button" class="header-bar__chip" :disabled="!canRedo" title="重做刚才撤销的操作" @click="historyStore.redo()">
-          <template #icon><PdIcon><RefreshRight /></PdIcon></template>
+          <template #icon>
+            <PdIcon><RefreshRight /></PdIcon>
+          </template>
           重做
         </PdButton>
       </section>
 
-      <div class="header-bar__divider"></div>
+      <div class="header-bar__divider" />
 
       <section class="header-bar__tool-group" aria-label="面板切换">
         <span class="header-bar__group-label">面板</span>
@@ -35,56 +90,82 @@
           title="打开左侧插入面板"
           @click="openTemplatePanel"
         >
-          <template #icon><PdIcon><CollectionTag /></PdIcon></template>
+          <template #icon>
+            <PdIcon><CollectionTag /></PdIcon>
+          </template>
           插入
         </PdButton>
         <PdButton class="header-bar__chip" :class="{ 'is-active': pagePanelActive }" native-type="button" title="打开页面设置" @click="openPagesPanel">
-          <template #icon><PdIcon><Document /></PdIcon></template>
+          <template #icon>
+            <PdIcon><Document /></PdIcon>
+          </template>
           页面
         </PdButton>
         <PdButton class="header-bar__chip" :class="{ 'is-active': viewPanelActive }" native-type="button" title="打开视图设置" @click="openViewPanel">
-          <template #icon><PdIcon><View /></PdIcon></template>
+          <template #icon>
+            <PdIcon><View /></PdIcon>
+          </template>
           视图
         </PdButton>
         <PdButton class="header-bar__chip" :class="{ 'is-active': propertiesPanelActive }" native-type="button" title="打开元素属性" @click="openPropertiesPanel">
-          <template #icon><PdIcon><Setting /></PdIcon></template>
+          <template #icon>
+            <PdIcon><Setting /></PdIcon>
+          </template>
           属性
         </PdButton>
       </section>
 
-      <div class="header-bar__spacer"></div>
+      <div class="header-bar__spacer" />
 
-      <p class="header-bar__hint">{{ workflowHint }}</p>
+      <p class="header-bar__hint">
+        {{ workflowHint }}
+      </p>
 
       <section class="header-bar__tool-group" aria-label="文件命令">
         <span class="header-bar__group-label">文件</span>
         <PdButton class="header-bar__chip" native-type="button" title="从起始模板创建新文档" @click="emit('new-template')">
-          <template #icon><PdIcon><DocumentAdd /></PdIcon></template>
+          <template #icon>
+            <PdIcon><DocumentAdd /></PdIcon>
+          </template>
           新建
         </PdButton>
         <PdButton class="header-bar__chip" native-type="button" title="打开已保存模板" @click="emit('open-template')">
-          <template #icon><PdIcon><FolderOpened /></PdIcon></template>
+          <template #icon>
+            <PdIcon><FolderOpened /></PdIcon>
+          </template>
           打开
         </PdButton>
-        <PdButton class="header-bar__chip" native-type="button" title="导入模板 JSON" @click="emit('import-template')">导入</PdButton>
+        <PdButton class="header-bar__chip" native-type="button" title="导入模板 JSON" @click="emit('import-template')">
+          导入
+        </PdButton>
         <PdButton class="header-bar__chip" native-type="button" title="导出模板 JSON" @click="emit('export-template')">
-          <template #icon><PdIcon><Download /></PdIcon></template>
+          <template #icon>
+            <PdIcon><Download /></PdIcon>
+          </template>
           导出
         </PdButton>
-        <PdButton class="header-bar__chip" native-type="button" title="管理元素预设" @click="emit('open-presets')">预设</PdButton>
+        <PdButton class="header-bar__chip" native-type="button" title="管理元素预设" @click="emit('open-presets')">
+          预设
+        </PdButton>
       </section>
 
       <section class="header-bar__tool-group header-bar__tool-group--primary" aria-label="输出命令">
         <PdButton class="header-bar__chip is-primary" native-type="button" title="保存当前模板" @click="emit('save-template')">
-          <template #icon><PdIcon><Check /></PdIcon></template>
+          <template #icon>
+            <PdIcon><Check /></PdIcon>
+          </template>
           保存
         </PdButton>
         <PdButton class="header-bar__chip" native-type="button" title="预览运行时输出" @click="emit('preview')">
-          <template #icon><PdIcon><View /></PdIcon></template>
+          <template #icon>
+            <PdIcon><View /></PdIcon>
+          </template>
           预览
         </PdButton>
         <PdButton class="header-bar__chip is-emphasis" native-type="button" title="打开浏览器打印" @click="emit('print')">
-          <template #icon><PdIcon><Printer /></PdIcon></template>
+          <template #icon>
+            <PdIcon><Printer /></PdIcon>
+          </template>
           打印
         </PdButton>
       </section>
@@ -94,55 +175,6 @@
     <LayoutToolbar />
   </header>
 </template>
-
-<script setup lang="ts">import { Check, CollectionTag, Document, DocumentAdd, Download, FolderOpened, Printer, RefreshLeft, RefreshRight, Setting, View, } from "../../ui/icons.js";
-import PdButton from "../../ui/primitives/PdButton.vue";
-import PdIcon from "../../ui/primitives/PdIcon.vue";
-import { computed } from "vue";
-import { storeToRefs } from "pinia";
-import TextFormatToolbar from "./TextFormatToolbar.vue";
-import LayoutToolbar from "./LayoutToolbar.vue";
-import { useEditorDocumentStore } from "../stores/documentStore";
-import { useEditorHistoryStore } from "../stores/historyStore";
-import { useEditorSelectionStore } from "../stores/selectionStore";
-import { useEditorShellStore } from "../stores/shellStore";
-const emit = defineEmits(["new-template", "open-template", "import-template", "export-template", "open-presets", "save-template", "preview", "print", "export-pdf"]);
-const historyStore = useEditorHistoryStore();
-const shellStore = useEditorShellStore();
-const documentStore = useEditorDocumentStore();
-const selectionStore = useEditorSelectionStore();
-const { currentPageNumber, currentPaperLabel, dirty, documentName, saveStatus, totalPages } = storeToRefs(documentStore);
-const { canUndo, canRedo } = storeToRefs(historyStore);
-const { selectedCount } = storeToRefs(selectionStore);
-const { activeLeftPanel, activeRightPanel, leftDockCollapsed, rightDockCollapsed } = storeToRefs(shellStore);
-const templatePanelActive = computed(() => !leftDockCollapsed.value && activeLeftPanel.value === "insert");
-const pagePanelActive = computed(() => !rightDockCollapsed.value && activeRightPanel.value === "page");
-const viewPanelActive = computed(() => !rightDockCollapsed.value && activeRightPanel.value === "view");
-const propertiesPanelActive = computed(() => !rightDockCollapsed.value && activeRightPanel.value === "properties");
-const documentMeta = computed(() => `${currentPaperLabel.value} · 第 ${currentPageNumber.value}/${totalPages.value} 页`);
-const saveStatusClass = computed(() => ({
-    "is-dirty": dirty.value,
-    "is-saved": !dirty.value,
-}));
-const workflowHint = computed(() => {
-    if (selectedCount.value > 0) {
-        return `已选中 ${selectedCount.value} 个元素，可继续在右侧调整属性。`;
-    }
-    return "从左侧插入元素，完成后先预览，再决定是否打印。";
-});
-function openTemplatePanel() {
-    shellStore.toggleLeftDockPanel("insert");
-}
-function openPagesPanel() {
-    shellStore.toggleLeftDockPanel("pages");
-}
-function openViewPanel() {
-    shellStore.toggleRightDockPanel("view");
-}
-function openPropertiesPanel() {
-    shellStore.toggleRightDockPanel("properties");
-}
-</script>
 
 <style scoped lang="scss">
 .header-bar {

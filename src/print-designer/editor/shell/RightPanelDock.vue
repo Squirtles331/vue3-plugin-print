@@ -1,3 +1,86 @@
+<script setup lang="ts">
+import StructurePanel from '../../components/inspector/StructurePanel.vue'
+import { Clock, DataLine, Files, Setting, View } from '../../ui/icons.js'
+import PdButton from '../../ui/primitives/PdButton.vue'
+import PdIcon from '../../ui/primitives/PdIcon.vue'
+import BindingPanel from '../panels/BindingPanel.vue'
+import ElementPropertiesPanel from '../panels/ElementPropertiesPanel.vue'
+import HistoryPanel from '../panels/HistoryPanel.vue'
+import PageSettingsPanel from '../panels/PageSettingsPanel.vue'
+import ViewSettingsPanel from '../panels/ViewSettingsPanel.vue'
+import { useEditorDocumentStore } from '../stores/documentStore'
+import { useEditorSelectionStore } from '../stores/selectionStore'
+import { useEditorShellStore } from '../stores/shellStore'
+
+const emit = defineEmits(['bind'])
+const shellStore = useEditorShellStore()
+const documentStore = useEditorDocumentStore()
+const selectionStore = useEditorSelectionStore()
+const { activeRightPanel, rightDockCollapsed, rightPanelWidth } = storeToRefs(shellStore)
+const { layers, variables } = storeToRefs(documentStore)
+const { selectedIds } = storeToRefs(selectionStore)
+const rightDockRef = ref(null)
+const panels = [
+  { key: 'properties', label: '属性', icon: Setting },
+  { key: 'page', label: '页面', icon: Setting },
+  { key: 'view', label: '视图', icon: View },
+  { key: 'layers', label: '结构', icon: Files },
+  { key: 'bindings', label: '绑定', icon: DataLine },
+  { key: 'history', label: '历史', icon: Clock },
+]
+const panelTitle = computed(() => {
+  const map = {
+    properties: '元素属性',
+    page: '页面设置',
+    view: '视图设置',
+    layers: '图层结构',
+    bindings: '数据绑定',
+    history: '历史记录',
+  }
+  return map[activeRightPanel.value] || '右侧面板'
+})
+const panelDescription = computed(() => {
+  const map = {
+    properties: !selectedIds.value.length
+      ? '选中画布元素后，可在这里修改位置、样式和绑定。'
+      : selectedIds.value.length === 1
+        ? '正在编辑 1 个选中元素。'
+        : `已选中 ${selectedIds.value.length} 个元素。可批量修改显示、打印、锁定和通用样式。`,
+    page: '设置纸张、方向、边距和打印标记。',
+    view: '控制辅助线、网格、吸附和编辑器显示。',
+    layers: '查看当前页图层并定位到画布。',
+    bindings: '查看可用字段并核对绑定结果。',
+    history: '查看最近操作，确认可撤销范围。',
+  }
+  return map[activeRightPanel.value] || ''
+})
+const panelBadges = computed(() => ({
+  properties: selectedIds.value.length,
+  layers: layers.value.length,
+  bindings: variables.value.length,
+}))
+function onPointerMove(event) {
+  const dockElement = rightDockRef.value
+  if (!dockElement) {
+    return
+  }
+  const dockRect = dockElement.getBoundingClientRect()
+  shellStore.setRightPanelWidth(dockRect.right - event.clientX)
+}
+function stopResize() {
+  window.removeEventListener('pointermove', onPointerMove)
+  window.removeEventListener('pointerup', stopResize)
+}
+function startResize(event) {
+  event.preventDefault()
+  window.addEventListener('pointermove', onPointerMove)
+  window.addEventListener('pointerup', stopResize)
+}
+onBeforeUnmount(() => {
+  stopResize()
+})
+</script>
+
 <template>
   <aside
     v-if="!rightDockCollapsed"
@@ -5,16 +88,24 @@
     class="right-panel-dock"
     :style="{ width: `${rightPanelWidth}px` }"
   >
-    <div class="right-panel-dock__resizer" @pointerdown="startResize"></div>
+    <div class="right-panel-dock__resizer" @pointerdown="startResize" />
 
     <section class="right-panel-dock__surface">
       <header class="right-panel-dock__header">
         <div>
-          <p class="right-panel-dock__eyebrow">右侧属性</p>
-          <h2 class="right-panel-dock__title">{{ panelTitle }}</h2>
-          <p class="right-panel-dock__description">{{ panelDescription }}</p>
+          <p class="right-panel-dock__eyebrow">
+            右侧属性
+          </p>
+          <h2 class="right-panel-dock__title">
+            {{ panelTitle }}
+          </h2>
+          <p class="right-panel-dock__description">
+            {{ panelDescription }}
+          </p>
         </div>
-        <PdButton class="right-panel-dock__close" native-type="button" @click="shellStore.toggleRightDock()">收起</PdButton>
+        <PdButton class="right-panel-dock__close" native-type="button" @click="shellStore.toggleRightDock()">
+          收起
+        </PdButton>
       </header>
 
       <div class="right-panel-dock__main">
@@ -27,7 +118,11 @@
             native-type="button"
             @click="shellStore.toggleRightDockPanel(panel.key)"
           >
-            <template #icon><PdIcon class="right-panel-dock__tab-icon"><component :is="panel.icon" /></PdIcon></template>
+            <template #icon>
+              <PdIcon class="right-panel-dock__tab-icon">
+                <component :is="panel.icon" />
+              </PdIcon>
+            </template>
             <span>{{ panel.label }}</span>
             <small v-if="panelBadges[panel.key]" class="right-panel-dock__tab-badge">{{ panelBadges[panel.key] }}</small>
           </PdButton>
@@ -50,89 +145,6 @@
     </section>
   </aside>
 </template>
-
-<script setup lang="ts">import { Clock, DataLine, Files, Setting, View } from "../../ui/icons.js";
-import PdButton from "../../ui/primitives/PdButton.vue";
-import PdIcon from "../../ui/primitives/PdIcon.vue";
-import { computed, onBeforeUnmount, ref } from "vue";
-import { storeToRefs } from "pinia";
-import StructurePanel from "../../components/inspector/StructurePanel.vue";
-import BindingPanel from "../panels/BindingPanel.vue";
-import ElementPropertiesPanel from "../panels/ElementPropertiesPanel.vue";
-import HistoryPanel from "../panels/HistoryPanel.vue";
-import PageSettingsPanel from "../panels/PageSettingsPanel.vue";
-import ViewSettingsPanel from "../panels/ViewSettingsPanel.vue";
-import { useEditorDocumentStore } from "../stores/documentStore";
-import { useEditorSelectionStore } from "../stores/selectionStore";
-import { useEditorShellStore } from "../stores/shellStore";
-const emit = defineEmits(["bind"]);
-const shellStore = useEditorShellStore();
-const documentStore = useEditorDocumentStore();
-const selectionStore = useEditorSelectionStore();
-const { activeRightPanel, rightDockCollapsed, rightPanelWidth } = storeToRefs(shellStore);
-const { layers, variables } = storeToRefs(documentStore);
-const { selectedIds } = storeToRefs(selectionStore);
-const rightDockRef = ref(null);
-const panels = [
-    { key: "properties", label: "属性", icon: Setting },
-    { key: "page", label: "页面", icon: Setting },
-    { key: "view", label: "视图", icon: View },
-    { key: "layers", label: "结构", icon: Files },
-    { key: "bindings", label: "绑定", icon: DataLine },
-    { key: "history", label: "历史", icon: Clock },
-];
-const panelTitle = computed(() => {
-    const map = {
-        properties: "元素属性",
-        page: "页面设置",
-        view: "视图设置",
-        layers: "图层结构",
-        bindings: "数据绑定",
-        history: "历史记录",
-    };
-    return map[activeRightPanel.value] || "右侧面板";
-});
-const panelDescription = computed(() => {
-    const map = {
-        properties: !selectedIds.value.length
-            ? "选中画布元素后，可在这里修改位置、样式和绑定。"
-            : selectedIds.value.length === 1
-                ? "正在编辑 1 个选中元素。"
-                : `已选中 ${selectedIds.value.length} 个元素。可批量修改显示、打印、锁定和通用样式。`,
-        page: "设置纸张、方向、边距和打印标记。",
-        view: "控制辅助线、网格、吸附和编辑器显示。",
-        layers: "查看当前页图层并定位到画布。",
-        bindings: "查看可用字段并核对绑定结果。",
-        history: "查看最近操作，确认可撤销范围。",
-    };
-    return map[activeRightPanel.value] || "";
-});
-const panelBadges = computed(() => ({
-    properties: selectedIds.value.length,
-    layers: layers.value.length,
-    bindings: variables.value.length,
-}));
-function onPointerMove(event) {
-    const dockElement = rightDockRef.value;
-    if (!dockElement) {
-        return;
-    }
-    const dockRect = dockElement.getBoundingClientRect();
-    shellStore.setRightPanelWidth(dockRect.right - event.clientX);
-}
-function stopResize() {
-    window.removeEventListener("pointermove", onPointerMove);
-    window.removeEventListener("pointerup", stopResize);
-}
-function startResize(event) {
-    event.preventDefault();
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", stopResize);
-}
-onBeforeUnmount(() => {
-    stopResize();
-});
-</script>
 
 <style scoped lang="scss">
 .right-panel-dock {

@@ -1,7 +1,67 @@
+<script setup lang="ts">
+import PdIcon from '../../ui/primitives/PdIcon.vue'
+
+const props = defineProps({
+  palette: {
+    type: Array,
+    default: () => [],
+  },
+  searchQuery: {
+    type: String,
+    default: '',
+  },
+})
+defineEmits(['insert', 'palette-dragstart', 'palette-dragend'])
+const GROUP_DEFINITIONS = [
+  {
+    label: '常用',
+    types: ['text', 'image', 'table', 'barcode', 'qrcode'],
+  },
+  {
+    label: '页面',
+    types: ['pageNumber'],
+  },
+  {
+    label: '图形',
+    types: ['rect', 'line', 'circle'],
+  },
+  {
+    label: '扩展',
+    types: ['multiLabel'],
+  },
+]
+const normalizedQuery = computed(() => String(props.searchQuery || '').trim().toLowerCase())
+const groupedPalette = computed(() => {
+  return GROUP_DEFINITIONS.map(group => ({
+    label: group.label,
+    items: group.types
+      .map(type => props.palette.find(item => item.type === type))
+      .filter(Boolean),
+  })).filter(group => group.items.length > 0)
+})
+const filteredGroups = computed(() => {
+  const query = normalizedQuery.value
+  if (!query) {
+    return groupedPalette.value
+  }
+  return groupedPalette.value
+    .map(group => ({
+      ...group,
+      items: group.items.filter((item) => {
+        const haystack = `${item.label || ''} ${item.type || ''}`.toLowerCase()
+        return haystack.includes(query)
+      }),
+    }))
+    .filter(group => group.items.length > 0)
+})
+</script>
+
 <template>
   <div class="insert-panel">
     <div v-if="!filteredGroups.length" class="insert-panel__empty">
-      <div class="insert-panel__empty-title">没有匹配的元素</div>
+      <div class="insert-panel__empty-title">
+        没有匹配的元素
+      </div>
       <p>试试搜索“文本”“图片”“表格”或清空搜索条件。</p>
     </div>
 
@@ -36,63 +96,6 @@
     </section>
   </div>
 </template>
-
-<script setup lang="ts">import { computed } from "vue";
-import PdIcon from "../../ui/primitives/PdIcon.vue";
-const props = defineProps({
-    palette: {
-        type: Array,
-        default: () => [],
-    },
-    searchQuery: {
-        type: String,
-        default: "",
-    },
-});
-defineEmits(["insert", "palette-dragstart", "palette-dragend"]);
-const GROUP_DEFINITIONS = [
-    {
-        label: "常用",
-        types: ["text", "image", "table", "barcode", "qrcode"],
-    },
-    {
-        label: "页面",
-        types: ["pageNumber"],
-    },
-    {
-        label: "图形",
-        types: ["rect", "line", "circle"],
-    },
-    {
-        label: "扩展",
-        types: ["multiLabel"],
-    },
-];
-const normalizedQuery = computed(() => String(props.searchQuery || "").trim().toLowerCase());
-const groupedPalette = computed(() => {
-    return GROUP_DEFINITIONS.map((group) => ({
-        label: group.label,
-        items: group.types
-            .map((type) => props.palette.find((item) => item.type === type))
-            .filter(Boolean),
-    })).filter((group) => group.items.length > 0);
-});
-const filteredGroups = computed(() => {
-    const query = normalizedQuery.value;
-    if (!query) {
-        return groupedPalette.value;
-    }
-    return groupedPalette.value
-        .map((group) => ({
-        ...group,
-        items: group.items.filter((item) => {
-            const haystack = `${item.label || ""} ${item.type || ""}`.toLowerCase();
-            return haystack.includes(query);
-        }),
-    }))
-        .filter((group) => group.items.length > 0);
-});
-</script>
 
 <style scoped lang="scss">
 .insert-panel {

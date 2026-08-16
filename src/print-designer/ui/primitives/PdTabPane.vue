@@ -1,13 +1,13 @@
-<script setup lang="ts">import { computed, inject, onMounted } from "vue";
+<script setup lang="ts">
 const props = defineProps({
-    label: { type: String, default: "" },
-    name: { type: String, required: true },
-});
-const tabs = inject("pdTabs", null);
-const isActive = computed(() => tabs?.activeName?.value === props.name);
+  label: { type: String, default: '' },
+  name: { type: String, required: true },
+})
+const tabs = inject('pdTabs', null)
+const isActive = computed(() => tabs?.activeName?.value === props.name)
 onMounted(() => {
-    tabs?.registerTab({ label: props.label, name: props.name });
-});
+  tabs?.registerTab({ label: props.label, name: props.name })
+})
 </script>
 
 <template>

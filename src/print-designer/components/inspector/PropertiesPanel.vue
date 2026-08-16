@@ -1,9 +1,26 @@
+<script setup lang="ts">
+import InspectorEmpty from './InspectorEmpty.vue'
+
+defineProps({
+  variables: {
+    type: Array,
+    default: () => [],
+  },
+})
+</script>
+
 <template>
   <div class="properties-panel">
     <div class="properties-panel__switcher">
-      <button class="is-active" type="button">Basic</button>
-      <button type="button">Style</button>
-      <button type="button">Data</button>
+      <button class="is-active" type="button">
+        Basic
+      </button>
+      <button type="button">
+        Style
+      </button>
+      <button type="button">
+        Data
+      </button>
     </div>
 
     <InspectorEmpty />
@@ -28,15 +45,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">import InspectorEmpty from "./InspectorEmpty.vue";
-defineProps({
-    variables: {
-        type: Array,
-        default: () => [],
-    },
-});
-</script>
 
 <style scoped lang="scss">
 .properties-panel {

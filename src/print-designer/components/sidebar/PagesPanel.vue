@@ -1,9 +1,57 @@
+<script setup lang="ts">
+import { Bottom, CopyDocument, Delete, Plus, Top } from '../../ui/icons.js'
+import PdButton from '../../ui/primitives/PdButton.vue'
+import PdConfirm from '../../ui/primitives/PdConfirm.vue'
+import PdIcon from '../../ui/primitives/PdIcon.vue'
+import PdInput from '../../ui/primitives/PdInput.vue'
+
+const props = defineProps({
+  pages: {
+    type: Array,
+    default: () => [],
+  },
+  searchQuery: {
+    type: String,
+    default: '',
+  },
+  showActions: {
+    type: Boolean,
+    default: false,
+  },
+})
+const emit = defineEmits(['select', 'create', 'duplicate', 'remove', 'rename', 'move'])
+const filteredPages = computed(() => {
+  const query = String(props.searchQuery || '').trim().toLowerCase()
+  if (!query) {
+    return props.pages
+  }
+  return props.pages.filter((page) => {
+    const haystack = `${page.title || ''} ${page.size || ''} ${page.orientation || ''}`.toLowerCase()
+    return haystack.includes(query)
+  })
+})
+function pageIndex(pageId) {
+  const index = props.pages.findIndex(page => page.id === pageId)
+  return index >= 0 ? index + 1 : 0
+}
+function onRename(page, value) {
+  emit('rename', { page, title: value })
+}
+function onMove(page, direction) {
+  emit('move', { page, direction })
+}
+</script>
+
 <template>
   <div class="pages-panel">
     <header class="pages-panel__header">
       <div>
-        <p class="pages-panel__eyebrow">页面管理</p>
-        <h3 class="pages-panel__title">页面列表</h3>
+        <p class="pages-panel__eyebrow">
+          页面管理
+        </p>
+        <h3 class="pages-panel__title">
+          页面列表
+        </h3>
         <p class="pages-panel__description">
           在这里切换、重命名、复制和删除页面，当前页会同步到画布与右侧属性区。
         </p>
@@ -14,7 +62,9 @@
           <span>{{ pages.length }} 页</span>
         </div>
         <PdButton v-if="showActions" class="pages-panel__create" type="primary" plain size="small" @click="emit('create')">
-          <template #icon><PdIcon><Plus /></PdIcon></template>
+          <template #icon>
+            <PdIcon><Plus /></PdIcon>
+          </template>
           新建
         </PdButton>
       </div>
@@ -87,49 +137,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">import { computed } from "vue";
-import { Bottom, CopyDocument, Delete, Plus, Top } from "../../ui/icons.js";
-import PdButton from "../../ui/primitives/PdButton.vue";
-import PdConfirm from "../../ui/primitives/PdConfirm.vue";
-import PdIcon from "../../ui/primitives/PdIcon.vue";
-import PdInput from "../../ui/primitives/PdInput.vue";
-const props = defineProps({
-    pages: {
-        type: Array,
-        default: () => [],
-    },
-    searchQuery: {
-        type: String,
-        default: "",
-    },
-    showActions: {
-        type: Boolean,
-        default: false,
-    },
-});
-const emit = defineEmits(["select", "create", "duplicate", "remove", "rename", "move"]);
-const filteredPages = computed(() => {
-    const query = String(props.searchQuery || "").trim().toLowerCase();
-    if (!query) {
-        return props.pages;
-    }
-    return props.pages.filter((page) => {
-        const haystack = `${page.title || ""} ${page.size || ""} ${page.orientation || ""}`.toLowerCase();
-        return haystack.includes(query);
-    });
-});
-function pageIndex(pageId) {
-    const index = props.pages.findIndex((page) => page.id === pageId);
-    return index >= 0 ? index + 1 : 0;
-}
-function onRename(page, value) {
-    emit("rename", { page, title: value });
-}
-function onMove(page, direction) {
-    emit("move", { page, direction });
-}
-</script>
 
 <style scoped lang="scss">
 .pages-panel {

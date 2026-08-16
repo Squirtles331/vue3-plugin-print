@@ -1,10 +1,54 @@
+<script setup lang="ts">
+const props = defineProps({
+  variables: {
+    type: Array,
+    default: () => [],
+  },
+  searchQuery: {
+    type: String,
+    default: '',
+  },
+  variant: {
+    type: String,
+    default: 'panel',
+  },
+})
+const emit = defineEmits(['select'])
+const isEmbedded = computed(() => props.variant === 'embedded')
+const normalizedQuery = computed(() => String(props.searchQuery || '').trim().toLowerCase())
+const variablePath = variable => typeof variable === 'string' ? variable : String(variable?.path || '')
+function variableKind(variable) {
+  const kind = typeof variable === 'object' ? variable?.kind : ''
+  return kind === 'array' ? '数组' : kind === 'object' ? '对象' : '标量'
+}
+const filteredVariables = computed(() => {
+  const query = normalizedQuery.value
+  if (!query) {
+    return props.variables
+  }
+  return props.variables.filter(variable => variablePath(variable).toLowerCase().includes(query))
+})
+const searchSummary = computed(() => {
+  const query = String(props.searchQuery || '').trim()
+  return query ? `筛选 “${query}”` : '全部路径'
+})
+const emptyTitle = computed(() => (props.variables.length ? '没有匹配的字段' : '当前还没有可绑定字段'))
+const emptyDescription = computed(() => props.variables.length ? '清空筛选条件后可以查看全部路径。' : '导入或生成业务数据后，这里会显示可绑定路径。')
+</script>
+
 <template>
   <section class="data-panel" :class="{ 'data-panel--embedded': isEmbedded }">
     <header v-if="!isEmbedded" class="data-panel__header">
       <div>
-        <p class="data-panel__eyebrow">数据字段</p>
-        <h3 class="data-panel__title">可绑定路径</h3>
-        <p class="data-panel__description">按字段路径查找可绑定数据，适合直接复制到属性面板。</p>
+        <p class="data-panel__eyebrow">
+          数据字段
+        </p>
+        <h3 class="data-panel__title">
+          可绑定路径
+        </h3>
+        <p class="data-panel__description">
+          按字段路径查找可绑定数据，适合直接复制到属性面板。
+        </p>
       </div>
       <div class="data-panel__badge">
         <strong>{{ filteredVariables.length }}</strong>
@@ -49,44 +93,6 @@
     </div>
   </section>
 </template>
-
-<script setup lang="ts">import { computed } from "vue";
-const props = defineProps({
-    variables: {
-        type: Array,
-        default: () => [],
-    },
-    searchQuery: {
-        type: String,
-        default: "",
-    },
-    variant: {
-        type: String,
-        default: "panel",
-    },
-});
-const emit = defineEmits(["select"]);
-const isEmbedded = computed(() => props.variant === "embedded");
-const normalizedQuery = computed(() => String(props.searchQuery || "").trim().toLowerCase());
-const variablePath = (variable) => typeof variable === "string" ? variable : String(variable?.path || "");
-const variableKind = ((variable) => {
-    const kind = typeof variable === "object" ? variable?.kind : "";
-    return kind === "array" ? "数组" : kind === "object" ? "对象" : "标量";
-});
-const filteredVariables = computed(() => {
-    const query = normalizedQuery.value;
-    if (!query) {
-        return props.variables;
-    }
-    return props.variables.filter((variable) => variablePath(variable).toLowerCase().includes(query));
-});
-const searchSummary = computed(() => {
-    const query = String(props.searchQuery || "").trim();
-    return query ? `筛选 “${query}”` : "全部路径";
-});
-const emptyTitle = computed(() => (props.variables.length ? "没有匹配的字段" : "当前还没有可绑定字段"));
-const emptyDescription = computed(() => props.variables.length ? "清空筛选条件后可以查看全部路径。" : "导入或生成业务数据后，这里会显示可绑定路径。");
-</script>
 
 <style scoped lang="scss">
 .data-panel {

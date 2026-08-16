@@ -1,21 +1,24 @@
+<script setup lang="ts">
+defineProps({
+  title: {
+    type: String,
+    default: '未选中元素',
+  },
+  description: {
+    type: String,
+    default: '选中画布中的元素后，这里会显示位置、尺寸、样式和数据绑定等配置。',
+  },
+})
+</script>
+
 <template>
   <div class="inspector-empty">
-    <div class="inspector-empty__title">{{ title }}</div>
+    <div class="inspector-empty__title">
+      {{ title }}
+    </div>
     <p>{{ description }}</p>
   </div>
 </template>
-
-<script setup lang="ts">defineProps({
-    title: {
-        type: String,
-        default: "未选中元素",
-    },
-    description: {
-        type: String,
-        default: "选中画布中的元素后，这里会显示位置、尺寸、样式和数据绑定等配置。",
-    },
-});
-</script>
 
 <style scoped lang="scss">
 .inspector-empty {

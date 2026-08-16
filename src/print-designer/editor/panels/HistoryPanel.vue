@@ -1,10 +1,38 @@
+<script setup lang="ts">
+import { RefreshLeft, RefreshRight } from '../../ui/icons.js'
+import PdButton from '../../ui/primitives/PdButton.vue'
+import PdIcon from '../../ui/primitives/PdIcon.vue'
+import { useEditorHistoryStore } from '../stores/historyStore'
+
+const historyStore = useEditorHistoryStore()
+const { canRedo, canUndo, historyEntries, lastCommandName } = storeToRefs(historyStore)
+const historyHint = computed(() => {
+  if (canUndo.value && canRedo.value) {
+    return '当前有前后两侧可回退步骤'
+  }
+  if (canUndo.value) {
+    return '可以撤销最近一步'
+  }
+  if (canRedo.value) {
+    return '可以重做已撤销步骤'
+  }
+  return '暂无可用历史'
+})
+</script>
+
 <template>
   <div class="history-panel">
     <header class="history-panel__header">
       <div>
-        <p class="history-panel__eyebrow">编辑历史</p>
-        <h2 class="history-panel__title">最近操作</h2>
-        <p class="history-panel__description">保留最近的编辑步骤，方便快速撤销、重做和确认修改范围。</p>
+        <p class="history-panel__eyebrow">
+          编辑历史
+        </p>
+        <h2 class="history-panel__title">
+          最近操作
+        </h2>
+        <p class="history-panel__description">
+          保留最近的编辑步骤，方便快速撤销、重做和确认修改范围。
+        </p>
       </div>
       <div class="history-panel__badge">
         <strong>{{ historyEntries.length }}</strong>
@@ -14,11 +42,15 @@
 
     <div class="history-panel__actions">
       <PdButton :disabled="!canUndo" size="small" plain @click="historyStore.undo">
-        <template #icon><PdIcon><RefreshLeft /></PdIcon></template>
+        <template #icon>
+          <PdIcon><RefreshLeft /></PdIcon>
+        </template>
         撤销
       </PdButton>
       <PdButton :disabled="!canRedo" size="small" plain @click="historyStore.redo">
-        <template #icon><PdIcon><RefreshRight /></PdIcon></template>
+        <template #icon>
+          <PdIcon><RefreshRight /></PdIcon>
+        </template>
         重做
       </PdButton>
       <span class="history-panel__hint">{{ historyHint }}</span>
@@ -47,28 +79,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">import { computed } from "vue";
-import { storeToRefs } from "pinia";
-import { RefreshLeft, RefreshRight } from "../../ui/icons.js";
-import PdButton from "../../ui/primitives/PdButton.vue";
-import PdIcon from "../../ui/primitives/PdIcon.vue";
-import { useEditorHistoryStore } from "../stores/historyStore";
-const historyStore = useEditorHistoryStore();
-const { canRedo, canUndo, historyEntries, lastCommandName } = storeToRefs(historyStore);
-const historyHint = computed(() => {
-    if (canUndo.value && canRedo.value) {
-        return "当前有前后两侧可回退步骤";
-    }
-    if (canUndo.value) {
-        return "可以撤销最近一步";
-    }
-    if (canRedo.value) {
-        return "可以重做已撤销步骤";
-    }
-    return "暂无可用历史";
-});
-</script>
 
 <style scoped lang="scss">
 .history-panel {

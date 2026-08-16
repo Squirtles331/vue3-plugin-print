@@ -1,9 +1,9 @@
-import type { Config } from "tailwindcss";
+import type { Config } from 'tailwindcss'
 
 export default {
   content: [
-    "./index.html",
-    "./src/**/*.{vue,ts}",
+    './index.html',
+    './src/**/*.{vue,ts}',
   ],
   corePlugins: {
     preflight: false,
@@ -12,16 +12,16 @@ export default {
     extend: {
       colors: {
         pd: {
-          border: "var(--pd-border)",
-          text: "var(--pd-text)",
-          muted: "var(--pd-muted)",
-          panel: "var(--pd-panel-bg)",
-          accent: "var(--pd-accent-text)",
+          border: 'var(--pd-border)',
+          text: 'var(--pd-text)',
+          muted: 'var(--pd-muted)',
+          panel: 'var(--pd-panel-bg)',
+          accent: 'var(--pd-accent-text)',
         },
       },
       borderRadius: {
-        pd: "var(--pd-radius-control)",
+        pd: 'var(--pd-radius-control)',
       },
     },
   },
-} satisfies Config;
+} satisfies Config

@@ -1,9 +1,54 @@
+<script setup lang="ts">
+import { Check, DocumentAdd, Download, FolderOpened, Printer, RefreshLeft, RefreshRight, View, ZoomIn, ZoomOut } from '../../ui/icons.js'
+import PdIcon from '../../ui/primitives/PdIcon.vue'
+
+defineProps({
+  templateName: {
+    type: String,
+    default: '默认模板',
+  },
+  saveStatus: {
+    type: String,
+    default: '已保存',
+  },
+  zoomLabel: {
+    type: String,
+    default: '100%',
+  },
+  canUndo: {
+    type: Boolean,
+    default: false,
+  },
+  canRedo: {
+    type: Boolean,
+    default: false,
+  },
+})
+defineEmits([
+  'new-template',
+  'open-template',
+  'save-template',
+  'undo',
+  'redo',
+  'zoom-in',
+  'zoom-out',
+  'zoom-reset',
+  'preview',
+  'print',
+  'export',
+])
+</script>
+
 <template>
   <header class="designer-topbar">
     <div class="designer-topbar__brand">
-      <div class="designer-topbar__brand-mark">PD</div>
+      <div class="designer-topbar__brand-mark">
+        PD
+      </div>
       <div class="designer-topbar__brand-copy">
-        <div class="designer-topbar__app">打印设计器</div>
+        <div class="designer-topbar__app">
+          打印设计器
+        </div>
         <div class="designer-topbar__doc">
           <span class="designer-topbar__title">{{ templateName }}</span>
           <span class="designer-topbar__status">{{ saveStatus }}</span>
@@ -77,45 +122,6 @@
     </div>
   </header>
 </template>
-
-<script setup lang="ts">import { Check, DocumentAdd, Download, FolderOpened, Printer, RefreshLeft, RefreshRight, View, ZoomIn, ZoomOut, } from "../../ui/icons.js";
-import PdIcon from "../../ui/primitives/PdIcon.vue";
-defineProps({
-    templateName: {
-        type: String,
-        default: "默认模板",
-    },
-    saveStatus: {
-        type: String,
-        default: "已保存",
-    },
-    zoomLabel: {
-        type: String,
-        default: "100%",
-    },
-    canUndo: {
-        type: Boolean,
-        default: false,
-    },
-    canRedo: {
-        type: Boolean,
-        default: false,
-    },
-});
-defineEmits([
-    "new-template",
-    "open-template",
-    "save-template",
-    "undo",
-    "redo",
-    "zoom-in",
-    "zoom-out",
-    "zoom-reset",
-    "preview",
-    "print",
-    "export",
-]);
-</script>
 
 <style scoped lang="scss">
 .designer-topbar {

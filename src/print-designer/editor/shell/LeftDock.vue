@@ -1,3 +1,81 @@
+<script setup lang="ts">
+import { CollectionTag, DataLine, Document, Files, Search } from '../../ui/icons.js'
+import PdButton from '../../ui/primitives/PdButton.vue'
+import PdIcon from '../../ui/primitives/PdIcon.vue'
+import PdInput from '../../ui/primitives/PdInput.vue'
+import { useEditorDocumentStore } from '../stores/documentStore'
+import { useEditorShellStore } from '../stores/shellStore'
+import InsertAssetsPanel from './InsertAssetsPanel.vue'
+
+const emit = defineEmits(['bind', 'runtime-data'])
+const shellStore = useEditorShellStore()
+const documentStore = useEditorDocumentStore()
+const { activeLeftPanel, leftDockCollapsed, leftPanelWidth } = storeToRefs(shellStore)
+const { palette, pages, layers, variables } = storeToRefs(documentStore)
+const leftDockRef = ref(null)
+const searchQuery = shallowRef('')
+const panelItems = [
+  { key: 'pages', label: '页面', title: '管理模板页面', icon: Document },
+  { key: 'insert', label: '插入', title: '插入元素和常用控件', icon: CollectionTag },
+  { key: 'layers', label: '图层', title: '查看并定位页面元素', icon: Files },
+  { key: 'data', label: '数据', title: '查看可绑定的字段路径', icon: DataLine },
+]
+const panelTitle = computed(() => {
+  const map = {
+    pages: '页面管理',
+    insert: '插入元素',
+    layers: '图层结构',
+    data: '数据字段',
+  }
+  return map[activeLeftPanel.value] || '左侧面板'
+})
+const panelDescription = computed(() => {
+  const map = {
+    pages: '切换页面、重命名、复制或删除。',
+    insert: '拖入元素后继续排版和绑定。',
+    layers: '查看层级、状态和排序入口。',
+    data: '按字段路径查找可绑定数据。',
+  }
+  return map[activeLeftPanel.value] || ''
+})
+const panelCounts = computed(() => ({
+  pages: pages.value.length,
+  insert: palette.value.length,
+  layers: layers.value.length,
+  data: variables.value.length,
+}))
+const searchPlaceholder = computed(() => {
+  const map = {
+    pages: '搜索页面',
+    insert: '搜索元素',
+    layers: '搜索图层',
+    data: '搜索字段路径',
+  }
+  return map[activeLeftPanel.value] || '搜索'
+})
+const panelCountLabel = computed(() => `${panelCounts.value[activeLeftPanel.value] || 0} 项`)
+function onPointerMove(event) {
+  const dockElement = leftDockRef.value
+  if (!dockElement) {
+    return
+  }
+  const dockRect = dockElement.getBoundingClientRect()
+  shellStore.setLeftPanelWidth(event.clientX - dockRect.left)
+}
+function stopResize() {
+  window.removeEventListener('pointermove', onPointerMove)
+  window.removeEventListener('pointerup', stopResize)
+}
+function startResize(event) {
+  event.preventDefault()
+  window.addEventListener('pointermove', onPointerMove)
+  window.addEventListener('pointerup', stopResize)
+}
+onBeforeUnmount(() => {
+  stopResize()
+})
+</script>
+
 <template>
   <aside
     v-if="!leftDockCollapsed"
@@ -8,11 +86,19 @@
     <section class="left-dock__surface">
       <header class="left-dock__header">
         <div>
-          <p class="left-dock__eyebrow">左侧工具</p>
-          <h2 class="left-dock__title">{{ panelTitle }}</h2>
-          <p class="left-dock__description">{{ panelDescription }}</p>
+          <p class="left-dock__eyebrow">
+            左侧工具
+          </p>
+          <h2 class="left-dock__title">
+            {{ panelTitle }}
+          </h2>
+          <p class="left-dock__description">
+            {{ panelDescription }}
+          </p>
         </div>
-        <PdButton class="left-dock__close" native-type="button" @click="shellStore.toggleLeftDock()">收起</PdButton>
+        <PdButton class="left-dock__close" native-type="button" @click="shellStore.toggleLeftDock()">
+          收起
+        </PdButton>
       </header>
 
       <div class="left-dock__main">
@@ -26,7 +112,11 @@
             :title="item.title"
             @click="shellStore.toggleLeftDockPanel(item.key)"
           >
-            <template #icon><PdIcon class="left-dock__tab-icon"><component :is="item.icon" /></PdIcon></template>
+            <template #icon>
+              <PdIcon class="left-dock__tab-icon">
+                <component :is="item.icon" />
+              </PdIcon>
+            </template>
             <span class="left-dock__tab-label">{{ item.label }}</span>
             <small class="left-dock__tab-count">{{ panelCounts[item.key] }}</small>
           </PdButton>
@@ -56,87 +146,9 @@
       </div>
     </section>
 
-    <div class="left-dock__resizer" @pointerdown="startResize"></div>
+    <div class="left-dock__resizer" @pointerdown="startResize" />
   </aside>
 </template>
-
-<script setup lang="ts">import { CollectionTag, DataLine, Document, Files, Search } from "../../ui/icons.js";
-import PdButton from "../../ui/primitives/PdButton.vue";
-import PdIcon from "../../ui/primitives/PdIcon.vue";
-import PdInput from "../../ui/primitives/PdInput.vue";
-import { computed, onBeforeUnmount, ref, shallowRef } from "vue";
-import { storeToRefs } from "pinia";
-import InsertAssetsPanel from "./InsertAssetsPanel.vue";
-import { useEditorDocumentStore } from "../stores/documentStore";
-import { useEditorShellStore } from "../stores/shellStore";
-const emit = defineEmits(["bind", "runtime-data"]);
-const shellStore = useEditorShellStore();
-const documentStore = useEditorDocumentStore();
-const { activeLeftPanel, leftDockCollapsed, leftPanelWidth } = storeToRefs(shellStore);
-const { palette, pages, layers, variables } = storeToRefs(documentStore);
-const leftDockRef = ref(null);
-const searchQuery = shallowRef("");
-const panelItems = [
-    { key: "pages", label: "页面", title: "管理模板页面", icon: Document },
-    { key: "insert", label: "插入", title: "插入元素和常用控件", icon: CollectionTag },
-    { key: "layers", label: "图层", title: "查看并定位页面元素", icon: Files },
-    { key: "data", label: "数据", title: "查看可绑定的字段路径", icon: DataLine },
-];
-const panelTitle = computed(() => {
-    const map = {
-        pages: "页面管理",
-        insert: "插入元素",
-        layers: "图层结构",
-        data: "数据字段",
-    };
-    return map[activeLeftPanel.value] || "左侧面板";
-});
-const panelDescription = computed(() => {
-    const map = {
-        pages: "切换页面、重命名、复制或删除。",
-        insert: "拖入元素后继续排版和绑定。",
-        layers: "查看层级、状态和排序入口。",
-        data: "按字段路径查找可绑定数据。",
-    };
-    return map[activeLeftPanel.value] || "";
-});
-const panelCounts = computed(() => ({
-    pages: pages.value.length,
-    insert: palette.value.length,
-    layers: layers.value.length,
-    data: variables.value.length,
-}));
-const searchPlaceholder = computed(() => {
-    const map = {
-        pages: "搜索页面",
-        insert: "搜索元素",
-        layers: "搜索图层",
-        data: "搜索字段路径",
-    };
-    return map[activeLeftPanel.value] || "搜索";
-});
-const panelCountLabel = computed(() => `${panelCounts.value[activeLeftPanel.value] || 0} 项`);
-function onPointerMove(event) {
-    const dockElement = leftDockRef.value;
-    if (!dockElement) {
-        return;
-    }
-    const dockRect = dockElement.getBoundingClientRect();
-    shellStore.setLeftPanelWidth(event.clientX - dockRect.left);
-}
-function stopResize() {
-    window.removeEventListener("pointermove", onPointerMove);
-    window.removeEventListener("pointerup", stopResize);
-}
-function startResize(event) {
-    event.preventDefault();
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", stopResize);
-}
-onBeforeUnmount(() => {
-    stopResize();
-});
-</script>
 
 <style scoped lang="scss">
 .left-dock {

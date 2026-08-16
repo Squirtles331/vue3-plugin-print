@@ -1,9 +1,60 @@
+<script setup lang="ts">
+import PdInput from '../../ui/primitives/PdInput.vue'
+import PdInputNumber from '../../ui/primitives/PdInputNumber.vue'
+import PdOption from '../../ui/primitives/PdOption.vue'
+import PdOptionGroup from '../../ui/primitives/PdOptionGroup.vue'
+import PdSelect from '../../ui/primitives/PdSelect.vue'
+import PdSwitch from '../../ui/primitives/PdSwitch.vue'
+import { CUSTOM_PAPER_SIZE_KEY, PAPER_SIZE_PRESETS } from '../paperSizePresets'
+import { useEditorDocumentStore } from '../stores/documentStore'
+
+const documentStore = useEditorDocumentStore()
+const { currentPaperPresetKey, unit, pageWidthMm, pageHeightMm, marginTopMm, marginRightMm, marginBottomMm, marginLeftMm, pageBackground, pageCornerVisible, headerLineVisible, footerLineVisible, headerOffsetMm, footerOffsetMm, printMarksVisible, documentName, currentPageTitle } = storeToRefs(documentStore)
+const paperSizeGroups = PAPER_SIZE_PRESETS
+const recommendedPaperOptions = paperSizeGroups[0]?.options || []
+const orientation = computed(() => (pageWidthMm.value > pageHeightMm.value ? 'landscape' : 'portrait'))
+const orientationLabel = computed(() => (orientation.value === 'landscape' ? '横向' : '纵向'))
+const paperSizeLabel = computed(() => {
+  if (currentPaperPresetKey.value === CUSTOM_PAPER_SIZE_KEY) {
+    return '自定义'
+  }
+  return paperSizeGroups
+    .flatMap(group => group.options || [])
+    .find(option => option.key === currentPaperPresetKey.value)
+    ?.label || '纸张'
+})
+const marginSummary = computed(() => `${marginTopMm.value}/${marginRightMm.value}/${marginBottomMm.value}/${marginLeftMm.value} mm`)
+const helperSummary = computed(() => {
+  const active = [
+    pageCornerVisible.value ? '角标' : '',
+    printMarksVisible.value ? '标记' : '',
+    headerLineVisible.value ? '页眉线' : '',
+    footerLineVisible.value ? '页脚线' : '',
+  ].filter(Boolean)
+  return active.length ? active.join(' · ') : '已关闭'
+})
+const pageSummary = computed(() => ({
+  shortLabel: paperSizeLabel.value,
+  detail: `${pageWidthMm.value} x ${pageHeightMm.value} mm`,
+}))
+function onWidthChange(value) {
+  documentStore.setPageDimensions(value, pageHeightMm.value)
+}
+function onHeightChange(value) {
+  documentStore.setPageDimensions(pageWidthMm.value, value)
+}
+</script>
+
 <template>
   <div class="page-settings-panel">
     <header class="page-settings-panel__header">
       <div>
-        <p class="page-settings-panel__eyebrow">页面设置</p>
-        <h2 class="page-settings-panel__title">文档页面</h2>
+        <p class="page-settings-panel__eyebrow">
+          页面设置
+        </p>
+        <h2 class="page-settings-panel__title">
+          文档页面
+        </h2>
         <p class="page-settings-panel__description">
           控制纸张、边距和打印辅助线。修改后会同步到预览与输出。
         </p>
@@ -34,7 +85,9 @@
     </div>
 
     <section class="page-settings-panel__section">
-      <div class="page-settings-panel__section-title">文档信息</div>
+      <div class="page-settings-panel__section-title">
+        文档信息
+      </div>
       <div class="page-settings-panel__field-stack">
         <label class="page-settings-panel__field">
           <span>模板名称</span>
@@ -48,7 +101,9 @@
     </section>
 
     <section class="page-settings-panel__section">
-      <div class="page-settings-panel__section-title">纸张与方向</div>
+      <div class="page-settings-panel__section-title">
+        纸张与方向
+      </div>
       <div class="page-settings-panel__preset-grid">
         <button
           v-for="option in recommendedPaperOptions"
@@ -123,7 +178,9 @@
     </section>
 
     <section class="page-settings-panel__section">
-      <div class="page-settings-panel__section-title">边距</div>
+      <div class="page-settings-panel__section-title">
+        边距
+      </div>
       <div class="page-settings-panel__margin-grid">
         <label class="page-settings-panel__field">
           <span>上</span>
@@ -145,11 +202,13 @@
     </section>
 
     <section class="page-settings-panel__section">
-      <div class="page-settings-panel__section-title">打印辅助</div>
+      <div class="page-settings-panel__section-title">
+        打印辅助
+      </div>
       <div class="page-settings-panel__field-stack">
         <div class="page-settings-panel__toggle-row">
           <span>页面背景</span>
-          <input class="page-settings-panel__color" :value="pageBackground" type="color" @input="documentStore.setPageBackground(($event.target as HTMLInputElement).value)" />
+          <input class="page-settings-panel__color" :value="pageBackground" type="color" @input="documentStore.setPageBackground(($event.target as HTMLInputElement).value)">
         </div>
 
         <label class="page-settings-panel__toggle">
@@ -177,52 +236,6 @@
     </section>
   </div>
 </template>
-
-<script setup lang="ts">import { computed } from "vue";
-import { storeToRefs } from "pinia";
-import PdInput from "../../ui/primitives/PdInput.vue";
-import PdInputNumber from "../../ui/primitives/PdInputNumber.vue";
-import PdOption from "../../ui/primitives/PdOption.vue";
-import PdOptionGroup from "../../ui/primitives/PdOptionGroup.vue";
-import PdSelect from "../../ui/primitives/PdSelect.vue";
-import PdSwitch from "../../ui/primitives/PdSwitch.vue";
-import { CUSTOM_PAPER_SIZE_KEY, PAPER_SIZE_PRESETS } from "../paperSizePresets";
-import { useEditorDocumentStore } from "../stores/documentStore";
-const documentStore = useEditorDocumentStore();
-const { currentPaperPresetKey, unit, pageWidthMm, pageHeightMm, marginTopMm, marginRightMm, marginBottomMm, marginLeftMm, pageBackground, pageCornerVisible, headerLineVisible, footerLineVisible, headerOffsetMm, footerOffsetMm, printMarksVisible, documentName, currentPageTitle, } = storeToRefs(documentStore);
-const paperSizeGroups = PAPER_SIZE_PRESETS;
-const recommendedPaperOptions = paperSizeGroups[0]?.options || [];
-const orientation = computed(() => (pageWidthMm.value > pageHeightMm.value ? "landscape" : "portrait"));
-const orientationLabel = computed(() => (orientation.value === "landscape" ? "横向" : "纵向"));
-const paperSizeLabel = computed(() => {
-    if (currentPaperPresetKey.value === CUSTOM_PAPER_SIZE_KEY) {
-        return "自定义";
-    }
-    return paperSizeGroups
-        .flatMap((group) => group.options || [])
-        .find((option) => option.key === currentPaperPresetKey.value)?.label || "纸张";
-});
-const marginSummary = computed(() => `${marginTopMm.value}/${marginRightMm.value}/${marginBottomMm.value}/${marginLeftMm.value} mm`);
-const helperSummary = computed(() => {
-    const active = [
-        pageCornerVisible.value ? "角标" : "",
-        printMarksVisible.value ? "标记" : "",
-        headerLineVisible.value ? "页眉线" : "",
-        footerLineVisible.value ? "页脚线" : "",
-    ].filter(Boolean);
-    return active.length ? active.join(" · ") : "已关闭";
-});
-const pageSummary = computed(() => ({
-    shortLabel: paperSizeLabel.value,
-    detail: `${pageWidthMm.value} x ${pageHeightMm.value} mm`,
-}));
-function onWidthChange(value) {
-    documentStore.setPageDimensions(value, pageHeightMm.value);
-}
-function onHeightChange(value) {
-    documentStore.setPageDimensions(pageWidthMm.value, value);
-}
-</script>
 
 <style scoped lang="scss">
 .page-settings-panel {

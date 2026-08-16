@@ -1,9 +1,62 @@
+<script setup lang="ts">
+import { Bottom, CopyDocument, Delete, Hide, Lock, Top, Unlock, View } from '../../ui/icons.js'
+import PdButton from '../../ui/primitives/PdButton.vue'
+import PdConfirm from '../../ui/primitives/PdConfirm.vue'
+import PdIcon from '../../ui/primitives/PdIcon.vue'
+
+const props = defineProps({
+  layers: {
+    type: Array,
+    default: () => [],
+  },
+  selectedIds: {
+    type: Array,
+    default: () => [],
+  },
+  searchQuery: {
+    type: String,
+    default: '',
+  },
+  showActions: {
+    type: Boolean,
+    default: false,
+  },
+})
+const emit = defineEmits(['select', 'toggle-visible', 'toggle-lock', 'move', 'duplicate', 'remove'])
+const normalizedQuery = computed(() => String(props.searchQuery || '').trim().toLowerCase())
+const filteredLayers = computed(() => {
+  const query = normalizedQuery.value
+  if (!query) {
+    return props.layers
+  }
+  return props.layers.filter((layer) => {
+    const haystack = `${layer.name || ''} ${layer.type || ''}`.toLowerCase()
+    return haystack.includes(query)
+  })
+})
+const visibleCount = computed(() => props.layers.filter(layer => layer.visible !== false).length)
+const lockedCount = computed(() => props.layers.filter(layer => layer.locked).length)
+const emptyTitle = computed(() => (props.layers.length ? '没有匹配的图层' : '当前页面还没有元素'))
+const emptyDescription = computed(() => props.layers.length ? '清空搜索条件后可查看全部图层。' : '从左侧插入元素后，这里会显示结构、状态和排序入口。')
+function isSelected(layerId) {
+  return props.selectedIds.includes(layerId)
+}
+function layerRank(layerId) {
+  const index = props.layers.findIndex(layer => layer.id === layerId)
+  return index >= 0 ? props.layers.length - index : 0
+}
+</script>
+
 <template>
   <div class="layers-panel">
     <header class="layers-panel__header">
       <div>
-        <p class="layers-panel__eyebrow">图层结构</p>
-        <h3 class="layers-panel__title">当前页元素</h3>
+        <p class="layers-panel__eyebrow">
+          图层结构
+        </p>
+        <h3 class="layers-panel__title">
+          当前页元素
+        </h3>
         <p class="layers-panel__description">
           点选图层可定位到画布，常用的隐藏、锁定、复制和置顶操作放在同一行。
         </p>
@@ -86,54 +139,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">import { computed } from "vue";
-import { Bottom, CopyDocument, Delete, Hide, Lock, Top, Unlock, View } from "../../ui/icons.js";
-import PdButton from "../../ui/primitives/PdButton.vue";
-import PdConfirm from "../../ui/primitives/PdConfirm.vue";
-import PdIcon from "../../ui/primitives/PdIcon.vue";
-const props = defineProps({
-    layers: {
-        type: Array,
-        default: () => [],
-    },
-    selectedIds: {
-        type: Array,
-        default: () => [],
-    },
-    searchQuery: {
-        type: String,
-        default: "",
-    },
-    showActions: {
-        type: Boolean,
-        default: false,
-    },
-});
-const emit = defineEmits(["select", "toggle-visible", "toggle-lock", "move", "duplicate", "remove"]);
-const normalizedQuery = computed(() => String(props.searchQuery || "").trim().toLowerCase());
-const filteredLayers = computed(() => {
-    const query = normalizedQuery.value;
-    if (!query) {
-        return props.layers;
-    }
-    return props.layers.filter((layer) => {
-        const haystack = `${layer.name || ""} ${layer.type || ""}`.toLowerCase();
-        return haystack.includes(query);
-    });
-});
-const visibleCount = computed(() => props.layers.filter((layer) => layer.visible !== false).length);
-const lockedCount = computed(() => props.layers.filter((layer) => layer.locked).length);
-const emptyTitle = computed(() => (props.layers.length ? "没有匹配的图层" : "当前页面还没有元素"));
-const emptyDescription = computed(() => props.layers.length ? "清空搜索条件后可查看全部图层。" : "从左侧插入元素后，这里会显示结构、状态和排序入口。");
-function isSelected(layerId) {
-    return props.selectedIds.includes(layerId);
-}
-function layerRank(layerId) {
-    const index = props.layers.findIndex((layer) => layer.id === layerId);
-    return index >= 0 ? props.layers.length - index : 0;
-}
-</script>
 
 <style scoped lang="scss">
 .layers-panel {

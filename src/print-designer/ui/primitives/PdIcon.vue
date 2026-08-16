@@ -1,12 +1,13 @@
-<script setup lang="ts">import { computed } from "vue";
-import { ICON_PATHS } from "../iconPaths.js";
+<script setup lang="ts">
+import { ICON_PATHS } from '../iconPaths.js'
+
 const props = defineProps({
-    name: { type: String, default: "" },
-    size: { type: [Number, String], default: 16 },
-    title: { type: String, default: "" },
-});
-const paths = computed(() => ICON_PATHS[props.name] || ICON_PATHS.Document);
-const sizeValue = computed(() => (typeof props.size === "number" ? `${props.size}px` : props.size));
+  name: { type: String, default: '' },
+  size: { type: [Number, String], default: 16 },
+  title: { type: String, default: '' },
+})
+const paths = computed(() => ICON_PATHS[props.name] || ICON_PATHS.Document)
+const sizeValue = computed(() => (typeof props.size === 'number' ? `${props.size}px` : props.size))
 </script>
 
 <template>

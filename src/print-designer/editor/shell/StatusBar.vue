@@ -1,3 +1,30 @@
+<script setup lang="ts">
+import { useEditorDocumentStore } from '../stores/documentStore'
+import { useEditorSelectionStore } from '../stores/selectionStore'
+import { useEditorViewportStore } from '../stores/viewportStore'
+
+const documentStore = useEditorDocumentStore()
+const selectionStore = useEditorSelectionStore()
+const viewportStore = useEditorViewportStore()
+const { currentPageNumber, dirty, saveStatus, totalPages, unit, currentPaperLabel } = storeToRefs(documentStore)
+const { selectedCount } = storeToRefs(selectionStore)
+const { zoom, snapEnabled, coordinateReadout } = storeToRefs(viewportStore)
+function formatCoordinate(value) {
+  return Number.isFinite(value) ? `${value.toFixed(2)} mm` : '--'
+}
+const zoomLabel = computed(() => `${Math.round(zoom.value * 100)}%`)
+const coordinateXLabel = computed(() => formatCoordinate(coordinateReadout.value.x))
+const coordinateYLabel = computed(() => formatCoordinate(coordinateReadout.value.y))
+const selectedHint = computed(() => (selectedCount.value ? `已选中 ${selectedCount.value} 个元素` : '未选中元素'))
+const guideLabel = computed(() => {
+  if (coordinateReadout.value.source !== 'guide' || !coordinateReadout.value.guideOrientation) {
+    return ''
+  }
+  const axis = coordinateReadout.value.guideOrientation === 'vertical' ? '纵向参考线' : '横向参考线'
+  return `${axis} ${formatCoordinate(coordinateReadout.value.guidePosition)}`
+})
+</script>
+
 <template>
   <footer class="status-bar">
     <div class="status-bar__section">
@@ -27,33 +54,6 @@
     </div>
   </footer>
 </template>
-
-<script setup lang="ts">import { computed } from "vue";
-import { storeToRefs } from "pinia";
-import { useEditorDocumentStore } from "../stores/documentStore";
-import { useEditorSelectionStore } from "../stores/selectionStore";
-import { useEditorViewportStore } from "../stores/viewportStore";
-const documentStore = useEditorDocumentStore();
-const selectionStore = useEditorSelectionStore();
-const viewportStore = useEditorViewportStore();
-const { currentPageNumber, dirty, saveStatus, totalPages, unit, currentPaperLabel } = storeToRefs(documentStore);
-const { selectedCount } = storeToRefs(selectionStore);
-const { zoom, snapEnabled, coordinateReadout } = storeToRefs(viewportStore);
-function formatCoordinate(value) {
-    return Number.isFinite(value) ? `${value.toFixed(2)} mm` : "--";
-}
-const zoomLabel = computed(() => `${Math.round(zoom.value * 100)}%`);
-const coordinateXLabel = computed(() => formatCoordinate(coordinateReadout.value.x));
-const coordinateYLabel = computed(() => formatCoordinate(coordinateReadout.value.y));
-const selectedHint = computed(() => (selectedCount.value ? `已选中 ${selectedCount.value} 个元素` : "未选中元素"));
-const guideLabel = computed(() => {
-    if (coordinateReadout.value.source !== "guide" || !coordinateReadout.value.guideOrientation) {
-        return "";
-    }
-    const axis = coordinateReadout.value.guideOrientation === "vertical" ? "纵向参考线" : "横向参考线";
-    return `${axis} ${formatCoordinate(coordinateReadout.value.guidePosition)}`;
-});
-</script>
 
 <style scoped lang="scss">
 .status-bar {

@@ -1,9 +1,101 @@
+<script setup lang="ts">
+import PdSwitch from '../../ui/primitives/PdSwitch.vue'
+import { useEditorViewportStore } from '../stores/viewportStore'
+
+const viewportStore = useEditorViewportStore()
+const { guidesVisible, gridVisible, safeAreaVisible, snapEnabled, pageOutlineVisible, allowOverflowDrag, textQuickToolbarVisible } = storeToRefs(viewportStore)
+const activeOptionCount = computed(() => {
+  const options = [
+    guidesVisible.value,
+    gridVisible.value,
+    safeAreaVisible.value,
+    pageOutlineVisible.value,
+    snapEnabled.value,
+    allowOverflowDrag.value,
+    textQuickToolbarVisible.value,
+  ]
+  return options.filter(Boolean).length
+})
+const activeMode = computed(() => {
+  if (guidesVisible.value
+    && gridVisible.value
+    && !safeAreaVisible.value
+    && pageOutlineVisible.value
+    && snapEnabled.value
+    && !allowOverflowDrag.value
+    && !textQuickToolbarVisible.value) {
+    return 'focus'
+  }
+  if (guidesVisible.value
+    && !gridVisible.value
+    && !safeAreaVisible.value
+    && pageOutlineVisible.value
+    && snapEnabled.value
+    && !allowOverflowDrag.value
+    && !textQuickToolbarVisible.value) {
+    return 'print'
+  }
+  if (!guidesVisible.value
+    && !gridVisible.value
+    && !safeAreaVisible.value
+    && !pageOutlineVisible.value
+    && snapEnabled.value
+    && !allowOverflowDrag.value
+    && !textQuickToolbarVisible.value) {
+    return 'simple'
+  }
+  return ''
+})
+function applyMode(mode) {
+  if (mode === 'focus') {
+    if (!guidesVisible.value)
+      viewportStore.toggleGuides()
+    if (!gridVisible.value)
+      viewportStore.toggleGrid()
+    if (safeAreaVisible.value)
+      viewportStore.toggleSafeArea()
+    if (!pageOutlineVisible.value)
+      viewportStore.togglePageOutline()
+    if (!snapEnabled.value)
+      viewportStore.toggleSnap()
+    return
+  }
+  if (mode === 'print') {
+    if (!guidesVisible.value)
+      viewportStore.toggleGuides()
+    if (gridVisible.value)
+      viewportStore.toggleGrid()
+    if (!safeAreaVisible.value)
+      viewportStore.toggleSafeArea()
+    if (!pageOutlineVisible.value)
+      viewportStore.togglePageOutline()
+    if (!snapEnabled.value)
+      viewportStore.toggleSnap()
+    return
+  }
+  if (guidesVisible.value)
+    viewportStore.toggleGuides()
+  if (gridVisible.value)
+    viewportStore.toggleGrid()
+  if (safeAreaVisible.value)
+    viewportStore.toggleSafeArea()
+  if (pageOutlineVisible.value)
+    viewportStore.togglePageOutline()
+  if (!snapEnabled.value)
+    viewportStore.toggleSnap()
+}
+</script>
+
 <template>
   <div class="view-settings-panel">
     <header class="view-settings-panel__header">
       <div>
-        <p class="view-settings-panel__eyebrow">视图设置</p>
-        <h2 class="view-settings-panel__title">编辑视图</h2>
+        <p class="view-settings-panel__eyebrow">
+          视图设置
+        </p>
+        <h2 class="view-settings-panel__title">
+          编辑视图
+        </h2>
         <p class="view-settings-panel__description">
           这里只影响编辑器的显示方式，不会直接写入打印结果。
         </p>
@@ -15,7 +107,9 @@
     </header>
 
     <section class="view-settings-panel__section">
-      <div class="view-settings-panel__section-title">模式预设</div>
+      <div class="view-settings-panel__section-title">
+        模式预设
+      </div>
       <div class="view-settings-panel__modes">
         <button type="button" class="view-settings-panel__mode" :class="{ 'is-active': activeMode === 'focus' }" @click="applyMode('focus')">
           <strong>专注编辑</strong>
@@ -33,7 +127,9 @@
     </section>
 
     <section class="view-settings-panel__section">
-      <div class="view-settings-panel__section-title">编辑辅助</div>
+      <div class="view-settings-panel__section-title">
+        编辑辅助
+      </div>
       <label class="view-settings-panel__toggle">
         <span>显示参考线</span>
         <PdSwitch :model-value="guidesVisible" @change="viewportStore.toggleGuides" />
@@ -57,7 +153,9 @@
     </section>
 
     <section class="view-settings-panel__section">
-      <div class="view-settings-panel__section-title">交互偏好</div>
+      <div class="view-settings-panel__section-title">
+        交互偏好
+      </div>
       <label class="view-settings-panel__toggle">
         <span>允许元素拖出画布</span>
         <PdSwitch :model-value="allowOverflowDrag" @change="viewportStore.toggleAllowOverflowDrag" />
@@ -68,97 +166,11 @@
       </label>
     </section>
 
-    <p class="view-settings-panel__hint">这些设置只影响编辑器视图，不会直接改写模板数据。</p>
+    <p class="view-settings-panel__hint">
+      这些设置只影响编辑器视图，不会直接改写模板数据。
+    </p>
   </div>
 </template>
-
-<script setup lang="ts">import { computed } from "vue";
-import { storeToRefs } from "pinia";
-import PdSwitch from "../../ui/primitives/PdSwitch.vue";
-import { useEditorViewportStore } from "../stores/viewportStore";
-const viewportStore = useEditorViewportStore();
-const { guidesVisible, gridVisible, safeAreaVisible, snapEnabled, pageOutlineVisible, allowOverflowDrag, textQuickToolbarVisible, } = storeToRefs(viewportStore);
-const activeOptionCount = computed(() => {
-    const options = [
-        guidesVisible.value,
-        gridVisible.value,
-        safeAreaVisible.value,
-        pageOutlineVisible.value,
-        snapEnabled.value,
-        allowOverflowDrag.value,
-        textQuickToolbarVisible.value,
-    ];
-    return options.filter(Boolean).length;
-});
-const activeMode = computed(() => {
-    if (guidesVisible.value &&
-        gridVisible.value &&
-        !safeAreaVisible.value &&
-        pageOutlineVisible.value &&
-        snapEnabled.value &&
-        !allowOverflowDrag.value &&
-        !textQuickToolbarVisible.value) {
-        return "focus";
-    }
-    if (guidesVisible.value &&
-        !gridVisible.value &&
-        !safeAreaVisible.value &&
-        pageOutlineVisible.value &&
-        snapEnabled.value &&
-        !allowOverflowDrag.value &&
-        !textQuickToolbarVisible.value) {
-        return "print";
-    }
-    if (!guidesVisible.value &&
-        !gridVisible.value &&
-        !safeAreaVisible.value &&
-        !pageOutlineVisible.value &&
-        snapEnabled.value &&
-        !allowOverflowDrag.value &&
-        !textQuickToolbarVisible.value) {
-        return "simple";
-    }
-    return "";
-});
-function applyMode(mode) {
-    if (mode === "focus") {
-        if (!guidesVisible.value)
-            viewportStore.toggleGuides();
-        if (!gridVisible.value)
-            viewportStore.toggleGrid();
-        if (safeAreaVisible.value)
-            viewportStore.toggleSafeArea();
-        if (!pageOutlineVisible.value)
-            viewportStore.togglePageOutline();
-        if (!snapEnabled.value)
-            viewportStore.toggleSnap();
-        return;
-    }
-    if (mode === "print") {
-        if (!guidesVisible.value)
-            viewportStore.toggleGuides();
-        if (gridVisible.value)
-            viewportStore.toggleGrid();
-        if (!safeAreaVisible.value)
-            viewportStore.toggleSafeArea();
-        if (!pageOutlineVisible.value)
-            viewportStore.togglePageOutline();
-        if (!snapEnabled.value)
-            viewportStore.toggleSnap();
-        return;
-    }
-    if (guidesVisible.value)
-        viewportStore.toggleGuides();
-    if (gridVisible.value)
-        viewportStore.toggleGrid();
-    if (safeAreaVisible.value)
-        viewportStore.toggleSafeArea();
-    if (pageOutlineVisible.value)
-        viewportStore.togglePageOutline();
-    if (!snapEnabled.value)
-        viewportStore.toggleSnap();
-}
-</script>
 
 <style scoped lang="scss">
 .view-settings-panel {

@@ -1,10 +1,43 @@
+<script setup lang="ts">
+import DataPanel from '../../components/sidebar/DataPanel.vue'
+import { Search } from '../../ui/icons.js'
+import PdInput from '../../ui/primitives/PdInput.vue'
+
+const props = defineProps({
+  variables: {
+    type: Array,
+    default: () => [],
+  },
+})
+const emit = defineEmits(['bind'])
+const searchQuery = ref('')
+const variableCount = computed(() => props.variables.length)
+const filteredCount = computed(() => {
+  const query = String(searchQuery.value || '').trim().toLowerCase()
+  if (!query) {
+    return variableCount.value
+  }
+  return props.variables.filter(variable => String(variable).toLowerCase().includes(query)).length
+})
+const toolbarNote = computed(() => {
+  const query = String(searchQuery.value || '').trim()
+  return query ? `正在筛选 “${query}”` : '按字段路径快速查找'
+})
+</script>
+
 <template>
   <div class="binding-panel">
     <header class="binding-panel__header">
       <div>
-        <p class="binding-panel__eyebrow">数据绑定</p>
-        <h2 class="binding-panel__title">字段路径</h2>
-        <p class="binding-panel__description">先找路径，再回到属性面板填入字段名，适合快速绑定文本、表格和标签网格。</p>
+        <p class="binding-panel__eyebrow">
+          数据绑定
+        </p>
+        <h2 class="binding-panel__title">
+          字段路径
+        </h2>
+        <p class="binding-panel__description">
+          先找路径，再回到属性面板填入字段名，适合快速绑定文本、表格和标签网格。
+        </p>
       </div>
       <div class="binding-panel__badge">
         <strong>{{ variableCount }}</strong>
@@ -27,32 +60,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">import { computed, ref } from "vue";
-import { Search } from "../../ui/icons.js";
-import PdInput from "../../ui/primitives/PdInput.vue";
-import DataPanel from "../../components/sidebar/DataPanel.vue";
-const props = defineProps({
-    variables: {
-        type: Array,
-        default: () => [],
-    },
-});
-const emit = defineEmits(["bind"]);
-const searchQuery = ref("");
-const variableCount = computed(() => props.variables.length);
-const filteredCount = computed(() => {
-    const query = String(searchQuery.value || "").trim().toLowerCase();
-    if (!query) {
-        return variableCount.value;
-    }
-    return props.variables.filter((variable) => String(variable).toLowerCase().includes(query)).length;
-});
-const toolbarNote = computed(() => {
-    const query = String(searchQuery.value || "").trim();
-    return query ? `正在筛选 “${query}”` : "按字段路径快速查找";
-});
-</script>
 
 <style scoped lang="scss">
 .binding-panel {

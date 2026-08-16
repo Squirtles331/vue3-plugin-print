@@ -1,9 +1,34 @@
+<script setup lang="ts">
+import PdTabPane from '../../ui/primitives/PdTabPane.vue'
+import PdTabs from '../../ui/primitives/PdTabs.vue'
+import PropertiesPanel from '../inspector/PropertiesPanel.vue'
+import StructurePanel from '../inspector/StructurePanel.vue'
+
+defineProps({
+  layers: {
+    type: Array,
+    default: () => [],
+  },
+  variables: {
+    type: Array,
+    default: () => [],
+  },
+})
+const activeTab = ref('properties')
+</script>
+
 <template>
   <aside class="designer-inspector">
     <div class="designer-inspector__header">
-      <p class="designer-inspector__eyebrow">Inspector</p>
-      <h2 class="designer-inspector__title">检查器</h2>
-      <p class="designer-inspector__desc">查看当前页面结构，并编辑选中元素的属性与绑定信息。</p>
+      <p class="designer-inspector__eyebrow">
+        Inspector
+      </p>
+      <h2 class="designer-inspector__title">
+        检查器
+      </h2>
+      <p class="designer-inspector__desc">
+        查看当前页面结构，并编辑选中元素的属性与绑定信息。
+      </p>
     </div>
 
     <PdTabs v-model="activeTab" class="designer-inspector__tabs" stretch>
@@ -16,24 +41,6 @@
     </PdTabs>
   </aside>
 </template>
-
-<script setup lang="ts">import { ref } from "vue";
-import PdTabPane from "../../ui/primitives/PdTabPane.vue";
-import PdTabs from "../../ui/primitives/PdTabs.vue";
-import PropertiesPanel from "../inspector/PropertiesPanel.vue";
-import StructurePanel from "../inspector/StructurePanel.vue";
-defineProps({
-    layers: {
-        type: Array,
-        default: () => [],
-    },
-    variables: {
-        type: Array,
-        default: () => [],
-    },
-});
-const activeTab = ref("properties");
-</script>
 
 <style scoped lang="scss">
 .designer-inspector {

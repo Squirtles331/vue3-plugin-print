@@ -1,1 +1,1 @@
-export const variableTokens = ["@title", "@customerName", "@items"];
+export const variableTokens = ['@title', '@customerName', '@items']

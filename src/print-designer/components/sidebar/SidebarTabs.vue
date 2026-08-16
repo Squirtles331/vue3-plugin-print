@@ -1,3 +1,19 @@
+<script setup lang="ts">
+import PdIcon from '../../ui/primitives/PdIcon.vue'
+
+defineProps({
+  modelValue: {
+    type: String,
+    required: true,
+  },
+  tabs: {
+    type: Array,
+    default: () => [],
+  },
+})
+defineEmits(['update:modelValue'])
+</script>
+
 <template>
   <div class="sidebar-tabs">
     <button
@@ -15,20 +31,6 @@
     </button>
   </div>
 </template>
-
-<script setup lang="ts">import PdIcon from "../../ui/primitives/PdIcon.vue";
-defineProps({
-    modelValue: {
-        type: String,
-        required: true,
-    },
-    tabs: {
-        type: Array,
-        default: () => [],
-    },
-});
-defineEmits(["update:modelValue"]);
-</script>
 
 <style scoped lang="scss">
 .sidebar-tabs {

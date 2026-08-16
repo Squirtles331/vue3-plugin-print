@@ -1,3 +1,222 @@
+<script setup lang="ts">
+import { FONT_FAMILY_OPTIONS } from '../../core/textFormatting.js'
+import { createUpdateObjectPropsCommand } from '../../editor/commands/documentCommands.js'
+import { executeEditorCommand } from '../../editor/commands/executeCommand.js'
+import { createUpdateTextFormattingCommand } from '../../editor/commands/textCommands.js'
+import { useEditorDocumentStore } from '../../editor/stores/documentStore.js'
+import { useEditorHistoryStore } from '../../editor/stores/historyStore.js'
+import { useEditorPreviewStore } from '../../editor/stores/previewStore.js'
+import { useEditorSelectionStore } from '../../editor/stores/selectionStore.js'
+import { useEditorViewportStore } from '../../editor/stores/viewportStore.js'
+import { resolveDataPath } from '../../runtime/dataResolver.js'
+import { bindingLabel, textStyle } from './elementPreview.js'
+
+const props = defineProps({
+  object: {
+    type: Object,
+    required: true,
+  },
+})
+const emit = defineEmits(['start-object-drag'])
+const documentStore = useEditorDocumentStore()
+const historyStore = useEditorHistoryStore()
+const previewStore = useEditorPreviewStore()
+const selectionStore = useEditorSelectionStore()
+const viewportStore = useEditorViewportStore()
+const { runtimeData } = storeToRefs(previewStore)
+const { selectedIds } = storeToRefs(selectionStore)
+const { zoom } = storeToRefs(viewportStore)
+const rootRef = ref(null)
+const editorRef = ref(null)
+const toolbarRef = ref(null)
+const isInlineEditing = ref(false)
+const editingValue = ref('')
+const toolbarPosition = ref({ visible: false, left: 0, top: 0, placement: 'above' })
+let resizeObserver = null
+const canEditText = computed(() => selectedIds.value.length === 1 && selectedIds.value[0] === props.object.id && !props.object.locked)
+const showQuickToolbar = computed(() => canEditText.value && !isInlineEditing.value)
+const binding = computed(() => bindingLabel(props.object))
+const hasValue = computed(() => Boolean(props.object?.variable || String(props.object?.content || '').trim()))
+const previewValue = computed(() => resolvePreviewValue(props.object, runtimeData.value))
+const contentStyle = computed(() => textStyle(props.object))
+const fontFamilyValue = computed(() => props.object?.style?.fontFamily || '')
+const fontSizeValue = computed(() => clampFontSize(props.object?.style?.fontSize))
+const textAlignValue = computed(() => props.object?.style?.textAlign || 'left')
+const verticalAlignValue = computed(() => props.object?.style?.verticalAlign || 'top')
+const isBold = computed(() => ['bold', '700'].includes(String(props.object?.style?.fontWeight || '')))
+const isItalic = computed(() => props.object?.style?.fontStyle === 'italic')
+const isUnderline = computed(() => props.object?.style?.textDecoration === 'underline')
+const isVertical = computed(() => props.object?.props?.writingMode === 'vertical-rl')
+const quickToolbarStyle = computed(() => ({
+  display: toolbarPosition.value.visible ? 'flex' : 'none',
+  left: `${toolbarPosition.value.left}px`,
+  top: `${toolbarPosition.value.top}px`,
+}))
+const horizontalAlignButtons = [
+  { label: '左', value: 'left', ariaLabel: '左对齐' },
+  { label: '中', value: 'center', ariaLabel: '水平居中' },
+  { label: '右', value: 'right', ariaLabel: '右对齐' },
+]
+const verticalAlignButtons = [
+  { label: '上', value: 'top', ariaLabel: '顶端对齐' },
+  { label: '中', value: 'middle', ariaLabel: '垂直居中' },
+  { label: '下', value: 'bottom', ariaLabel: '底端对齐' },
+]
+function normalizeBinding(variable) {
+  return String(variable || '').trim().replace(/^@/, '')
+}
+function resolvePreviewValue(object, data) {
+  const variable = normalizeBinding(object?.variable)
+  if (variable) {
+    const result = resolveDataPath(data, variable)
+    if (result.found) {
+      return result.value == null ? '' : String(result.value)
+    }
+    const sampleValue = object?.props?.sampleValue
+    if (sampleValue != null && String(sampleValue).trim() !== '') {
+      return String(sampleValue)
+    }
+    return `{{${variable}}}`
+  }
+  const content = object?.content
+  return content != null && String(content).trim() !== '' ? String(content) : '输入文本'
+}
+function clampFontSize(value) {
+  const parsed = Number(value)
+  return Math.min(240, Math.max(1, Number.isFinite(parsed) ? Math.round(parsed) : 14))
+}
+function emitDrag(event) {
+  if (canEditText.value) {
+    emit('start-object-drag', event)
+  }
+}
+async function startInlineEdit() {
+  if (!canEditText.value)
+    return
+  editingValue.value = String(props.object?.content || '')
+  isInlineEditing.value = true
+  await nextTick()
+  editorRef.value?.focus?.()
+  editorRef.value?.select?.()
+}
+function commitInlineEdit() {
+  if (!isInlineEditing.value)
+    return
+  const nextValue = editingValue.value
+  const previousValue = String(props.object?.content || '')
+  isInlineEditing.value = false
+  editingValue.value = ''
+  if (nextValue === previousValue || props.object?.locked)
+    return
+  const command = createUpdateObjectPropsCommand(documentStore, props.object.id, { content: nextValue })
+  if (!command)
+    return
+  command.label = '编辑文本内容'
+  executeEditorCommand(historyStore, command)
+}
+function cancelInlineEdit() {
+  if (!isInlineEditing.value)
+    return
+  isInlineEditing.value = false
+  editingValue.value = ''
+}
+function handleEditorKeydown(event) {
+  event.stopPropagation()
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    cancelInlineEdit()
+  }
+  else if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+    event.preventDefault()
+    commitInlineEdit()
+  }
+}
+function updateTextFormat(stylePatch = {}, propsPatch = {}) {
+  if (!canEditText.value)
+    return
+  const command = createUpdateTextFormattingCommand(documentStore, props.object.id, stylePatch, propsPatch)
+  if (command) {
+    executeEditorCommand(historyStore, command)
+  }
+}
+function setFontFamily(value) {
+  updateTextFormat({ fontFamily: value })
+}
+function commitFontSize(value) {
+  updateTextFormat({ fontSize: clampFontSize(value) })
+}
+function changeFontSize(delta) {
+  commitFontSize(fontSizeValue.value + delta)
+}
+function setTextAlign(value) {
+  updateTextFormat({ textAlign: value })
+}
+function setVerticalAlign(value) {
+  updateTextFormat({ verticalAlign: value })
+}
+function toggleBold() {
+  updateTextFormat({ fontWeight: isBold.value ? 'normal' : 'bold' })
+}
+function toggleItalic() {
+  updateTextFormat({ fontStyle: isItalic.value ? 'normal' : 'italic' })
+}
+function toggleUnderline() {
+  updateTextFormat({ textDecoration: isUnderline.value ? 'none' : 'underline' })
+}
+function toggleWritingMode() {
+  updateTextFormat({}, { writingMode: isVertical.value ? 'horizontal-tb' : 'vertical-rl' })
+}
+async function updateToolbarPosition() {
+  if (!showQuickToolbar.value || !rootRef.value) {
+    toolbarPosition.value = { ...toolbarPosition.value, visible: false }
+    return
+  }
+  await nextTick()
+  if (!showQuickToolbar.value || !rootRef.value) {
+    toolbarPosition.value = { ...toolbarPosition.value, visible: false }
+    return
+  }
+  const anchor = rootRef.value.getBoundingClientRect()
+  const toolbar = toolbarRef.value
+  const toolbarWidth = toolbar?.offsetWidth || 460
+  const toolbarHeight = toolbar?.offsetHeight || 36
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth || toolbarWidth + 16
+  const left = Math.max(8, Math.min(anchor.left, Math.max(8, viewportWidth - toolbarWidth - 8)))
+  const placeBelow = anchor.top < toolbarHeight + 12
+  toolbarPosition.value = {
+    visible: true,
+    left,
+    top: placeBelow ? anchor.bottom + 8 : Math.max(8, anchor.top - toolbarHeight - 8),
+    placement: placeBelow ? 'below' : 'above',
+  }
+}
+watch(() => selectedIds.value.join(','), () => {
+  if (isInlineEditing.value && !canEditText.value) {
+    commitInlineEdit()
+  }
+})
+watch(showQuickToolbar, () => {
+  updateToolbarPosition()
+})
+watch(() => [props.object?.x, props.object?.y, props.object?.width, props.object?.height, props.object?.rotation, zoom.value], () => {
+  updateToolbarPosition()
+})
+onMounted(() => {
+  window.addEventListener('resize', updateToolbarPosition)
+  window.addEventListener('scroll', updateToolbarPosition, true)
+  if (typeof ResizeObserver !== 'undefined' && rootRef.value) {
+    resizeObserver = new ResizeObserver(updateToolbarPosition)
+    resizeObserver.observe(rootRef.value)
+  }
+  updateToolbarPosition()
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateToolbarPosition)
+  window.removeEventListener('scroll', updateToolbarPosition, true)
+  resizeObserver?.disconnect()
+})
+</script>
+
 <template>
   <div
     ref="rootRef"
@@ -7,10 +226,10 @@
     @pointerdown.stop
   >
     <template v-if="canEditText">
-      <span class="pd-text-element__drag-zone pd-text-element__drag-zone--top" @pointerdown.stop="emitDrag"></span>
-      <span class="pd-text-element__drag-zone pd-text-element__drag-zone--right" @pointerdown.stop="emitDrag"></span>
-      <span class="pd-text-element__drag-zone pd-text-element__drag-zone--bottom" @pointerdown.stop="emitDrag"></span>
-      <span class="pd-text-element__drag-zone pd-text-element__drag-zone--left" @pointerdown.stop="emitDrag"></span>
+      <span class="pd-text-element__drag-zone pd-text-element__drag-zone--top" @pointerdown.stop="emitDrag" />
+      <span class="pd-text-element__drag-zone pd-text-element__drag-zone--right" @pointerdown.stop="emitDrag" />
+      <span class="pd-text-element__drag-zone pd-text-element__drag-zone--bottom" @pointerdown.stop="emitDrag" />
+      <span class="pd-text-element__drag-zone pd-text-element__drag-zone--left" @pointerdown.stop="emitDrag" />
     </template>
 
     <textarea
@@ -23,7 +242,7 @@
       @pointerdown.stop
       @keydown="handleEditorKeydown"
       @blur="commitInlineEdit"
-    ></textarea>
+    />
     <template v-else>
       <span v-if="binding" class="pd-text-element__binding">{{ binding }}</span>
       <span class="pd-text-element__value" @dblclick.stop="startInlineEdit">{{ previewValue }}</span>
@@ -53,10 +272,12 @@
         </option>
       </select>
 
-      <span class="pd-text-element__toolbar-divider"></span>
+      <span class="pd-text-element__toolbar-divider" />
 
       <div class="pd-text-element__toolbar-size">
-        <button type="button" aria-label="减小字号" @click="changeFontSize(-1)">−</button>
+        <button type="button" aria-label="减小字号" @click="changeFontSize(-1)">
+          −
+        </button>
         <input
           :value="fontSizeValue"
           type="number"
@@ -65,11 +286,13 @@
           step="1"
           aria-label="字号"
           @change="commitFontSize(($event.target as HTMLInputElement).value)"
-        />
-        <button type="button" aria-label="增大字号" @click="changeFontSize(1)">+</button>
+        >
+        <button type="button" aria-label="增大字号" @click="changeFontSize(1)">
+          +
+        </button>
       </div>
 
-      <span class="pd-text-element__toolbar-divider"></span>
+      <span class="pd-text-element__toolbar-divider" />
 
       <div class="pd-text-element__toolbar-group">
         <button
@@ -79,7 +302,9 @@
           :class="{ 'is-active': textAlignValue === option.value }"
           :aria-label="option.ariaLabel"
           @click="setTextAlign(option.value)"
-        >{{ option.label }}</button>
+        >
+          {{ option.label }}
+        </button>
       </div>
       <div class="pd-text-element__toolbar-group">
         <button
@@ -89,239 +314,30 @@
           :class="{ 'is-active': verticalAlignValue === option.value }"
           :aria-label="option.ariaLabel"
           @click="setVerticalAlign(option.value)"
-        >{{ option.label }}</button>
+        >
+          {{ option.label }}
+        </button>
       </div>
 
-      <span class="pd-text-element__toolbar-divider"></span>
+      <span class="pd-text-element__toolbar-divider" />
 
       <div class="pd-text-element__toolbar-group">
-        <button type="button" :class="{ 'is-active': isBold }" aria-label="粗体" @click="toggleBold"><strong>B</strong></button>
-        <button type="button" :class="{ 'is-active': isItalic }" aria-label="斜体" @click="toggleItalic"><em>I</em></button>
-        <button type="button" :class="{ 'is-active': isUnderline }" aria-label="下划线" @click="toggleUnderline"><u>U</u></button>
-        <button type="button" :class="{ 'is-active': isVertical }" aria-label="竖排文字" @click="toggleWritingMode">竖</button>
+        <button type="button" :class="{ 'is-active': isBold }" aria-label="粗体" @click="toggleBold">
+          <strong>B</strong>
+        </button>
+        <button type="button" :class="{ 'is-active': isItalic }" aria-label="斜体" @click="toggleItalic">
+          <em>I</em>
+        </button>
+        <button type="button" :class="{ 'is-active': isUnderline }" aria-label="下划线" @click="toggleUnderline">
+          <u>U</u>
+        </button>
+        <button type="button" :class="{ 'is-active': isVertical }" aria-label="竖排文字" @click="toggleWritingMode">
+          竖
+        </button>
       </div>
     </section>
   </Teleport>
 </template>
-
-<script setup lang="ts">import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { storeToRefs } from "pinia";
-import { FONT_FAMILY_OPTIONS } from "../../core/textFormatting.js";
-import { createUpdateObjectPropsCommand } from "../../editor/commands/documentCommands.js";
-import { executeEditorCommand } from "../../editor/commands/executeCommand.js";
-import { createUpdateTextFormattingCommand } from "../../editor/commands/textCommands.js";
-import { useEditorDocumentStore } from "../../editor/stores/documentStore.js";
-import { useEditorHistoryStore } from "../../editor/stores/historyStore.js";
-import { useEditorPreviewStore } from "../../editor/stores/previewStore.js";
-import { useEditorSelectionStore } from "../../editor/stores/selectionStore.js";
-import { useEditorViewportStore } from "../../editor/stores/viewportStore.js";
-import { resolveDataPath } from "../../runtime/dataResolver.js";
-import { bindingLabel, textStyle } from "./elementPreview.js";
-const props = defineProps({
-    object: {
-        type: Object,
-        required: true,
-    },
-});
-const emit = defineEmits(["start-object-drag"]);
-const documentStore = useEditorDocumentStore();
-const historyStore = useEditorHistoryStore();
-const previewStore = useEditorPreviewStore();
-const selectionStore = useEditorSelectionStore();
-const viewportStore = useEditorViewportStore();
-const { runtimeData } = storeToRefs(previewStore);
-const { selectedIds } = storeToRefs(selectionStore);
-const { zoom } = storeToRefs(viewportStore);
-const rootRef = ref(null);
-const editorRef = ref(null);
-const toolbarRef = ref(null);
-const isInlineEditing = ref(false);
-const editingValue = ref("");
-const toolbarPosition = ref({ visible: false, left: 0, top: 0, placement: "above" });
-let resizeObserver = null;
-const canEditText = computed(() => selectedIds.value.length === 1 && selectedIds.value[0] === props.object.id && !props.object.locked);
-const showQuickToolbar = computed(() => canEditText.value && !isInlineEditing.value);
-const binding = computed(() => bindingLabel(props.object));
-const hasValue = computed(() => Boolean(props.object?.variable || String(props.object?.content || "").trim()));
-const previewValue = computed(() => resolvePreviewValue(props.object, runtimeData.value));
-const contentStyle = computed(() => textStyle(props.object));
-const fontFamilyValue = computed(() => props.object?.style?.fontFamily || "");
-const fontSizeValue = computed(() => clampFontSize(props.object?.style?.fontSize));
-const textAlignValue = computed(() => props.object?.style?.textAlign || "left");
-const verticalAlignValue = computed(() => props.object?.style?.verticalAlign || "top");
-const isBold = computed(() => ["bold", "700"].includes(String(props.object?.style?.fontWeight || "")));
-const isItalic = computed(() => props.object?.style?.fontStyle === "italic");
-const isUnderline = computed(() => props.object?.style?.textDecoration === "underline");
-const isVertical = computed(() => props.object?.props?.writingMode === "vertical-rl");
-const quickToolbarStyle = computed(() => ({
-    display: toolbarPosition.value.visible ? "flex" : "none",
-    left: `${toolbarPosition.value.left}px`,
-    top: `${toolbarPosition.value.top}px`,
-}));
-const horizontalAlignButtons = [
-    { label: "左", value: "left", ariaLabel: "左对齐" },
-    { label: "中", value: "center", ariaLabel: "水平居中" },
-    { label: "右", value: "right", ariaLabel: "右对齐" },
-];
-const verticalAlignButtons = [
-    { label: "上", value: "top", ariaLabel: "顶端对齐" },
-    { label: "中", value: "middle", ariaLabel: "垂直居中" },
-    { label: "下", value: "bottom", ariaLabel: "底端对齐" },
-];
-function normalizeBinding(variable) {
-    return String(variable || "").trim().replace(/^@/, "");
-}
-function resolvePreviewValue(object, data) {
-    const variable = normalizeBinding(object?.variable);
-    if (variable) {
-        const result = resolveDataPath(data, variable);
-        if (result.found) {
-            return result.value == null ? "" : String(result.value);
-        }
-        const sampleValue = object?.props?.sampleValue;
-        if (sampleValue != null && String(sampleValue).trim() !== "") {
-            return String(sampleValue);
-        }
-        return `{{${variable}}}`;
-    }
-    const content = object?.content;
-    return content != null && String(content).trim() !== "" ? String(content) : "输入文本";
-}
-function clampFontSize(value) {
-    const parsed = Number(value);
-    return Math.min(240, Math.max(1, Number.isFinite(parsed) ? Math.round(parsed) : 14));
-}
-function emitDrag(event) {
-    if (canEditText.value) {
-        emit("start-object-drag", event);
-    }
-}
-async function startInlineEdit() {
-    if (!canEditText.value)
-        return;
-    editingValue.value = String(props.object?.content || "");
-    isInlineEditing.value = true;
-    await nextTick();
-    editorRef.value?.focus?.();
-    editorRef.value?.select?.();
-}
-function commitInlineEdit() {
-    if (!isInlineEditing.value)
-        return;
-    const nextValue = editingValue.value;
-    const previousValue = String(props.object?.content || "");
-    isInlineEditing.value = false;
-    editingValue.value = "";
-    if (nextValue === previousValue || props.object?.locked)
-        return;
-    const command = createUpdateObjectPropsCommand(documentStore, props.object.id, { content: nextValue });
-    if (!command)
-        return;
-    command.label = "编辑文本内容";
-    executeEditorCommand(historyStore, command);
-}
-function cancelInlineEdit() {
-    if (!isInlineEditing.value)
-        return;
-    isInlineEditing.value = false;
-    editingValue.value = "";
-}
-function handleEditorKeydown(event) {
-    event.stopPropagation();
-    if (event.key === "Escape") {
-        event.preventDefault();
-        cancelInlineEdit();
-    }
-    else if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
-        event.preventDefault();
-        commitInlineEdit();
-    }
-}
-function updateTextFormat(stylePatch = {}, propsPatch = {}) {
-    if (!canEditText.value)
-        return;
-    const command = createUpdateTextFormattingCommand(documentStore, props.object.id, stylePatch, propsPatch);
-    if (command) {
-        executeEditorCommand(historyStore, command);
-    }
-}
-function setFontFamily(value) {
-    updateTextFormat({ fontFamily: value });
-}
-function commitFontSize(value) {
-    updateTextFormat({ fontSize: clampFontSize(value) });
-}
-function changeFontSize(delta) {
-    commitFontSize(fontSizeValue.value + delta);
-}
-function setTextAlign(value) {
-    updateTextFormat({ textAlign: value });
-}
-function setVerticalAlign(value) {
-    updateTextFormat({ verticalAlign: value });
-}
-function toggleBold() {
-    updateTextFormat({ fontWeight: isBold.value ? "normal" : "bold" });
-}
-function toggleItalic() {
-    updateTextFormat({ fontStyle: isItalic.value ? "normal" : "italic" });
-}
-function toggleUnderline() {
-    updateTextFormat({ textDecoration: isUnderline.value ? "none" : "underline" });
-}
-function toggleWritingMode() {
-    updateTextFormat({}, { writingMode: isVertical.value ? "horizontal-tb" : "vertical-rl" });
-}
-async function updateToolbarPosition() {
-    if (!showQuickToolbar.value || !rootRef.value) {
-        toolbarPosition.value = { ...toolbarPosition.value, visible: false };
-        return;
-    }
-    await nextTick();
-    if (!showQuickToolbar.value || !rootRef.value) {
-        toolbarPosition.value = { ...toolbarPosition.value, visible: false };
-        return;
-    }
-    const anchor = rootRef.value.getBoundingClientRect();
-    const toolbar = toolbarRef.value;
-    const toolbarWidth = toolbar?.offsetWidth || 460;
-    const toolbarHeight = toolbar?.offsetHeight || 36;
-    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || toolbarWidth + 16;
-    const left = Math.max(8, Math.min(anchor.left, Math.max(8, viewportWidth - toolbarWidth - 8)));
-    const placeBelow = anchor.top < toolbarHeight + 12;
-    toolbarPosition.value = {
-        visible: true,
-        left,
-        top: placeBelow ? anchor.bottom + 8 : Math.max(8, anchor.top - toolbarHeight - 8),
-        placement: placeBelow ? "below" : "above",
-    };
-}
-watch(() => selectedIds.value.join(","), () => {
-    if (isInlineEditing.value && !canEditText.value) {
-        commitInlineEdit();
-    }
-});
-watch(showQuickToolbar, () => {
-    updateToolbarPosition();
-});
-watch(() => [props.object?.x, props.object?.y, props.object?.width, props.object?.height, props.object?.rotation, zoom.value], () => {
-    updateToolbarPosition();
-});
-onMounted(() => {
-    window.addEventListener("resize", updateToolbarPosition);
-    window.addEventListener("scroll", updateToolbarPosition, true);
-    if (typeof ResizeObserver !== "undefined" && rootRef.value) {
-        resizeObserver = new ResizeObserver(updateToolbarPosition);
-        resizeObserver.observe(rootRef.value);
-    }
-    updateToolbarPosition();
-});
-onBeforeUnmount(() => {
-    window.removeEventListener("resize", updateToolbarPosition);
-    window.removeEventListener("scroll", updateToolbarPosition, true);
-    resizeObserver?.disconnect();
-});
-</script>
 
 <style scoped lang="scss">
 .pd-text-element {

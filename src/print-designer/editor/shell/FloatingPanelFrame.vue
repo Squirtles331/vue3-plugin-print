@@ -1,3 +1,54 @@
+<script setup lang="ts">
+const props = defineProps({
+  panelId: {
+    type: String,
+    required: true,
+  },
+  eyebrow: {
+    type: String,
+    default: '',
+  },
+  title: {
+    type: String,
+    required: true,
+  },
+  x: {
+    type: Number,
+    default: 0,
+  },
+  y: {
+    type: Number,
+    default: 0,
+  },
+  width: {
+    type: Number,
+    default: 360,
+  },
+  height: {
+    type: Number,
+    default: 520,
+  },
+  zIndex: {
+    type: Number,
+    default: 1,
+  },
+})
+const emit = defineEmits(['close', 'focus', 'drag-start'])
+const panelStyle = computed(() => ({
+  width: `${props.width}px`,
+  height: `${props.height}px`,
+  transform: `translate3d(${props.x}px, ${props.y}px, 0)`,
+  zIndex: props.zIndex,
+}))
+function onHeaderPointerDown(event) {
+  emit('focus', props.panelId)
+  emit('drag-start', {
+    panelId: props.panelId,
+    event,
+  })
+}
+</script>
+
 <template>
   <section
     class="floating-panel-frame"
@@ -10,7 +61,9 @@
     >
       <div class="floating-panel-frame__title-group">
         <span v-if="eyebrow" class="floating-panel-frame__eyebrow">{{ eyebrow }}</span>
-        <h2 class="floating-panel-frame__title">{{ title }}</h2>
+        <h2 class="floating-panel-frame__title">
+          {{ title }}
+        </h2>
       </div>
 
       <button
@@ -28,57 +81,6 @@
     </div>
   </section>
 </template>
-
-<script setup lang="ts">import { computed } from "vue";
-const props = defineProps({
-    panelId: {
-        type: String,
-        required: true,
-    },
-    eyebrow: {
-        type: String,
-        default: "",
-    },
-    title: {
-        type: String,
-        required: true,
-    },
-    x: {
-        type: Number,
-        default: 0,
-    },
-    y: {
-        type: Number,
-        default: 0,
-    },
-    width: {
-        type: Number,
-        default: 360,
-    },
-    height: {
-        type: Number,
-        default: 520,
-    },
-    zIndex: {
-        type: Number,
-        default: 1,
-    },
-});
-const emit = defineEmits(["close", "focus", "drag-start"]);
-const panelStyle = computed(() => ({
-    width: `${props.width}px`,
-    height: `${props.height}px`,
-    transform: `translate3d(${props.x}px, ${props.y}px, 0)`,
-    zIndex: props.zIndex,
-}));
-function onHeaderPointerDown(event) {
-    emit("focus", props.panelId);
-    emit("drag-start", {
-        panelId: props.panelId,
-        event,
-    });
-}
-</script>
 
 <style scoped lang="scss">
 .floating-panel-frame {

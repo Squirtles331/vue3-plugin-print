@@ -1,3 +1,59 @@
+<script setup lang="ts">
+import DataPanel from '../../components/sidebar/DataPanel.vue'
+import { describeRuntimeBindingPaths } from '../../runtime/bindingPaths.js'
+import PdButton from '../../ui/primitives/PdButton.vue'
+import PdInput from '../../ui/primitives/PdInput.vue'
+
+const props = defineProps({
+  runtimeData: { type: Object, default: () => ({}) },
+  variables: { type: Array, default: () => [] },
+  selectedCount: { type: Number, default: 0 },
+  searchQuery: { type: String, default: '' },
+})
+const emit = defineEmits(['update:runtime-data', 'bind'])
+const text = ref('{}')
+function normalized(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+}
+function parse(value = text.value) {
+  try {
+    const parsed = JSON.parse(value || '{}')
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? { value: parsed, error: '' }
+      : { value: null, error: '测试数据必须是 JSON 对象。' }
+  }
+  catch {
+    return { value: null, error: 'JSON 格式不正确；修复后会自动更新预览。' }
+  }
+}
+const parseError = computed(() => parse().error)
+const selectedHint = computed(() => props.selectedCount === 1 ? '点击字段即可绑定' : props.selectedCount ? '请只选择一个元素' : '先选择元素')
+const bindingFields = computed(() => describeRuntimeBindingPaths(normalized(props.runtimeData)))
+watch(() => props.runtimeData, (value) => {
+  const parsed = parse()
+  const next = normalized(value)
+  if (!parsed.value || JSON.stringify(parsed.value) !== JSON.stringify(next)) {
+    text.value = JSON.stringify(next, null, 2)
+  }
+}, { immediate: true, deep: true })
+watch(text, () => {
+  const result = parse()
+  if (result.value) {
+    emit('update:runtime-data', result.value)
+  }
+})
+function formatData() {
+  const result = parse()
+  if (!result.value) {
+    return
+  }
+  text.value = JSON.stringify(result.value, null, 2)
+}
+function resetData() {
+  text.value = '{}'
+}
+</script>
+
 <template>
   <section class="runtime-data-panel">
     <header class="runtime-data-panel__header">
@@ -8,7 +64,9 @@
       <span>{{ variables.length }} 字段</span>
     </header>
 
-    <p class="runtime-data-panel__hint">输入 JSON 后，字段可直接绑定到当前选中的元素。测试数据不会写入模板。</p>
+    <p class="runtime-data-panel__hint">
+      输入 JSON 后，字段可直接绑定到当前选中的元素。测试数据不会写入模板。
+    </p>
     <PdInput
       v-model="text"
       type="textarea"
@@ -17,11 +75,17 @@
       aria-label="测试数据 JSON"
       @blur="formatData"
     />
-    <p v-if="parseError" class="runtime-data-panel__error">{{ parseError }}</p>
+    <p v-if="parseError" class="runtime-data-panel__error">
+      {{ parseError }}
+    </p>
 
     <div class="runtime-data-panel__actions">
-      <PdButton size="small" native-type="button" :disabled="Boolean(parseError)" @click="formatData">格式化</PdButton>
-      <PdButton size="small" native-type="button" @click="resetData">清空</PdButton>
+      <PdButton size="small" native-type="button" :disabled="Boolean(parseError)" @click="formatData">
+        格式化
+      </PdButton>
+      <PdButton size="small" native-type="button" @click="resetData">
+        清空
+      </PdButton>
     </div>
 
     <div class="runtime-data-panel__fields">
@@ -33,61 +97,6 @@
     </div>
   </section>
 </template>
-
-<script setup lang="ts">import { computed, ref, watch } from "vue";
-import DataPanel from "../../components/sidebar/DataPanel.vue";
-import { describeRuntimeBindingPaths } from "../../runtime/bindingPaths.js";
-import PdButton from "../../ui/primitives/PdButton.vue";
-import PdInput from "../../ui/primitives/PdInput.vue";
-const props = defineProps({
-    runtimeData: { type: Object, default: () => ({}) },
-    variables: { type: Array, default: () => [] },
-    selectedCount: { type: Number, default: 0 },
-    searchQuery: { type: String, default: "" },
-});
-const emit = defineEmits(["update:runtime-data", "bind"]);
-const text = ref("{}");
-function normalized(value) {
-    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
-}
-function parse(value = text.value) {
-    try {
-        const parsed = JSON.parse(value || "{}");
-        return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-            ? { value: parsed, error: "" }
-            : { value: null, error: "测试数据必须是 JSON 对象。" };
-    }
-    catch {
-        return { value: null, error: "JSON 格式不正确；修复后会自动更新预览。" };
-    }
-}
-const parseError = computed(() => parse().error);
-const selectedHint = computed(() => props.selectedCount === 1 ? "点击字段即可绑定" : props.selectedCount ? "请只选择一个元素" : "先选择元素");
-const bindingFields = computed(() => describeRuntimeBindingPaths(normalized(props.runtimeData)));
-watch(() => props.runtimeData, (value) => {
-    const parsed = parse();
-    const next = normalized(value);
-    if (!parsed.value || JSON.stringify(parsed.value) !== JSON.stringify(next)) {
-        text.value = JSON.stringify(next, null, 2);
-    }
-}, { immediate: true, deep: true });
-watch(text, () => {
-    const result = parse();
-    if (result.value) {
-        emit("update:runtime-data", result.value);
-    }
-});
-function formatData() {
-    const result = parse();
-    if (!result.value) {
-        return;
-    }
-    text.value = JSON.stringify(result.value, null, 2);
-}
-function resetData() {
-    text.value = "{}";
-}
-</script>
 
 <style scoped lang="scss">
 .runtime-data-panel { display: flex; flex: 1; min-height: 0; flex-direction: column; gap: 10px; padding: 12px; overflow: auto; }

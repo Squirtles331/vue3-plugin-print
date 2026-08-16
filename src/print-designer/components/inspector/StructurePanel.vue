@@ -1,10 +1,32 @@
+<script setup lang="ts">
+const props = defineProps({
+  layers: {
+    type: Array,
+    default: () => [],
+  },
+  selectedIds: {
+    type: Array,
+    default: () => [],
+  },
+})
+const emit = defineEmits(['select'])
+const visibleCount = computed(() => props.layers.filter(layer => layer.visible !== false).length)
+const lockedCount = computed(() => props.layers.filter(layer => layer.locked).length)
+</script>
+
 <template>
   <section class="structure-panel">
     <header class="structure-panel__header">
       <div>
-        <p class="structure-panel__eyebrow">图层结构</p>
-        <h3 class="structure-panel__title">当前页元素</h3>
-        <p class="structure-panel__description">点选图层可以定位到画布，状态标签会提示隐藏和锁定情况。</p>
+        <p class="structure-panel__eyebrow">
+          图层结构
+        </p>
+        <h3 class="structure-panel__title">
+          当前页元素
+        </h3>
+        <p class="structure-panel__description">
+          点选图层可以定位到画布，状态标签会提示隐藏和锁定情况。
+        </p>
       </div>
       <div class="structure-panel__badge">
         <strong>{{ layers.length }}</strong>
@@ -48,22 +70,6 @@
     </div>
   </section>
 </template>
-
-<script setup lang="ts">import { computed } from "vue";
-const props = defineProps({
-    layers: {
-        type: Array,
-        default: () => [],
-    },
-    selectedIds: {
-        type: Array,
-        default: () => [],
-    },
-});
-const emit = defineEmits(["select"]);
-const visibleCount = computed(() => props.layers.filter((layer) => layer.visible !== false).length);
-const lockedCount = computed(() => props.layers.filter((layer) => layer.locked).length);
-</script>
 
 <style scoped lang="scss">
 .structure-panel {

@@ -1,10 +1,30 @@
+<script setup lang="ts">
+import PropertiesPanel from '../inspector/PropertiesPanel.vue'
+import StructurePanel from '../inspector/StructurePanel.vue'
+
+defineProps({
+  layers: {
+    type: Array,
+    default: () => [],
+  },
+  variables: {
+    type: Array,
+    default: () => [],
+  },
+})
+</script>
+
 <template>
   <aside class="designer-right-dock">
     <section class="designer-right-dock__panel">
       <header class="designer-right-dock__header">
         <div>
-          <p class="designer-right-dock__eyebrow">Structure</p>
-          <h2 class="designer-right-dock__title">布局结构</h2>
+          <p class="designer-right-dock__eyebrow">
+            Structure
+          </p>
+          <h2 class="designer-right-dock__title">
+            布局结构
+          </h2>
         </div>
         <span class="designer-right-dock__count">{{ layers.length }}</span>
       </header>
@@ -16,8 +36,12 @@
     <section class="designer-right-dock__panel">
       <header class="designer-right-dock__header">
         <div>
-          <p class="designer-right-dock__eyebrow">Properties</p>
-          <h2 class="designer-right-dock__title">属性面板</h2>
+          <p class="designer-right-dock__eyebrow">
+            Properties
+          </p>
+          <h2 class="designer-right-dock__title">
+            属性面板
+          </h2>
         </div>
         <span class="designer-right-dock__count">未选中</span>
       </header>
@@ -27,20 +51,6 @@
     </section>
   </aside>
 </template>
-
-<script setup lang="ts">import PropertiesPanel from "../inspector/PropertiesPanel.vue";
-import StructurePanel from "../inspector/StructurePanel.vue";
-defineProps({
-    layers: {
-        type: Array,
-        default: () => [],
-    },
-    variables: {
-        type: Array,
-        default: () => [],
-    },
-});
-</script>
 
 <style scoped lang="scss">
 .designer-right-dock {

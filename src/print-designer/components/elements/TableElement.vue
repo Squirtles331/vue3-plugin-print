@@ -1,22 +1,427 @@
+<script setup lang="ts">
+import { normalizeTableCell, normalizeTableColumns, normalizeTableRowHeights, renameTableColumn, shouldRenderTableCell, tableCellColSpan, tableCellDisplayValue, tableCellRowSpan, tableCellStyle, tableCellValue, tableRowHeight, updateTableCell, updateTableRowHeight } from '../../core/tableModel.js'
+import { formatTableSummaryCell } from '../../core/tableSummary.js'
+import { createUpdateObjectPropsCommand } from '../../editor/commands/documentCommands.js'
+import { executeEditorCommand } from '../../editor/commands/executeCommand.js'
+import { MM_TO_CSS_PX, mmToCssPx } from '../../editor/measurement.js'
+import { useEditorDocumentStore } from '../../editor/stores/documentStore.js'
+import { useEditorHistoryStore } from '../../editor/stores/historyStore.js'
+import { useEditorSelectionStore } from '../../editor/stores/selectionStore.js'
+import { formatTableValue, resolveRelativeRecordPath } from '../../runtime/propertySemantics.js'
+import { hasBlankTableHeaders } from './elementPreview.js'
+
+const props = defineProps({
+  object: {
+    type: Object,
+    required: true,
+  },
+})
+const emit = defineEmits(['start-object-drag'])
+const documentStore = useEditorDocumentStore()
+const historyStore = useEditorHistoryStore()
+const selectionStore = useEditorSelectionStore()
+const { selectedIds, tableSelection } = storeToRefs(selectionStore)
+const tableHostRef = ref(null)
+const inlineEditorRef = ref(null)
+const inlineEditingCell = ref(null)
+const inlineEditingValue = ref('')
+const selectionStart = ref(null)
+const isSelecting = ref(false)
+const tempColumnWidths = ref({})
+const tempRowHeights = ref({})
+const columnResize = ref(null)
+const rowResize = ref(null)
+const editFormRef = ref(null)
+const editForm = ref({ kind: '', index: -1, rowIndex: -1, colField: '', title: '', key: '', value: '', field: '', position: { top: 0, left: 0 } })
+const hideHeaderLabels = computed(() => hasBlankTableHeaders(props.object))
+const columns = computed(() => normalizeTableColumns(props.object.props?.columns))
+const canEditTable = computed(() => selectedIds.value.length === 1 && selectedIds.value[0] === props.object.id && !props.object.locked)
+const sourceRows = computed(() => {
+  if (Array.isArray(props.object.props?.sampleData))
+    return props.object.props.sampleData
+  return []
+})
+const omitRows = computed(() => props.object.editorHints?.omitRows ?? true)
+const requestedRowCount = computed(() => {
+  const value = Number(props.object.editorHints?.rowCount)
+  return Number.isFinite(value) && value > 0 ? Math.round(value) : sourceRows.value.length || 5
+})
+const visibleRowCount = computed(() => omitRows.value ? Math.min(requestedRowCount.value, 5) : requestedRowCount.value)
+const rows = computed(() => Array.from({ length: visibleRowCount.value }, (_, index) => ({
+  ...(sourceRows.value[index] && typeof sourceRows.value[index] === 'object' ? sourceRows.value[index] : {}),
+  __pdKey: `${props.object.id}-body-${index}`,
+})))
+const showsOmission = computed(() => omitRows.value && Math.max(sourceRows.value.length, requestedRowCount.value) > rows.value.length)
+const footerRows = computed(() => {
+  if (props.object.props?.showFooter === false)
+    return []
+  const source = props.object.props?.footerData
+  if (Array.isArray(source))
+    return source.map((row, index) => ({ ...(row || {}), __pdKey: `${props.object.id}-footer-${index}` }))
+  if (source && typeof source === 'object')
+    return [{ ...source, __pdKey: `${props.object.id}-footer-0` }]
+  if (!props.object.props?.footerDataVariable)
+    return []
+  return [columns.value.reduce((row, column) => {
+    row[column.key] = `{{${props.object.props.footerDataVariable}.${column.key}}}`
+    row.__pdKey = `${props.object.id}-footer-0`
+    return row
+  }, {})]
+})
+const totalColumnWidth = computed(() => columns.value.reduce((sum, column) => sum + displayColumnWidth(column), 0) || 1)
+const tableLayoutStyle = computed(() => ({ width: '100%', height: '100%', tableLayout: 'fixed' }))
+const tableStyle = computed(() => {
+  const style = props.object.style || {}
+  const borderWidth = Math.max(0, Number(style.borderWidth) || 0)
+  const borderStyle = style.borderStyle || 'solid'
+  const padding = Math.max(0, Number(style.padding) || 0)
+  const opacity = Number(style.opacity)
+  return {
+    'boxSizing': 'border-box',
+    'width': '100%',
+    'height': '100%',
+    'overflow': 'hidden',
+    'borderRadius': `${Math.max(0, Number(style.borderRadius) || 0)}px`,
+    'background': style.backgroundColor && style.backgroundColor !== 'transparent' ? style.backgroundColor : '#ffffff',
+    'color': style.color || '#172033',
+    'fontFamily': style.fontFamily || undefined,
+    'fontSize': `${Math.max(9, Number(style.fontSize) || 10)}px`,
+    'fontWeight': style.fontWeight || 'normal',
+    'fontStyle': style.fontStyle || 'normal',
+    'lineHeight': style.lineHeight || 1.35,
+    'letterSpacing': `${Number(style.letterSpacing) || 0}px`,
+    'opacity': Number.isFinite(opacity) ? opacity : 1,
+    '--pd-table-cell-y': `${Math.round(mmToCssPx(padding) * 0.55)}px`,
+    '--pd-table-cell-x': `${Math.round(mmToCssPx(padding))}px`,
+    '--pd-table-border': borderWidth && borderStyle !== 'none' ? `${borderWidth}px ${borderStyle} ${style.borderColor || style.color || '#172033'}` : '0 solid transparent',
+  }
+})
+const bindingTokens = computed(() => {
+  const tokens = []
+  if (props.object.props?.dataVariable)
+    tokens.push({ key: 'data', label: `数据：{{${props.object.props.dataVariable}}}` })
+  if (props.object.props?.footerDataVariable)
+    tokens.push({ key: 'footer', label: `页脚：{{${props.object.props.footerDataVariable}}}` })
+  return tokens
+})
+function emitDrag(event) {
+  if (!canEditTable.value)
+    return
+  emit('start-object-drag', event)
+}
+function displayColumnWidth(column) {
+  const temporary = Number(tempColumnWidths.value[column.key])
+  return Number.isFinite(temporary) && temporary > 0 ? temporary : column.width
+}
+function columnWidthStyle(column) {
+  return { width: `${(displayColumnWidth(column) / totalColumnWidth.value) * 100}%` }
+}
+function rawCell(row, column) {
+  return row?.[column.key]
+}
+function shouldRenderCell(row, column) {
+  return shouldRenderTableCell(rawCell(row, column))
+}
+function cellRowSpan(row, column) {
+  const value = tableCellRowSpan(rawCell(row, column))
+  return value > 1 ? value : undefined
+}
+function cellColSpan(row, column) {
+  const value = tableCellColSpan(rawCell(row, column))
+  return value > 1 ? value : undefined
+}
+function isLastVisibleColumn(row, column, columnIndex) {
+  return columnIndex + tableCellColSpan(rawCell(row, column)) >= columns.value.length
+}
+function cellStyle(column, row, section = 'body') {
+  const style = props.object.style || {}
+  const textAlign = column.align || (section === 'header' ? style.headerTextAlign : section === 'footer' ? style.footerTextAlign : style.textAlign) || 'left'
+  const fontSize = Number(section === 'header' ? style.headerFontSize : section === 'footer' ? style.footerFontSize : style.fontSize) || 10
+  const sectionBackground = section === 'header' ? style.headerBackgroundColor || '#edf3ff' : section === 'footer' ? style.footerBackgroundColor || '#f8fafc' : undefined
+  const sectionColor = section === 'header' ? style.headerColor || style.color || '#172033' : section === 'footer' ? style.footerColor || style.color || '#172033' : style.color || '#172033'
+  return {
+    position: 'relative',
+    padding: 'var(--pd-table-cell-y) var(--pd-table-cell-x)',
+    border: 'var(--pd-table-border)',
+    backgroundColor: sectionBackground,
+    color: sectionColor,
+    textAlign,
+    verticalAlign: style.verticalAlign || 'top',
+    fontSize: `${Math.max(9, fontSize)}px`,
+    fontWeight: section === 'header' ? '700' : section === 'footer' ? '600' : style.fontWeight || 'normal',
+    fontStyle: style.fontStyle || 'normal',
+    textDecoration: style.textDecoration || 'none',
+    lineHeight: style.lineHeight || 1.35,
+    letterSpacing: `${Number(style.letterSpacing) || 0}px`,
+    whiteSpace: 'pre-wrap',
+    overflowWrap: 'anywhere',
+    wordBreak: 'break-word',
+    ...tableCellStyle(rawCell(row, column)),
+  }
+}
+function rowStyle(section, rowIndex) {
+  const key = `${section}:${rowIndex}`
+  const temporary = Number(tempRowHeights.value[key])
+  const height = Number.isFinite(temporary) && temporary > 0 ? temporary : tableRowHeight(props.object.props, section, rowIndex)
+  return height > 0 ? { height: `${mmToCssPx(height)}px` } : {}
+}
+function displayValue(row, column) {
+  const resolved = resolveRelativeRecordPath(row, column.valuePath)
+  const value = resolved.found ? resolved.value : rawCell(row, column)
+  const text = tableCellDisplayValue(value, sourceRows.value)
+  return formatTableValue(formatTableSummaryCell(text, { pageRows: sourceRows.value, totalRows: sourceRows.value }), column.formatter)
+}
+function isCellSelected(rowIndex, colField, section) {
+  return tableSelection.value?.tableId === props.object.id
+    && tableSelection.value.cells.some(cell => cell.rowIndex === rowIndex && cell.colField === colField && cell.section === section)
+}
+function setSelection(cells, section) {
+  selectionStore.setTableSelection(props.object.id, cells, section)
+}
+function startCellSelection(event, rowIndex, colField, section) {
+  if (!canEditTable.value || event.button !== 0)
+    return
+  isSelecting.value = true
+  selectionStart.value = { rowIndex, colField, section }
+  setSelection([{ rowIndex, colField, section }], section)
+}
+function expandCellSelection(rowIndex, colField, section) {
+  const start = selectionStart.value
+  if (!isSelecting.value || !start || start.section !== section)
+    return
+  const startColumn = columns.value.findIndex(column => column.key === start.colField)
+  const endColumn = columns.value.findIndex(column => column.key === colField)
+  if (startColumn < 0 || endColumn < 0)
+    return
+  const cells = []
+  for (let row = Math.min(start.rowIndex, rowIndex); row <= Math.max(start.rowIndex, rowIndex); row += 1) {
+    for (let column = Math.min(startColumn, endColumn); column <= Math.max(startColumn, endColumn); column += 1) {
+      cells.push({ rowIndex: row, colField: columns.value[column].key, section })
+    }
+  }
+  setSelection(cells, section)
+}
+function stopCellSelection() {
+  isSelecting.value = false
+  selectionStart.value = null
+}
+function isInlineEditingCurrentCell(rowIndex, colField, section) {
+  const editing = inlineEditingCell.value
+  return Boolean(editing && editing.rowIndex === rowIndex && editing.colField === colField && editing.section === section)
+}
+async function startCellInlineEdit(event, rowIndex, colField, section) {
+  if (!canEditTable.value)
+    return
+  const row = section === 'footer' ? footerRows.value[rowIndex] : rows.value[rowIndex]
+  inlineEditingCell.value = { rowIndex, colField, section }
+  inlineEditingValue.value = String(tableCellValue(rawCell(row, { key: colField })) ?? '')
+  setSelection([{ rowIndex, colField, section }], section)
+  await nextTick()
+  const editor = Array.isArray(inlineEditorRef.value) ? inlineEditorRef.value.at(-1) : inlineEditorRef.value
+  editor?.focus?.()
+  editor?.select?.()
+}
+function commitObjectPatch(patch, label) {
+  if (!canEditTable.value)
+    return false
+  const command = createUpdateObjectPropsCommand(documentStore, props.object.id, patch)
+  if (!command)
+    return false
+  command.label = label
+  executeEditorCommand(historyStore, command)
+  return true
+}
+function commitTableProps(patch, label) {
+  return commitObjectPatch({ props: { ...(props.object.props || {}), ...patch } }, label)
+}
+function commitCellInlineEdit() {
+  const editing = inlineEditingCell.value
+  if (!editing)
+    return
+  const target = editing.section === 'footer' ? props.object.props?.footerData : props.object.props?.sampleData
+  const nextRows = updateTableCell(target, columns.value, editing.rowIndex, editing.colField, inlineEditingValue.value)
+  commitTableProps({ [editing.section === 'footer' ? 'footerData' : 'sampleData']: nextRows }, '编辑表格单元格')
+  inlineEditingCell.value = null
+  inlineEditingValue.value = ''
+}
+function cancelCellInlineEdit() {
+  inlineEditingCell.value = null
+  inlineEditingValue.value = ''
+}
+function handleInlineCellEditorKeydown(event) {
+  event.stopPropagation()
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    cancelCellInlineEdit()
+  }
+  else if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+    event.preventDefault()
+    commitCellInlineEdit()
+  }
+}
+function startHeaderEdit(event, index) {
+  if (!canEditTable.value || !columns.value[index])
+    return
+  const column = columns.value[index]
+  editForm.value = { kind: 'header', index, rowIndex: -1, colField: '', title: column.title, key: column.key, value: '', field: '', position: popoverPosition(event) }
+}
+function startFooterEdit(event, rowIndex, colField) {
+  if (!canEditTable.value)
+    return
+  const cell = normalizeTableCell(footerRows.value[rowIndex]?.[colField])
+  editForm.value = {
+    kind: 'footer',
+    index: -1,
+    rowIndex,
+    colField,
+    title: '',
+    key: '',
+    value: String(tableCellValue(cell) ?? ''),
+    field: cell?.field === colField ? colField : '',
+    position: popoverPosition(event),
+  }
+  setSelection([{ rowIndex, colField, section: 'footer' }], 'footer')
+}
+function popoverPosition(event) {
+  return { top: Math.max(8, event.clientY + 8), left: Math.max(8, event.clientX + 8) }
+}
+function closeEditForm() {
+  editForm.value = { kind: '', index: -1, rowIndex: -1, colField: '', title: '', key: '', value: '', field: '', position: { top: 0, left: 0 } }
+}
+function saveEditForm() {
+  const form = editForm.value
+  if (form.kind === 'header') {
+    const next = renameTableColumn(columns.value, props.object.props?.sampleData, props.object.props?.footerData, form.index, form.key, form.title)
+    if (next?.error)
+      return
+    if (next)
+      commitTableProps(next, '编辑表格列')
+  }
+  else if (form.kind === 'footer') {
+    const rows = updateTableCell(props.object.props?.footerData, columns.value, form.rowIndex, form.colField, form.value)
+    const cell = normalizeTableCell(rows[form.rowIndex][form.colField])
+    const summaryField = form.field === form.colField ? form.colField : ''
+    rows[form.rowIndex][form.colField] = summaryField
+      ? { ...cell, field: summaryField }
+      : (() => {
+          const nextCell = { ...cell }
+          delete nextCell.field
+          return Object.keys(nextCell).length === 1 && Object.hasOwn(nextCell, 'value') ? nextCell.value : nextCell
+        })()
+    commitTableProps({ footerData: rows }, '编辑表脚单元格')
+  }
+  closeEditForm()
+}
+function startColumnResize(event, index) {
+  if (!canEditTable.value)
+    return
+  const column = columns.value[index]
+  const hostWidth = tableHostRef.value?.getBoundingClientRect().width || 1
+  columnResize.value = { index, startX: event.clientX, startWidth: displayColumnWidth(column), hostWidth, total: totalColumnWidth.value }
+  window.addEventListener('pointermove', moveColumnResize)
+  window.addEventListener('pointerup', endColumnResize, { once: true })
+}
+function moveColumnResize(event) {
+  if (!columnResize.value)
+    return
+  const resize = columnResize.value
+  const column = columns.value[resize.index]
+  if (!column)
+    return
+  const deltaWeight = ((event.clientX - resize.startX) / Math.max(1, resize.hostWidth)) * resize.total
+  tempColumnWidths.value = { ...tempColumnWidths.value, [column.key]: Math.max(10, resize.startWidth + deltaWeight) }
+}
+function endColumnResize() {
+  const resize = columnResize.value
+  window.removeEventListener('pointermove', moveColumnResize)
+  columnResize.value = null
+  if (!resize)
+    return
+  const column = columns.value[resize.index]
+  const width = Number(tempColumnWidths.value[column?.key])
+  tempColumnWidths.value = {}
+  if (!column || !Number.isFinite(width) || width <= 0)
+    return
+  const nextColumns = columns.value.map((item, index) => index === resize.index ? { ...item, width } : item)
+  commitTableProps({ columns: nextColumns }, '调整表格列宽')
+}
+function startRowResize(event, section, rowIndex) {
+  if (!canEditTable.value)
+    return
+  const row = event.currentTarget?.closest('tr')
+  const fallback = tableRowHeight(props.object.props, section, rowIndex) || 6
+  rowResize.value = { section, rowIndex, startY: event.clientY, startHeight: (row?.getBoundingClientRect().height || mmToCssPx(fallback)) / MM_TO_CSS_PX }
+  window.addEventListener('pointermove', moveRowResize)
+  window.addEventListener('pointerup', endRowResize, { once: true })
+}
+function moveRowResize(event) {
+  if (!rowResize.value)
+    return
+  const resize = rowResize.value
+  const height = Math.max(4, resize.startHeight + (event.clientY - resize.startY) / MM_TO_CSS_PX)
+  tempRowHeights.value = { ...tempRowHeights.value, [`${resize.section}:${resize.rowIndex}`]: height }
+}
+function endRowResize() {
+  const resize = rowResize.value
+  window.removeEventListener('pointermove', moveRowResize)
+  rowResize.value = null
+  if (!resize)
+    return
+  const key = `${resize.section}:${resize.rowIndex}`
+  const height = Number(tempRowHeights.value[key])
+  tempRowHeights.value = {}
+  if (!Number.isFinite(height) || height <= 0)
+    return
+  if (resize.section === 'header') {
+    commitTableProps({ headerHeight: height }, '调整表头高度')
+  }
+  else {
+    commitTableProps({ rowHeights: updateTableRowHeight(normalizeTableRowHeights(props.object.props?.rowHeights), resize.section, resize.rowIndex, height) }, '调整表格行高')
+  }
+}
+function onDocumentPointerDown(event) {
+  if (editFormRef.value && !editFormRef.value.contains(event.target))
+    closeEditForm()
+}
+watch(() => selectedIds.value.join(','), () => {
+  if (!canEditTable.value) {
+    cancelCellInlineEdit()
+    closeEditForm()
+    selectionStore.clearTableSelection(props.object.id)
+  }
+})
+window.addEventListener('pointerup', stopCellSelection)
+window.addEventListener('pointerdown', onDocumentPointerDown)
+onBeforeUnmount(() => {
+  window.removeEventListener('pointerup', stopCellSelection)
+  window.removeEventListener('pointerdown', onDocumentPointerDown)
+  window.removeEventListener('pointermove', moveColumnResize)
+  window.removeEventListener('pointermove', moveRowResize)
+  selectionStore.clearTableSelection(props.object.id)
+})
+</script>
+
 <template>
   <div class="pd-table-element" :class="{ 'is-editable': canEditTable }" :style="tableStyle" @pointerdown.stop>
     <template v-if="canEditTable">
-      <span class="pd-table-element__drag-zone pd-table-element__drag-zone--top" @pointerdown.stop="emitDrag"></span>
-      <span class="pd-table-element__drag-zone pd-table-element__drag-zone--right" @pointerdown.stop="emitDrag"></span>
-      <span class="pd-table-element__drag-zone pd-table-element__drag-zone--bottom" @pointerdown.stop="emitDrag"></span>
-      <span class="pd-table-element__drag-zone pd-table-element__drag-zone--left" @pointerdown.stop="emitDrag"></span>
+      <span class="pd-table-element__drag-zone pd-table-element__drag-zone--top" @pointerdown.stop="emitDrag" />
+      <span class="pd-table-element__drag-zone pd-table-element__drag-zone--right" @pointerdown.stop="emitDrag" />
+      <span class="pd-table-element__drag-zone pd-table-element__drag-zone--bottom" @pointerdown.stop="emitDrag" />
+      <span class="pd-table-element__drag-zone pd-table-element__drag-zone--left" @pointerdown.stop="emitDrag" />
     </template>
 
     <div v-if="bindingTokens.length" class="pd-table-element__bindings">
       <span v-for="token in bindingTokens" :key="token.key">{{ token.label }}</span>
     </div>
 
-    <div v-if="!columns.length" class="pd-table-element__empty">请先配置表格列</div>
+    <div v-if="!columns.length" class="pd-table-element__empty">
+      请先配置表格列
+    </div>
 
     <div v-else ref="tableHostRef" class="pd-table-element__table-wrap">
       <table class="pd-table-element__table" :style="tableLayoutStyle">
         <colgroup>
-          <col v-for="column in columns" :key="column.key" :style="columnWidthStyle(column)" />
+          <col v-for="column in columns" :key="column.key" :style="columnWidthStyle(column)">
         </colgroup>
 
         <thead v-if="object.props?.showHeader !== false" class="pd-table-element__head">
@@ -32,12 +437,12 @@
                 v-if="canEditTable && columnIndex < columns.length - 1"
                 class="pd-table-element__column-resize-handle"
                 @pointerdown.stop.prevent="startColumnResize($event, columnIndex)"
-              ></span>
+              />
               <span
                 v-if="canEditTable && columnIndex === columns.length - 1"
                 class="pd-table-element__row-resize-handle"
                 @pointerdown.stop.prevent="startRowResize($event, 'header', 0)"
-              ></span>
+              />
             </th>
           </tr>
         </thead>
@@ -64,23 +469,27 @@
                   @pointerdown.stop
                   @keydown="handleInlineCellEditorKeydown"
                   @blur="commitCellInlineEdit"
-                ></textarea>
-                <template v-else>{{ displayValue(row, column) }}</template>
+                />
+                <template v-else>
+                  {{ displayValue(row, column) }}
+                </template>
                 <span
                   v-if="canEditTable && columnIndex < columns.length - 1"
                   class="pd-table-element__column-resize-handle"
                   @pointerdown.stop.prevent="startColumnResize($event, columnIndex)"
-                ></span>
+                />
                 <span
                   v-if="canEditTable && isLastVisibleColumn(row, column, columnIndex)"
                   class="pd-table-element__row-resize-handle"
                   @pointerdown.stop.prevent="startRowResize($event, 'body', rowIndex)"
-                ></span>
+                />
               </td>
             </template>
           </tr>
           <tr v-if="showsOmission" class="pd-table-element__omission">
-            <td :colspan="columns.length">⋯</td>
+            <td :colspan="columns.length">
+              ⋯
+            </td>
           </tr>
         </tbody>
 
@@ -106,19 +515,21 @@
                     @pointerdown.stop
                     @keydown="handleInlineCellEditorKeydown"
                     @blur="commitCellInlineEdit"
-                  ></textarea>
+                  />
                 </template>
-                <template v-else>{{ displayValue(row, column) }}</template>
+                <template v-else>
+                  {{ displayValue(row, column) }}
+                </template>
                 <span
                   v-if="canEditTable && columnIndex < columns.length - 1"
                   class="pd-table-element__column-resize-handle"
                   @pointerdown.stop.prevent="startColumnResize($event, columnIndex)"
-                ></span>
+                />
                 <span
                   v-if="canEditTable && isLastVisibleColumn(row, column, columnIndex)"
                   class="pd-table-element__row-resize-handle"
                   @pointerdown.stop.prevent="startRowResize($event, 'footer', rowIndex)"
-                ></span>
+                />
               </td>
             </template>
           </tr>
@@ -137,17 +548,17 @@
       <template v-if="editForm.kind === 'header'">
         <label>
           <span>表头文本</span>
-          <input v-model="editForm.title" autofocus />
+          <input v-model="editForm.title" autofocus>
         </label>
         <label>
           <span>字段 key</span>
-          <input v-model="editForm.key" />
+          <input v-model="editForm.key">
         </label>
       </template>
       <template v-else>
         <label>
           <span>单元格文本</span>
-          <input v-model="editForm.value" autofocus />
+          <input v-model="editForm.value" autofocus>
         </label>
         <label>
           <span>汇总字段</span>
@@ -158,413 +569,16 @@
         </label>
       </template>
       <div class="pd-table-element__edit-actions">
-        <button type="button" @click="closeEditForm">取消</button>
-        <button type="submit">保存</button>
+        <button type="button" @click="closeEditForm">
+          取消
+        </button>
+        <button type="submit">
+          保存
+        </button>
       </div>
     </form>
   </div>
 </template>
-
-<script setup lang="ts">import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
-import { storeToRefs } from "pinia";
-import { normalizeTableCell, normalizeTableColumns, normalizeTableRowHeights, tableCellColSpan, tableCellDisplayValue, tableCellRowSpan, tableCellStyle, tableCellValue, tableRowHeight, updateTableCell, updateTableRowHeight, renameTableColumn, shouldRenderTableCell, } from "../../core/tableModel.js";
-import { formatTableSummaryCell } from "../../core/tableSummary.js";
-import { MM_TO_CSS_PX, mmToCssPx } from "../../editor/measurement.js";
-import { createUpdateObjectPropsCommand } from "../../editor/commands/documentCommands.js";
-import { executeEditorCommand } from "../../editor/commands/executeCommand.js";
-import { useEditorDocumentStore } from "../../editor/stores/documentStore.js";
-import { useEditorHistoryStore } from "../../editor/stores/historyStore.js";
-import { useEditorSelectionStore } from "../../editor/stores/selectionStore.js";
-import { formatTableValue, resolveRelativeRecordPath } from "../../runtime/propertySemantics.js";
-import { hasBlankTableHeaders } from "./elementPreview.js";
-const props = defineProps({
-    object: {
-        type: Object,
-        required: true,
-    },
-});
-const emit = defineEmits(["start-object-drag"]);
-const documentStore = useEditorDocumentStore();
-const historyStore = useEditorHistoryStore();
-const selectionStore = useEditorSelectionStore();
-const { selectedIds, tableSelection } = storeToRefs(selectionStore);
-const tableHostRef = ref(null);
-const inlineEditorRef = ref(null);
-const inlineEditingCell = ref(null);
-const inlineEditingValue = ref("");
-const selectionStart = ref(null);
-const isSelecting = ref(false);
-const tempColumnWidths = ref({});
-const tempRowHeights = ref({});
-const columnResize = ref(null);
-const rowResize = ref(null);
-const editFormRef = ref(null);
-const editForm = ref({ kind: "", index: -1, rowIndex: -1, colField: "", title: "", key: "", value: "", field: "", position: { top: 0, left: 0 } });
-const hideHeaderLabels = computed(() => hasBlankTableHeaders(props.object));
-const columns = computed(() => normalizeTableColumns(props.object.props?.columns));
-const canEditTable = computed(() => selectedIds.value.length === 1 && selectedIds.value[0] === props.object.id && !props.object.locked);
-const sourceRows = computed(() => {
-    if (Array.isArray(props.object.props?.sampleData))
-        return props.object.props.sampleData;
-    return [];
-});
-const omitRows = computed(() => props.object.editorHints?.omitRows ?? true);
-const requestedRowCount = computed(() => {
-    const value = Number(props.object.editorHints?.rowCount);
-    return Number.isFinite(value) && value > 0 ? Math.round(value) : sourceRows.value.length || 5;
-});
-const visibleRowCount = computed(() => omitRows.value ? Math.min(requestedRowCount.value, 5) : requestedRowCount.value);
-const rows = computed(() => Array.from({ length: visibleRowCount.value }, (_, index) => ({
-    ...(sourceRows.value[index] && typeof sourceRows.value[index] === "object" ? sourceRows.value[index] : {}),
-    __pdKey: `${props.object.id}-body-${index}`,
-})));
-const showsOmission = computed(() => omitRows.value && Math.max(sourceRows.value.length, requestedRowCount.value) > rows.value.length);
-const footerRows = computed(() => {
-    if (props.object.props?.showFooter === false)
-        return [];
-    const source = props.object.props?.footerData;
-    if (Array.isArray(source))
-        return source.map((row, index) => ({ ...(row || {}), __pdKey: `${props.object.id}-footer-${index}` }));
-    if (source && typeof source === "object")
-        return [{ ...source, __pdKey: `${props.object.id}-footer-0` }];
-    if (!props.object.props?.footerDataVariable)
-        return [];
-    return [columns.value.reduce((row, column) => {
-            row[column.key] = `{{${props.object.props.footerDataVariable}.${column.key}}}`;
-            row.__pdKey = `${props.object.id}-footer-0`;
-            return row;
-        }, {})];
-});
-const totalColumnWidth = computed(() => columns.value.reduce((sum, column) => sum + displayColumnWidth(column), 0) || 1);
-const tableLayoutStyle = computed(() => ({ width: "100%", height: "100%", tableLayout: "fixed" }));
-const tableStyle = computed(() => {
-    const style = props.object.style || {};
-    const borderWidth = Math.max(0, Number(style.borderWidth) || 0);
-    const borderStyle = style.borderStyle || "solid";
-    const padding = Math.max(0, Number(style.padding) || 0);
-    const opacity = Number(style.opacity);
-    return {
-        boxSizing: "border-box",
-        width: "100%",
-        height: "100%",
-        overflow: "hidden",
-        borderRadius: `${Math.max(0, Number(style.borderRadius) || 0)}px`,
-        background: style.backgroundColor && style.backgroundColor !== "transparent" ? style.backgroundColor : "#ffffff",
-        color: style.color || "#172033",
-        fontFamily: style.fontFamily || undefined,
-        fontSize: `${Math.max(9, Number(style.fontSize) || 10)}px`,
-        fontWeight: style.fontWeight || "normal",
-        fontStyle: style.fontStyle || "normal",
-        lineHeight: style.lineHeight || 1.35,
-        letterSpacing: `${Number(style.letterSpacing) || 0}px`,
-        opacity: Number.isFinite(opacity) ? opacity : 1,
-        "--pd-table-cell-y": `${Math.round(mmToCssPx(padding) * 0.55)}px`,
-        "--pd-table-cell-x": `${Math.round(mmToCssPx(padding))}px`,
-        "--pd-table-border": borderWidth && borderStyle !== "none" ? `${borderWidth}px ${borderStyle} ${style.borderColor || style.color || "#172033"}` : "0 solid transparent",
-    };
-});
-const bindingTokens = computed(() => {
-    const tokens = [];
-    if (props.object.props?.dataVariable)
-        tokens.push({ key: "data", label: `数据：{{${props.object.props.dataVariable}}}` });
-    if (props.object.props?.footerDataVariable)
-        tokens.push({ key: "footer", label: `页脚：{{${props.object.props.footerDataVariable}}}` });
-    return tokens;
-});
-function emitDrag(event) {
-    if (!canEditTable.value)
-        return;
-    emit("start-object-drag", event);
-}
-function displayColumnWidth(column) {
-    const temporary = Number(tempColumnWidths.value[column.key]);
-    return Number.isFinite(temporary) && temporary > 0 ? temporary : column.width;
-}
-function columnWidthStyle(column) {
-    return { width: `${(displayColumnWidth(column) / totalColumnWidth.value) * 100}%` };
-}
-function rawCell(row, column) {
-    return row?.[column.key];
-}
-function shouldRenderCell(row, column) {
-    return shouldRenderTableCell(rawCell(row, column));
-}
-function cellRowSpan(row, column) {
-    const value = tableCellRowSpan(rawCell(row, column));
-    return value > 1 ? value : undefined;
-}
-function cellColSpan(row, column) {
-    const value = tableCellColSpan(rawCell(row, column));
-    return value > 1 ? value : undefined;
-}
-function isLastVisibleColumn(row, column, columnIndex) {
-    return columnIndex + tableCellColSpan(rawCell(row, column)) >= columns.value.length;
-}
-function cellStyle(column, row, section = "body") {
-    const style = props.object.style || {};
-    const textAlign = column.align || (section === "header" ? style.headerTextAlign : section === "footer" ? style.footerTextAlign : style.textAlign) || "left";
-    const fontSize = Number(section === "header" ? style.headerFontSize : section === "footer" ? style.footerFontSize : style.fontSize) || 10;
-    const sectionBackground = section === "header" ? style.headerBackgroundColor || "#edf3ff" : section === "footer" ? style.footerBackgroundColor || "#f8fafc" : undefined;
-    const sectionColor = section === "header" ? style.headerColor || style.color || "#172033" : section === "footer" ? style.footerColor || style.color || "#172033" : style.color || "#172033";
-    return {
-        position: "relative",
-        padding: "var(--pd-table-cell-y) var(--pd-table-cell-x)",
-        border: "var(--pd-table-border)",
-        backgroundColor: sectionBackground,
-        color: sectionColor,
-        textAlign,
-        verticalAlign: style.verticalAlign || "top",
-        fontSize: `${Math.max(9, fontSize)}px`,
-        fontWeight: section === "header" ? "700" : section === "footer" ? "600" : style.fontWeight || "normal",
-        fontStyle: style.fontStyle || "normal",
-        textDecoration: style.textDecoration || "none",
-        lineHeight: style.lineHeight || 1.35,
-        letterSpacing: `${Number(style.letterSpacing) || 0}px`,
-        whiteSpace: "pre-wrap",
-        overflowWrap: "anywhere",
-        wordBreak: "break-word",
-        ...tableCellStyle(rawCell(row, column)),
-    };
-}
-function rowStyle(section, rowIndex) {
-    const key = `${section}:${rowIndex}`;
-    const temporary = Number(tempRowHeights.value[key]);
-    const height = Number.isFinite(temporary) && temporary > 0 ? temporary : tableRowHeight(props.object.props, section, rowIndex);
-    return height > 0 ? { height: `${mmToCssPx(height)}px` } : {};
-}
-function displayValue(row, column) {
-    const resolved = resolveRelativeRecordPath(row, column.valuePath);
-    const value = resolved.found ? resolved.value : rawCell(row, column);
-    const text = tableCellDisplayValue(value, sourceRows.value);
-    return formatTableValue(formatTableSummaryCell(text, { pageRows: sourceRows.value, totalRows: sourceRows.value }), column.formatter);
-}
-function isCellSelected(rowIndex, colField, section) {
-    return tableSelection.value?.tableId === props.object.id
-        && tableSelection.value.cells.some((cell) => cell.rowIndex === rowIndex && cell.colField === colField && cell.section === section);
-}
-function setSelection(cells, section) {
-    selectionStore.setTableSelection(props.object.id, cells, section);
-}
-function startCellSelection(event, rowIndex, colField, section) {
-    if (!canEditTable.value || event.button !== 0)
-        return;
-    isSelecting.value = true;
-    selectionStart.value = { rowIndex, colField, section };
-    setSelection([{ rowIndex, colField, section }], section);
-}
-function expandCellSelection(rowIndex, colField, section) {
-    const start = selectionStart.value;
-    if (!isSelecting.value || !start || start.section !== section)
-        return;
-    const startColumn = columns.value.findIndex((column) => column.key === start.colField);
-    const endColumn = columns.value.findIndex((column) => column.key === colField);
-    if (startColumn < 0 || endColumn < 0)
-        return;
-    const cells = [];
-    for (let row = Math.min(start.rowIndex, rowIndex); row <= Math.max(start.rowIndex, rowIndex); row += 1) {
-        for (let column = Math.min(startColumn, endColumn); column <= Math.max(startColumn, endColumn); column += 1) {
-            cells.push({ rowIndex: row, colField: columns.value[column].key, section });
-        }
-    }
-    setSelection(cells, section);
-}
-function stopCellSelection() {
-    isSelecting.value = false;
-    selectionStart.value = null;
-}
-function isInlineEditingCurrentCell(rowIndex, colField, section) {
-    const editing = inlineEditingCell.value;
-    return Boolean(editing && editing.rowIndex === rowIndex && editing.colField === colField && editing.section === section);
-}
-async function startCellInlineEdit(event, rowIndex, colField, section) {
-    if (!canEditTable.value)
-        return;
-    const row = section === "footer" ? footerRows.value[rowIndex] : rows.value[rowIndex];
-    inlineEditingCell.value = { rowIndex, colField, section };
-    inlineEditingValue.value = String(tableCellValue(rawCell(row, { key: colField })) ?? "");
-    setSelection([{ rowIndex, colField, section }], section);
-    await nextTick();
-    const editor = Array.isArray(inlineEditorRef.value) ? inlineEditorRef.value.at(-1) : inlineEditorRef.value;
-    editor?.focus?.();
-    editor?.select?.();
-}
-function commitObjectPatch(patch, label) {
-    if (!canEditTable.value)
-        return false;
-    const command = createUpdateObjectPropsCommand(documentStore, props.object.id, patch);
-    if (!command)
-        return false;
-    command.label = label;
-    executeEditorCommand(historyStore, command);
-    return true;
-}
-function commitTableProps(patch, label) {
-    return commitObjectPatch({ props: { ...(props.object.props || {}), ...patch } }, label);
-}
-function commitCellInlineEdit() {
-    const editing = inlineEditingCell.value;
-    if (!editing)
-        return;
-    const target = editing.section === "footer" ? props.object.props?.footerData : props.object.props?.sampleData;
-    const nextRows = updateTableCell(target, columns.value, editing.rowIndex, editing.colField, inlineEditingValue.value);
-    commitTableProps({ [editing.section === "footer" ? "footerData" : "sampleData"]: nextRows }, "编辑表格单元格");
-    inlineEditingCell.value = null;
-    inlineEditingValue.value = "";
-}
-function cancelCellInlineEdit() {
-    inlineEditingCell.value = null;
-    inlineEditingValue.value = "";
-}
-function handleInlineCellEditorKeydown(event) {
-    event.stopPropagation();
-    if (event.key === "Escape") {
-        event.preventDefault();
-        cancelCellInlineEdit();
-    }
-    else if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
-        event.preventDefault();
-        commitCellInlineEdit();
-    }
-}
-function startHeaderEdit(event, index) {
-    if (!canEditTable.value || !columns.value[index])
-        return;
-    const column = columns.value[index];
-    editForm.value = { kind: "header", index, rowIndex: -1, colField: "", title: column.title, key: column.key, value: "", field: "", position: popoverPosition(event) };
-}
-function startFooterEdit(event, rowIndex, colField) {
-    if (!canEditTable.value)
-        return;
-    const cell = normalizeTableCell(footerRows.value[rowIndex]?.[colField]);
-    editForm.value = {
-        kind: "footer",
-        index: -1,
-        rowIndex,
-        colField,
-        title: "",
-        key: "",
-        value: String(tableCellValue(cell) ?? ""),
-        field: cell?.field === colField ? colField : "",
-        position: popoverPosition(event),
-    };
-    setSelection([{ rowIndex, colField, section: "footer" }], "footer");
-}
-function popoverPosition(event) {
-    return { top: Math.max(8, event.clientY + 8), left: Math.max(8, event.clientX + 8) };
-}
-function closeEditForm() {
-    editForm.value = { kind: "", index: -1, rowIndex: -1, colField: "", title: "", key: "", value: "", field: "", position: { top: 0, left: 0 } };
-}
-function saveEditForm() {
-    const form = editForm.value;
-    if (form.kind === "header") {
-        const next = renameTableColumn(columns.value, props.object.props?.sampleData, props.object.props?.footerData, form.index, form.key, form.title);
-        if (next?.error)
-            return;
-        if (next)
-            commitTableProps(next, "编辑表格列");
-    }
-    else if (form.kind === "footer") {
-        const rows = updateTableCell(props.object.props?.footerData, columns.value, form.rowIndex, form.colField, form.value);
-        const cell = normalizeTableCell(rows[form.rowIndex][form.colField]);
-        const summaryField = form.field === form.colField ? form.colField : "";
-        rows[form.rowIndex][form.colField] = summaryField ? { ...cell, field: summaryField } : (() => {
-            const nextCell = { ...cell };
-            delete nextCell.field;
-            return Object.keys(nextCell).length === 1 && Object.hasOwn(nextCell, "value") ? nextCell.value : nextCell;
-        })();
-        commitTableProps({ footerData: rows }, "编辑表脚单元格");
-    }
-    closeEditForm();
-}
-function startColumnResize(event, index) {
-    if (!canEditTable.value)
-        return;
-    const column = columns.value[index];
-    const hostWidth = tableHostRef.value?.getBoundingClientRect().width || 1;
-    columnResize.value = { index, startX: event.clientX, startWidth: displayColumnWidth(column), hostWidth, total: totalColumnWidth.value };
-    window.addEventListener("pointermove", moveColumnResize);
-    window.addEventListener("pointerup", endColumnResize, { once: true });
-}
-function moveColumnResize(event) {
-    if (!columnResize.value)
-        return;
-    const resize = columnResize.value;
-    const column = columns.value[resize.index];
-    if (!column)
-        return;
-    const deltaWeight = ((event.clientX - resize.startX) / Math.max(1, resize.hostWidth)) * resize.total;
-    tempColumnWidths.value = { ...tempColumnWidths.value, [column.key]: Math.max(10, resize.startWidth + deltaWeight) };
-}
-function endColumnResize() {
-    const resize = columnResize.value;
-    window.removeEventListener("pointermove", moveColumnResize);
-    columnResize.value = null;
-    if (!resize)
-        return;
-    const column = columns.value[resize.index];
-    const width = Number(tempColumnWidths.value[column?.key]);
-    tempColumnWidths.value = {};
-    if (!column || !Number.isFinite(width) || width <= 0)
-        return;
-    const nextColumns = columns.value.map((item, index) => index === resize.index ? { ...item, width } : item);
-    commitTableProps({ columns: nextColumns }, "调整表格列宽");
-}
-function startRowResize(event, section, rowIndex) {
-    if (!canEditTable.value)
-        return;
-    const row = event.currentTarget?.closest("tr");
-    const fallback = tableRowHeight(props.object.props, section, rowIndex) || 6;
-    rowResize.value = { section, rowIndex, startY: event.clientY, startHeight: (row?.getBoundingClientRect().height || mmToCssPx(fallback)) / MM_TO_CSS_PX };
-    window.addEventListener("pointermove", moveRowResize);
-    window.addEventListener("pointerup", endRowResize, { once: true });
-}
-function moveRowResize(event) {
-    if (!rowResize.value)
-        return;
-    const resize = rowResize.value;
-    const height = Math.max(4, resize.startHeight + (event.clientY - resize.startY) / MM_TO_CSS_PX);
-    tempRowHeights.value = { ...tempRowHeights.value, [`${resize.section}:${resize.rowIndex}`]: height };
-}
-function endRowResize() {
-    const resize = rowResize.value;
-    window.removeEventListener("pointermove", moveRowResize);
-    rowResize.value = null;
-    if (!resize)
-        return;
-    const key = `${resize.section}:${resize.rowIndex}`;
-    const height = Number(tempRowHeights.value[key]);
-    tempRowHeights.value = {};
-    if (!Number.isFinite(height) || height <= 0)
-        return;
-    if (resize.section === "header") {
-        commitTableProps({ headerHeight: height }, "调整表头高度");
-    }
-    else {
-        commitTableProps({ rowHeights: updateTableRowHeight(normalizeTableRowHeights(props.object.props?.rowHeights), resize.section, resize.rowIndex, height) }, "调整表格行高");
-    }
-}
-function onDocumentPointerDown(event) {
-    if (editFormRef.value && !editFormRef.value.contains(event.target))
-        closeEditForm();
-}
-watch(() => selectedIds.value.join(","), () => {
-    if (!canEditTable.value) {
-        cancelCellInlineEdit();
-        closeEditForm();
-        selectionStore.clearTableSelection(props.object.id);
-    }
-});
-window.addEventListener("pointerup", stopCellSelection);
-window.addEventListener("pointerdown", onDocumentPointerDown);
-onBeforeUnmount(() => {
-    window.removeEventListener("pointerup", stopCellSelection);
-    window.removeEventListener("pointerdown", onDocumentPointerDown);
-    window.removeEventListener("pointermove", moveColumnResize);
-    window.removeEventListener("pointermove", moveRowResize);
-    selectionStore.clearTableSelection(props.object.id);
-});
-</script>
 
 <style scoped lang="scss">
 .pd-table-element {

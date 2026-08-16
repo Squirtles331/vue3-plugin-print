@@ -27,7 +27,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 24.11.1
+          node-version: 24.15.0
           cache: npm
 
       - name: Resolve Pages base path
