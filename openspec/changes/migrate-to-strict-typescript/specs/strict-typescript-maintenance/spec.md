@@ -1,11 +1,15 @@
 ## ADDED Requirements
 
 ### Requirement: Strict repository type checking
-The repository SHALL type-check all executable product source, Vue SFC scripts, tests, Node automation, and runtime configuration with strict TypeScript and strict Vue template checking. The checked codebase MUST not rely on JavaScript source files, implicit `any`, or TypeScript suppression directives.
+The repository SHALL type-check all executable product source, Vue SFC scripts, tests, Node automation, and runtime configuration with strict TypeScript and strict Vue template checking. The checked codebase MUST not rely on JavaScript source files, explicit or implicit `any`, or TypeScript suppression directives.
 
 #### Scenario: Type verification
 - **WHEN** a contributor runs the type-check command
 - **THEN** every covered source, test, script, and configuration file is checked successfully with the configured strict compiler options.
+
+#### Scenario: Explicit-any lint gate
+- **WHEN** a contributor runs the lint command
+- **THEN** it rejects every repository-owned executable TypeScript or Vue file that contains an explicit `any` or a TypeScript suppression directive.
 
 ### Requirement: Typed external boundaries
 The template designer SHALL treat JSON documents, browser storage values, network payloads, and DOM-derived data as untrusted values and MUST narrow them before use in typed domain logic.

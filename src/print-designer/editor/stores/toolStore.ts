@@ -1,11 +1,11 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-export const useEditorToolStore = defineStore("printDesignerTool", (): any => {
-    const activeTool = ref("select") as any;
-    const previousTool = ref(null) as any;
-    const pointerMode = ref("default") as any;
-    const dragState = ref(null) as any;
-    function setActiveTool(tool: any): any {
+export const useEditorToolStore = defineStore("printDesignerTool", () => {
+    const activeTool = ref("select");
+    const previousTool = ref(null);
+    const pointerMode = ref("default");
+    const dragState = ref(null);
+    function setActiveTool(tool) {
         previousTool.value = activeTool.value;
         activeTool.value = tool;
     }
@@ -16,4 +16,4 @@ export const useEditorToolStore = defineStore("printDesignerTool", (): any => {
         dragState,
         setActiveTool,
     };
-}) as any;
+});

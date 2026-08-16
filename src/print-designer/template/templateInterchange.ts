@@ -1,20 +1,20 @@
 import { TEMPLATE_LIMITS, serializeTemplateDocument, validateTemplateDocument } from "./templateDocument.js";
-export const TEMPLATE_INTERCHANGE_FORMAT = "print-template-studio/template" as any;
-export const TEMPLATE_INTERCHANGE_VERSION = 2 as any;
-function clone(value: any): any {
+export const TEMPLATE_INTERCHANGE_FORMAT = "print-template-studio/template";
+export const TEMPLATE_INTERCHANGE_VERSION = 2;
+function clone(value) {
     if (typeof structuredClone === "function") {
         return structuredClone(value);
     }
     return JSON.parse(JSON.stringify(value));
 }
-function freshId(): any {
+function freshId() {
     return `tpl-import-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
-function error(path: any, message: any): any {
+function error(path, message) {
     return { document: null, issues: [{ path, message, severity: "error" }] };
 }
-export function createTemplateInterchange(template: any): any {
-    const result = serializeTemplateDocument(template) as any;
+export function createTemplateInterchange(template) {
+    const result = serializeTemplateDocument(template);
     if (!result.valid) {
         return { ...result, envelope: null };
     }
@@ -28,21 +28,21 @@ export function createTemplateInterchange(template: any): any {
         },
     };
 }
-export function stringifyTemplateInterchange(template: any, space: any = 2): any {
-    const result = createTemplateInterchange(template) as any;
+export function stringifyTemplateInterchange(template, space = 2) {
+    const result = createTemplateInterchange(template);
     if (!result.valid) {
         return { ...result, json: null };
     }
     return { ...result, json: JSON.stringify(result.envelope, null, space) };
 }
-export function parseTemplateInterchange(input: any): any {
+export function parseTemplateInterchange(input) {
     if (typeof input !== "string") {
         return error("file", "Template import must be JSON text.");
     }
     if (input.length > TEMPLATE_LIMITS.maxSerializedCharacters) {
         return error("file", `Template import exceeds ${TEMPLATE_LIMITS.maxSerializedCharacters} characters.`);
     }
-    let envelope: any;
+    let envelope;
     try {
         envelope = JSON.parse(input);
     }
@@ -52,33 +52,33 @@ export function parseTemplateInterchange(input: any): any {
     if (!envelope || typeof envelope !== "object" || envelope.format !== TEMPLATE_INTERCHANGE_FORMAT) {
         return error("format", "Template import uses an unsupported format.");
     }
-    const formatVersion = Number(envelope.formatVersion) as any;
+    const formatVersion = Number(envelope.formatVersion);
     if (formatVersion !== TEMPLATE_INTERCHANGE_VERSION) {
         return error("formatVersion", `Template interchange version ${envelope.formatVersion ?? "unknown"} is not supported.`);
     }
-    const validation = validateTemplateDocument(envelope.template) as any;
+    const validation = validateTemplateDocument(envelope.template);
     if (!validation.valid) {
         return { document: null, issues: validation.issues };
     }
-    const document = clone(validation.document) as any;
-    const now = new Date().toISOString() as any;
+    const document = clone(validation.document);
+    const now = new Date().toISOString();
     document.id = freshId();
     document.meta = { ...document.meta, createdAt: now, updatedAt: now };
     return { document, issues: [] };
 }
-export function downloadTemplateInterchange(template: any, filename: any = "print-template.json"): any {
-    const result = stringifyTemplateInterchange(template) as any;
+export function downloadTemplateInterchange(template, filename = "print-template.json") {
+    const result = stringifyTemplateInterchange(template);
     if (!result.valid) {
         return result;
     }
     if (typeof document === "undefined" || typeof URL === "undefined" || typeof Blob === "undefined") {
         return { ...result, downloaded: false };
     }
-    const anchor = document.createElement("a") as any;
-    const url = URL.createObjectURL(new Blob([result.json], { type: "application/json" })) as any;
+    const anchor = document.createElement("a");
+    const url = URL.createObjectURL(new Blob([result.json], { type: "application/json" }));
     anchor.href = url;
     anchor.download = filename.endsWith(".json") ? filename : `${filename}.json`;
     anchor.click();
-    setTimeout((): any => URL.revokeObjectURL(url), 0);
+    setTimeout(() => URL.revokeObjectURL(url), 0);
     return { ...result, downloaded: true };
 }

@@ -6,25 +6,25 @@ const props = defineProps({
     title: { type: String, default: "" },
     width: { type: String, default: "min(640px, 92vw)" },
     closeOnClickModal: { type: Boolean, default: true },
-}) as any;
-const emit = defineEmits(["update:modelValue", "close"]) as any;
-const attrs = useAttrs() as any;
-const panelStyle = computed((): any => ({ width: props.width })) as any;
-function closeDialog(): any {
+});
+const emit = defineEmits(["update:modelValue", "close"]);
+const attrs = useAttrs();
+const panelStyle = computed(() => ({ width: props.width }));
+function closeDialog() {
     emit("update:modelValue", false);
     emit("close");
 }
-function onBackdropClick(): any {
+function onBackdropClick() {
     if (props.closeOnClickModal) {
         closeDialog();
     }
 }
-function onKeyDown(event: any): any {
+function onKeyDown(event) {
     if (event.key === "Escape" && props.modelValue) {
         closeDialog();
     }
 }
-watch((): any => props.modelValue, (visible: any): any => {
+watch(() => props.modelValue, (visible) => {
     if (typeof window === "undefined") {
         return;
     }
@@ -34,7 +34,7 @@ watch((): any => props.modelValue, (visible: any): any => {
     }
     window.removeEventListener("keydown", onKeyDown);
 }, { immediate: true });
-onBeforeUnmount((): any => {
+onBeforeUnmount(() => {
     if (typeof window !== "undefined") {
         window.removeEventListener("keydown", onKeyDown);
     }

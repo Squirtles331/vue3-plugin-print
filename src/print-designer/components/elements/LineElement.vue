@@ -8,13 +8,13 @@ const props = defineProps({
         type: Object,
         required: true,
     },
-}) as any;
-const lineStyle = computed((): any => ({
+});
+const lineStyle = computed(() => ({
     borderTopWidth: `${props.object.style?.borderWidth ?? 1}px`,
     borderTopStyle: props.object.style?.borderStyle || "solid",
     borderTopColor: props.object.style?.borderColor || "#172033",
     opacity: Number.isFinite(Number(props.object.style?.opacity)) ? Number(props.object.style.opacity) : 1,
-})) as any;
+}));
 </script>
 
 <style scoped lang="scss">

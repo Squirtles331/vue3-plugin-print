@@ -1,6 +1,6 @@
-const PALETTE_DRAG_MIME = "application/x-print-designer-palette-item" as any;
-function normalizePayload(payload: any, fallbackType: any = "", fallbackLabel: any = ""): any {
-    const type = payload?.type || fallbackType as any;
+const PALETTE_DRAG_MIME = "application/x-print-designer-palette-item";
+function normalizePayload(payload, fallbackType = "", fallbackLabel = "") {
+    const type = payload?.type || fallbackType;
     if (!type) {
         return null;
     }
@@ -10,9 +10,9 @@ function normalizePayload(payload: any, fallbackType: any = "", fallbackLabel: a
         label: payload?.label || fallbackLabel || type,
     };
 }
-export function writePaletteDragPayload(event: any, item: any): any {
-    const dataTransfer = event?.dataTransfer as any;
-    const payload = normalizePayload(item) as any;
+export function writePaletteDragPayload(event, item) {
+    const dataTransfer = event?.dataTransfer;
+    const payload = normalizePayload(item);
     if (!dataTransfer || !payload) {
         return null;
     }

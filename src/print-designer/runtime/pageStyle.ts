@@ -1,7 +1,7 @@
-export function createRuntimePageStyle(template: any): any {
-    const pageSettings = template?.pageSettings || {} as any;
-    const paper = pageSettings.paper || {} as any;
-    const margin = pageSettings.margin || {} as any;
+export function createRuntimePageStyle(template) {
+    const pageSettings = template?.pageSettings || {};
+    const paper = pageSettings.paper || {};
+    const margin = pageSettings.margin || {};
     return {
         width: `${paper.widthMm || 210}mm`,
         minHeight: `${paper.heightMm || 297}mm`,
@@ -12,6 +12,6 @@ export function createRuntimePageStyle(template: any): any {
         "--runtime-margin-left": `${margin.left || 0}mm`,
     };
 }
-export function hasRuntimePrintMarks(template: any): any {
+export function hasRuntimePrintMarks(template) {
     return template?.pageSettings?.printMarks?.visible === true;
 }

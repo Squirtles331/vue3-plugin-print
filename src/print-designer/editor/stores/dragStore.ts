@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
-function normalizePaletteDragItem(item: any): any {
-    const type = item?.type as any;
+function normalizePaletteDragItem(item) {
+    const type = item?.type;
     if (!type) {
         return null;
     }
@@ -11,14 +11,14 @@ function normalizePaletteDragItem(item: any): any {
         label: item?.label || type,
     };
 }
-export const useEditorDragStore = defineStore("printDesignerDrag", (): any => {
-    const activePaletteSession = ref(null) as any;
-    const requestedPaletteInsert = ref(null) as any;
-    const nextSessionId = ref(1) as any;
-    const activePaletteItem = computed((): any => activePaletteSession.value?.item || null) as any;
-    const isPaletteDragging = computed((): any => !!activePaletteSession.value) as any;
-    function beginPaletteDrag(item: any): any {
-        const normalizedItem = normalizePaletteDragItem(item) as any;
+export const useEditorDragStore = defineStore("printDesignerDrag", () => {
+    const activePaletteSession = ref(null);
+    const requestedPaletteInsert = ref(null);
+    const nextSessionId = ref(1);
+    const activePaletteItem = computed(() => activePaletteSession.value?.item || null);
+    const isPaletteDragging = computed(() => !!activePaletteSession.value);
+    function beginPaletteDrag(item) {
+        const normalizedItem = normalizePaletteDragItem(item);
         if (!normalizedItem) {
             activePaletteSession.value = null;
             return null;
@@ -26,26 +26,26 @@ export const useEditorDragStore = defineStore("printDesignerDrag", (): any => {
         const session = {
             id: nextSessionId.value++,
             item: normalizedItem,
-        } as any;
+        };
         activePaletteSession.value = session;
         return session;
     }
-    function clearPaletteDrag(sessionId: any = null): any {
+    function clearPaletteDrag(sessionId = null) {
         if (sessionId !== null && activePaletteSession.value?.id !== sessionId) {
             return false;
         }
         activePaletteSession.value = null;
         return true;
     }
-    function requestPaletteInsert(item: any): any {
-        const normalizedItem = normalizePaletteDragItem(item) as any;
+    function requestPaletteInsert(item) {
+        const normalizedItem = normalizePaletteDragItem(item);
         if (!normalizedItem) {
             return false;
         }
         requestedPaletteInsert.value = { id: nextSessionId.value++, item: normalizedItem };
         return true;
     }
-    function consumePaletteInsert(requestId: any): any {
+    function consumePaletteInsert(requestId) {
         if (!requestedPaletteInsert.value || (requestId != null && requestedPaletteInsert.value.id !== requestId)) {
             return false;
         }
@@ -62,4 +62,4 @@ export const useEditorDragStore = defineStore("printDesignerDrag", (): any => {
         requestPaletteInsert,
         consumePaletteInsert,
     };
-}) as any;
+});

@@ -69,54 +69,54 @@ import { storeToRefs } from "pinia";
 import InsertAssetsPanel from "./InsertAssetsPanel.vue";
 import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorShellStore } from "../stores/shellStore";
-const emit = defineEmits(["bind", "runtime-data"]) as any;
-const shellStore = useEditorShellStore() as any;
-const documentStore = useEditorDocumentStore() as any;
-const { activeLeftPanel, leftDockCollapsed, leftPanelWidth } = storeToRefs(shellStore) as any;
-const { palette, pages, layers, variables } = storeToRefs(documentStore) as any;
-const leftDockRef = ref(null) as any;
-const searchQuery = shallowRef("") as any;
+const emit = defineEmits(["bind", "runtime-data"]);
+const shellStore = useEditorShellStore();
+const documentStore = useEditorDocumentStore();
+const { activeLeftPanel, leftDockCollapsed, leftPanelWidth } = storeToRefs(shellStore);
+const { palette, pages, layers, variables } = storeToRefs(documentStore);
+const leftDockRef = ref(null);
+const searchQuery = shallowRef("");
 const panelItems = [
     { key: "pages", label: "页面", title: "管理模板页面", icon: Document },
     { key: "insert", label: "插入", title: "插入元素和常用控件", icon: CollectionTag },
     { key: "layers", label: "图层", title: "查看并定位页面元素", icon: Files },
     { key: "data", label: "数据", title: "查看可绑定的字段路径", icon: DataLine },
-] as any;
-const panelTitle = computed((): any => {
-    const map: any = {
+];
+const panelTitle = computed(() => {
+    const map = {
         pages: "页面管理",
         insert: "插入元素",
         layers: "图层结构",
         data: "数据字段",
     };
     return map[activeLeftPanel.value] || "左侧面板";
-}) as any;
-const panelDescription = computed((): any => {
-    const map: any = {
+});
+const panelDescription = computed(() => {
+    const map = {
         pages: "切换页面、重命名、复制或删除。",
         insert: "拖入元素后继续排版和绑定。",
         layers: "查看层级、状态和排序入口。",
         data: "按字段路径查找可绑定数据。",
     };
     return map[activeLeftPanel.value] || "";
-}) as any;
-const panelCounts = computed((): any => ({
+});
+const panelCounts = computed(() => ({
     pages: pages.value.length,
     insert: palette.value.length,
     layers: layers.value.length,
     data: variables.value.length,
-})) as any;
-const searchPlaceholder = computed((): any => {
-    const map: any = {
+}));
+const searchPlaceholder = computed(() => {
+    const map = {
         pages: "搜索页面",
         insert: "搜索元素",
         layers: "搜索图层",
         data: "搜索字段路径",
     };
     return map[activeLeftPanel.value] || "搜索";
-}) as any;
-const panelCountLabel = computed((): any => `${panelCounts.value[activeLeftPanel.value] || 0} 项`) as any;
-function onPointerMove(event: any): any {
+});
+const panelCountLabel = computed(() => `${panelCounts.value[activeLeftPanel.value] || 0} 项`);
+function onPointerMove(event) {
     const dockElement = leftDockRef.value;
     if (!dockElement) {
         return;
@@ -124,16 +124,16 @@ function onPointerMove(event: any): any {
     const dockRect = dockElement.getBoundingClientRect();
     shellStore.setLeftPanelWidth(event.clientX - dockRect.left);
 }
-function stopResize(): any {
+function stopResize() {
     window.removeEventListener("pointermove", onPointerMove);
     window.removeEventListener("pointerup", stopResize);
 }
-function startResize(event: any): any {
+function startResize(event) {
     event.preventDefault();
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", stopResize);
 }
-onBeforeUnmount((): any => {
+onBeforeUnmount(() => {
     stopResize();
 });
 </script>

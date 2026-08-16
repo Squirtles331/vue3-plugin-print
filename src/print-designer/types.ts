@@ -1,4 +1,4 @@
-import type { Component, Plugin } from "vue";
+import type { Component, CSSProperties, Plugin } from "vue";
 export type JsonPrimitive = boolean | null | number | string;
 export type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
 export type JsonObject = {
@@ -9,6 +9,48 @@ export function isRecord(value: unknown): value is UnknownRecord {
     return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 export type PrintElementType = "text" | "image" | "table" | "barcode" | "qrcode" | "pageNumber" | "line" | "rect" | "circle" | "multiLabel";
+
+export type ElementStyle = CSSProperties & Record<string, unknown>;
+
+export interface ElementProperties extends UnknownRecord {
+    autoHeight?: boolean;
+    autoPaginate?: boolean;
+    blankHeaders?: boolean;
+    cellPadding?: number;
+    cols?: number;
+    columns?: unknown[];
+    dataVariable?: string;
+    direction?: "row" | "column";
+    displayValue?: boolean;
+    eccLevel?: "L" | "M" | "Q" | "H";
+    footerData?: unknown[];
+    footerDataVariable?: string;
+    footerHeight?: number;
+    format?: string;
+    gapX?: number;
+    gapY?: number;
+    headerHeight?: number;
+    keepAspectRatio?: boolean;
+    margin?: number;
+    placeholder?: string;
+    primaryPath?: string;
+    rowHeight?: number;
+    rowHeights?: UnknownRecord;
+    rows?: number;
+    sampleData?: unknown[];
+    secondaryPath?: string;
+    showFooter?: boolean;
+    showHeader?: boolean;
+    src?: string;
+    tertiaryPath?: string;
+    textFontSize?: number;
+    textMargin?: number;
+    tfootRepeat?: boolean;
+    totalPages?: number;
+    transform?: UnknownRecord;
+    whiteSpace?: string;
+    writingMode?: string;
+}
 export interface TemplateMeta {
     name: string;
     unit: "mm";
@@ -55,10 +97,10 @@ export interface TemplateElementStyle extends UnknownRecord {
     backgroundColor?: string;
     textAlign?: "left" | "center" | "right";
 }
-export interface TemplateElement {
+export interface TemplateElement extends UnknownRecord {
     id: string;
     pageId: string;
-    type: PrintElementType;
+    type: string;
     name: string;
     x: number;
     y: number;
@@ -72,8 +114,12 @@ export interface TemplateElement {
     repeatPerPage: boolean;
     rotation: number;
     zIndex: number;
-    props: UnknownRecord;
-    style: TemplateElementStyle;
+    editorHints?: {
+        omitRows: boolean;
+        rowCount: number;
+    };
+    props: ElementProperties;
+    style: ElementStyle;
 }
 export interface TemplateGroup {
     id: string;
@@ -85,6 +131,33 @@ export interface TemplatePage {
     title: string;
     elements: TemplateElement[];
     groups: TemplateGroup[];
+}
+
+export interface EditorPage extends TemplatePage {
+    isCurrent: boolean;
+    orientation?: string;
+    size?: string;
+}
+
+export interface EditorPageState {
+    [key: string]: unknown;
+    id: string;
+    title: string;
+    size?: string;
+    orientation?: string;
+    isCurrent: boolean;
+    groups: TemplateGroup[];
+}
+
+export interface EditorPageSnapshot {
+    currentPageId: string;
+    objectsById: Record<string, TemplateElement>;
+    pageObjectMap: Record<string, string[]>;
+    pages: EditorPageState[];
+}
+
+export interface EditorTemplateElement extends TemplateElement {
+    selected?: boolean;
 }
 export interface TemplateDocument {
     schemaVersion: 2;

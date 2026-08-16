@@ -152,11 +152,11 @@ const props = defineProps({
         type: Number,
         default: 1,
     },
-}) as any;
-const documentStore = useEditorDocumentStore() as any;
-const historyStore = useEditorHistoryStore() as any;
-const selectionStore = useEditorSelectionStore() as any;
-const viewportStore = useEditorViewportStore() as any;
+});
+const documentStore = useEditorDocumentStore();
+const historyStore = useEditorHistoryStore();
+const selectionStore = useEditorSelectionStore();
+const viewportStore = useEditorViewportStore();
 const resizeHandles = [
     { key: "nw", label: "左上缩放" },
     { key: "n", label: "上边缩放" },
@@ -166,34 +166,34 @@ const resizeHandles = [
     { key: "s", label: "下边缩放" },
     { key: "sw", label: "左下缩放" },
     { key: "w", label: "左边缩放" },
-] as any;
-const { currentPage, pageObjectMap, objectsById, pageWidthMm, pageHeightMm, pageWidthPx, pageHeightPx, marginTopMm, marginRightMm, marginBottomMm, marginLeftMm, pageBackground, pageCornerVisible, headerLineVisible, footerLineVisible, headerOffsetMm, footerOffsetMm, currentPageGroups, } = storeToRefs(documentStore) as any;
-const { gridVisible, safeAreaVisible, guidesVisible, horizontalGuides, verticalGuides, snapEnabled, pageOutlineVisible, allowOverflowDrag, } = storeToRefs(viewportStore) as any;
-const { selectedIds, hoverObjectId, activeHandle } = storeToRefs(selectionStore) as any;
-const paperRef = ref(null) as any;
-const interactionState = ref(null) as any;
-const selectionMarquee = ref(null) as any;
-const contextMenu = ref(null) as any;
+];
+const { currentPage, pageObjectMap, objectsById, pageWidthMm, pageHeightMm, pageWidthPx, pageHeightPx, marginTopMm, marginRightMm, marginBottomMm, marginLeftMm, pageBackground, pageCornerVisible, headerLineVisible, footerLineVisible, headerOffsetMm, footerOffsetMm, currentPageGroups, } = storeToRefs(documentStore);
+const { gridVisible, safeAreaVisible, guidesVisible, horizontalGuides, verticalGuides, snapEnabled, pageOutlineVisible, allowOverflowDrag, } = storeToRefs(viewportStore);
+const { selectedIds, hoverObjectId, activeHandle } = storeToRefs(selectionStore);
+const paperRef = ref(null);
+const interactionState = ref(null);
+const selectionMarquee = ref(null);
+const contextMenu = ref(null);
 const activeSnap = ref({
     x: null,
     y: null,
-}) as any;
-function roundMm(value: any): any {
+});
+function roundMm(value) {
     return +value.toFixed(2);
 }
-function clamp(value: any, min: any, max: any): any {
+function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
 }
-function clampObjectPosition(position: any, size: any, pageSize: any): any {
+function clampObjectPosition(position, size, pageSize) {
     if (allowOverflowDrag.value) {
         return roundMm(position);
     }
     return clamp(roundMm(position), 0, Math.max(0, roundMm(pageSize - size)));
 }
-function isCornerHandle(handle: any = ""): any {
+function isCornerHandle(handle = "") {
     return handle.length === 2;
 }
-function isAspectRatioLocked(object: any, handle: any): any {
+function isAspectRatioLocked(object, handle) {
     if (!object || !isCornerHandle(handle)) {
         return false;
     }
@@ -202,21 +202,21 @@ function isAspectRatioLocked(object: any, handle: any): any {
     }
     return !!object.props?.keepAspectRatio;
 }
-function isAutoHeightTextObject(object: any): any {
+function isAutoHeightTextObject(object) {
     return object?.type === "text" && !!object?.props?.autoHeight;
 }
-function visibleResizeHandles(object: any): any {
+function visibleResizeHandles(object) {
     if (!isAutoHeightTextObject(object)) {
         return resizeHandles;
     }
-    return resizeHandles.filter((handle: any): any => handle.key === "e" || handle.key === "w");
+    return resizeHandles.filter((handle) => handle.key === "e" || handle.key === "w");
 }
-function resolveEdgeSnap(position: any, references: any, pixelsPerUnit: any, tolerancePx: any = 6): any {
+function resolveEdgeSnap(position, references, pixelsPerUnit, tolerancePx = 6) {
     if (!Number.isFinite(position)) {
         return null;
     }
-    let best: any = null;
-    references.forEach((reference: any): any => {
+    let best = null;
+    references.forEach((reference) => {
         const distancePx = Math.abs(reference.position - position) * pixelsPerUnit;
         if (distancePx > tolerancePx) {
             return;
@@ -231,7 +231,7 @@ function resolveEdgeSnap(position: any, references: any, pixelsPerUnit: any, tol
     });
     return best;
 }
-function resolveResizeSnap(rect: any, startRect: any, handle: any): any {
+function resolveResizeSnap(rect, startRect, handle) {
     const pixelsPerUnit = props.pixelsPerUnit * props.zoom;
     const gridSpacingMm = gridVisible.value ? gridDefinition.value.minorMm : null;
     const xReferences = buildAxisSnapReferences(pageWidthMm.value, guidesVisible.value ? verticalGuides.value : [], gridSpacingMm);
@@ -338,14 +338,14 @@ function resolveResizeSnap(rect: any, startRect: any, handle: any): any {
         },
     };
 }
-const allPageObjects = computed((): any => {
+const allPageObjects = computed(() => {
     const pageId = currentPage.value?.id || "page-1";
     const objectIds = pageObjectMap.value[pageId] || [];
-    return objectIds.map((objectId: any): any => objectsById.value[objectId]).filter(Boolean);
-}) as any;
-const pageObjects = computed((): any => allPageObjects.value.filter((object: any): any => object.visible !== false)) as any;
-const hiddenObjectCount = computed((): any => allPageObjects.value.length - pageObjects.value.length) as any;
-const canvasEmptyState = computed((): any => {
+    return objectIds.map((objectId) => objectsById.value[objectId]).filter(Boolean);
+});
+const pageObjects = computed(() => allPageObjects.value.filter((object) => object.visible !== false));
+const hiddenObjectCount = computed(() => allPageObjects.value.length - pageObjects.value.length);
+const canvasEmptyState = computed(() => {
     if (hiddenObjectCount.value > 0) {
         return {
             badge: "全部隐藏",
@@ -362,17 +362,17 @@ const canvasEmptyState = computed((): any => {
         helper: "推荐起点",
         chips: ["文本", "表格", "二维码"],
     };
-}) as any;
-const gridDefinition = computed((): any => createGridDefinition(props.pixelsPerUnit)) as any;
-const paperStyle = computed((): any => ({
+});
+const gridDefinition = computed(() => createGridDefinition(props.pixelsPerUnit));
+const paperStyle = computed(() => ({
     width: `${pageWidthPx.value}px`,
     height: `${pageHeightPx.value}px`,
     background: pageBackground.value,
-})) as any;
-const safeAreaStyle = computed((): any => ({
+}));
+const safeAreaStyle = computed(() => ({
     inset: `${mmToCssPx(marginTopMm.value)}px ${mmToCssPx(marginRightMm.value)}px ${mmToCssPx(marginBottomMm.value)}px ${mmToCssPx(marginLeftMm.value)}px`,
-})) as any;
-const selectionMarqueeStyle = computed((): any => {
+}));
+const selectionMarqueeStyle = computed(() => {
     const marquee = selectionMarquee.value;
     if (!marquee) {
         return {};
@@ -385,9 +385,9 @@ const selectionMarqueeStyle = computed((): any => {
         width: `${mmToCssPx(Math.abs(marquee.current.x - marquee.start.x))}px`,
         height: `${mmToCssPx(Math.abs(marquee.current.y - marquee.start.y))}px`,
     };
-}) as any;
-const hasContextGroup = computed((): any => currentPageGroups.value.some((group: any): any => group.elementIds?.some((id: any): any => selectedIds.value.includes(id)))) as any;
-function isOutsideSafeArea(object: any): any {
+});
+const hasContextGroup = computed(() => currentPageGroups.value.some((group) => group.elementIds?.some((id) => selectedIds.value.includes(id))));
+function isOutsideSafeArea(object) {
     if (!object || object.printable === false) {
         return false;
     }
@@ -396,13 +396,13 @@ function isOutsideSafeArea(object: any): any {
         || object.x + object.width > pageWidthMm.value - marginRightMm.value
         || object.y + object.height > pageHeightMm.value - marginBottomMm.value;
 }
-const headerLineStyle = computed((): any => ({
+const headerLineStyle = computed(() => ({
     top: `${mmToCssPx(clamp(headerOffsetMm.value, 0, pageHeightMm.value))}px`,
-})) as any;
-const footerLineStyle = computed((): any => ({
+}));
+const footerLineStyle = computed(() => ({
     bottom: `${mmToCssPx(clamp(footerOffsetMm.value, 0, pageHeightMm.value))}px`,
-})) as any;
-const gridStyle = computed((): any => ({
+}));
+const gridStyle = computed(() => ({
     backgroundImage: [
         "linear-gradient(rgba(191, 201, 214, 0.26) 1px, transparent 1px)",
         "linear-gradient(90deg, rgba(191, 201, 214, 0.26) 1px, transparent 1px)",
@@ -416,11 +416,11 @@ const gridStyle = computed((): any => ({
         `${gridDefinition.value.majorPx}px ${gridDefinition.value.majorPx}px`,
     ].join(", "),
     backgroundPosition: "0 0, 0 0, 0 0, 0 0",
-})) as any;
-function elementLabel(type: any): any {
+}));
+function elementLabel(type) {
     return getElementDefinition(type)?.label || type;
 }
-function objectFrameStyle(object: any): any {
+function objectFrameStyle(object) {
     const autoHeight = isAutoHeightTextObject(object);
     return {
         left: `${mmToCssPx(object.x)}px`,
@@ -431,21 +431,21 @@ function objectFrameStyle(object: any): any {
         opacity: object.opacity ?? 1,
     };
 }
-function objectContentStyle(object: any): any {
+function objectContentStyle(object) {
     return {
         color: object.style?.color || "#111827",
         background: object.style?.backgroundColor || "transparent",
     };
 }
-function textContentStyle(object: any): any {
+function textContentStyle(object) {
     const verticalAlign = object.style?.verticalAlign || "top";
     const textAlign = object.style?.textAlign || "left";
-    const alignItemsMap: any = {
+    const alignItemsMap = {
         top: "flex-start",
         middle: "center",
         bottom: "flex-end",
     };
-    const justifyContentMap: any = {
+    const justifyContentMap = {
         left: "flex-start",
         center: "center",
         right: "flex-end",
@@ -468,7 +468,7 @@ function textContentStyle(object: any): any {
         overflow: object.props?.autoHeight ? "visible" : "hidden",
     };
 }
-function textPreviewContent(object: any): any {
+function textPreviewContent(object) {
     const sampleValue = object.props?.sampleValue;
     const variable = object.variable;
     const content = object.content;
@@ -483,7 +483,7 @@ function textPreviewContent(object: any): any {
     }
     return "未配置文本";
 }
-function imagePlaceholderCaption(object: any): any {
+function imagePlaceholderCaption(object) {
     const variable = object.variable;
     if (variable) {
         return `{{${variable}}}`;
@@ -493,7 +493,7 @@ function imagePlaceholderCaption(object: any): any {
     }
     return "未绑定图片";
 }
-function encodedPreviewContent(object: any, fallback: any): any {
+function encodedPreviewContent(object, fallback) {
     const variable = object.variable;
     const content = object.content;
     if (variable) {
@@ -504,16 +504,16 @@ function encodedPreviewContent(object: any, fallback: any): any {
     }
     return fallback;
 }
-function showVariableBadge(object: any): any {
+function showVariableBadge(object) {
     if (!object?.variable) {
         return false;
     }
     return ["text", "image", "barcode", "qrcode"].includes(object.type);
 }
-function variableBadgeLabel(object: any): any {
+function variableBadgeLabel(object) {
     return `{{${object.variable}}}`;
 }
-function shapeStyle(object: any): any {
+function shapeStyle(object) {
     return {
         borderWidth: `${object.style?.borderWidth ?? 1}px`,
         borderStyle: object.style?.borderStyle || "solid",
@@ -523,9 +523,9 @@ function shapeStyle(object: any): any {
         opacity: Number.isFinite(Number(object.style?.opacity)) ? Number(object.style?.opacity) : 1,
     };
 }
-function tableColumns(object: any): any {
+function tableColumns(object) {
     if (Array.isArray(object.props?.columns)) {
-        return object.props.columns.map((column: any, index: any): any => ({
+        return object.props.columns.map((column, index) => ({
             key: typeof column?.key === "string" && column.key.trim()
                 ? column.key
                 : `field${index + 1}`,
@@ -554,22 +554,22 @@ function tableColumns(object: any): any {
         { key: "total", title: "合计", width: 120, align: "right" },
     ];
 }
-function tableHeaderLabel(column: any): any {
+function tableHeaderLabel(column) {
     return column?.title || "";
 }
-function tableColumnWidth(column: any): any {
+function tableColumnWidth(column) {
     const width = Number(column?.width);
     return Number.isFinite(width) && width > 0 ? width : 100;
 }
-function tableGridStyle(object: any): any {
+function tableGridStyle(object) {
     const trackList = tableColumns(object)
-        .map((column: any): any => `minmax(0, ${tableColumnWidth(column)}fr)`)
+        .map((column) => `minmax(0, ${tableColumnWidth(column)}fr)`)
         .join(" ");
     return {
         gridTemplateColumns: trackList || "minmax(0, 1fr)",
     };
 }
-function tableCellStyle(column: any, object: any, section: any = "body"): any {
+function tableCellStyle(column, object, section = "body") {
     const sectionFontSize = section === "header"
         ? object?.style?.headerFontSize || object?.style?.fontSize || 10
         : section === "footer"
@@ -582,12 +582,12 @@ function tableCellStyle(column: any, object: any, section: any = "body"): any {
             : object?.style?.textAlign || "left";
     const textAlign = column?.align || textAlignFallback;
     const verticalAlign = object?.style?.verticalAlign || "top";
-    const justifyContentMap: any = {
+    const justifyContentMap = {
         left: "flex-start",
         center: "center",
         right: "flex-end",
     };
-    const alignItemsMap: any = {
+    const alignItemsMap = {
         top: "flex-start",
         middle: "center",
         bottom: "flex-end",
@@ -607,7 +607,7 @@ function tableCellStyle(column: any, object: any, section: any = "body"): any {
                 : object?.style?.color || "#111827",
     };
 }
-function tableStyle(object: any): any {
+function tableStyle(object) {
     const style = object.style || {};
     const padding = Math.max(0, Number(style.padding) || 0);
     const borderWidth = Math.max(0, Number(style.borderWidth) || 0);
@@ -638,20 +638,20 @@ function tableStyle(object: any): any {
         "--table-footer-min-height": footerHeight > 0 ? `${Math.round(mmToCssPx(footerHeight))}px` : "auto",
     };
 }
-function tableBindingPlaceholder(variable: any, key: any, rowIndex: any = 0): any {
+function tableBindingPlaceholder(variable, key, rowIndex = 0) {
     return `{{${variable}[${rowIndex}].${key}}}`;
 }
-function tableDataSource(object: any): any {
+function tableDataSource(object) {
     if (Array.isArray(object.props?.sampleData)) {
         return object.props.sampleData;
     }
     return [];
 }
-function tableDesignRowCount(object: any): any {
+function tableDesignRowCount(object) {
     const value = Number(object?.editorHints?.rowCount);
     return Number.isFinite(value) && value > 0 ? Math.max(1, Math.round(value)) : 0;
 }
-function tablePreviewRowCount(object: any, rows: any): any {
+function tablePreviewRowCount(object, rows) {
     const explicitCount = tableDesignRowCount(object);
     if (explicitCount > 0) {
         return explicitCount;
@@ -661,27 +661,27 @@ function tablePreviewRowCount(object: any, rows: any): any {
     }
     return 5;
 }
-function tablePreviewLimit(object: any, totalRowCount: any): any {
+function tablePreviewLimit(object, totalRowCount) {
     if (object?.editorHints?.omitRows === false) {
         return totalRowCount;
     }
     return Math.min(totalRowCount, 5);
 }
-function createTableBindingPlaceholderRows(object: any, columns: any, rowCount: any): any {
-    return Array.from({ length: rowCount }, (_: any, rowIndex: any): any => columns.reduce((result: any, column: any): any => {
+function createTableBindingPlaceholderRows(object, columns, rowCount) {
+    return Array.from({ length: rowCount }, (_, rowIndex) => columns.reduce((result, column) => {
         result[column.key] = tableBindingPlaceholder(object.props?.dataVariable, column.valuePath || column.key, rowIndex);
         return result;
     }, {}));
 }
-function createEmptyTableRows(columns: any, rowCount: any): any {
-    return Array.from({ length: rowCount }, (): any => columns.reduce((result: any, column: any): any => {
+function createEmptyTableRows(columns, rowCount) {
+    return Array.from({ length: rowCount }, () => columns.reduce((result, column) => {
         result[column.key] = "";
         return result;
     }, {}));
 }
-function tableSummaryMetrics(object: any): any {
+function tableSummaryMetrics(object) {
     const rows = tableDataSource(object);
-    return rows.reduce((result: any, row: any): any => {
+    return rows.reduce((result, row) => {
         result.totalQty += Number(row?.qty) || 0;
         result.totalAmount += Number(row?.total) || 0;
         return result;
@@ -690,7 +690,7 @@ function tableSummaryMetrics(object: any): any {
         totalAmount: 0,
     });
 }
-function tableReplaceSummaryToken(value: any, object: any): any {
+function tableReplaceSummaryToken(value, object) {
     if (typeof value !== "string" || !value.includes("{#")) {
         return value;
     }
@@ -702,10 +702,10 @@ function tableReplaceSummaryToken(value: any, object: any): any {
         .replaceAll("{#totalSum}", totalAmount.toFixed(2))
         .replaceAll("{#totalCap}", digitUppercase(totalAmount));
 }
-function digitUppercase(value: any): any {
-    const fraction: any = ["角", "分"];
-    const digit: any = ["零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖"];
-    const unit: any = [
+function digitUppercase(value) {
+    const fraction = ["角", "分"];
+    const digit = ["零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖"];
+    const unit = [
         ["元", "万", "亿"],
         ["", "拾", "佰", "仟"],
     ];
@@ -726,7 +726,7 @@ function digitUppercase(value: any): any {
     }
     return result.replace(/(零.)*零元/, "元").replace(/(零.)+/g, "零").replace(/^整$/, "零元整");
 }
-function tableResolveCellValue(value: any, object: any): any {
+function tableResolveCellValue(value, object) {
     if (value && typeof value === "object" && !Array.isArray(value)) {
         if (value.result != null && value.result !== "") {
             return String(value.result);
@@ -743,7 +743,7 @@ function tableResolveCellValue(value: any, object: any): any {
     }
     return typeof value === "string" ? tableReplaceSummaryToken(value, object) : String(value);
 }
-function tableCellDisplayValue(row: any, column: any, object: any, section: any = "body"): any {
+function tableCellDisplayValue(row, column, object, section = "body") {
     const result = resolveRelativeRecordPath(row, column.valuePath || column.key);
     const value = result.found ? result.value : row?.[column.key];
     const resolved = tableResolveCellValue(value, object);
@@ -752,28 +752,28 @@ function tableCellDisplayValue(row: any, column: any, object: any, section: any 
     }
     return formatTableValue(resolved, column?.formatter);
 }
-function tableRows(object: any): any {
+function tableRows(object) {
     const rows = tableDataSource(object);
     const previewLimit = tablePreviewLimit(object, tablePreviewRowCount(object, rows));
     const bindingPreviewRows = !rows.length && object.props?.dataVariable
-        ? Array.from({ length: previewLimit }, (_: any, rowIndex: any): any => tableColumns(object).reduce((result: any, column: any): any => {
+        ? Array.from({ length: previewLimit }, (_, rowIndex) => tableColumns(object).reduce((result, column) => {
             result[column.key] = tableBindingPlaceholder(object.props.dataVariable, column.valuePath || column.key, rowIndex);
             return result;
         }, {}))
         : null;
     const previewRows = rows;
-    return (bindingPreviewRows || previewRows).slice(0, previewLimit).map((row: any, index: any): any => ({
+    return (bindingPreviewRows || previewRows).slice(0, previewLimit).map((row, index) => ({
         ...row,
         __rowKey: `${object.id}-${index}`,
     }));
 }
-function tableShowsOmission(object: any): any {
+function tableShowsOmission(object) {
     if (object?.editorHints?.omitRows === false) {
         return false;
     }
     return tableDataSource(object).length > tableRows(object).length;
 }
-function renderedTableRows(object: any): any {
+function renderedTableRows(object) {
     const rows = tableDataSource(object);
     const columns = tableColumns(object);
     const totalRowCount = tablePreviewRowCount(object, rows);
@@ -784,12 +784,12 @@ function renderedTableRows(object: any): any {
             ? createTableBindingPlaceholderRows(object, columns, previewLimit)
             : createEmptyTableRows(columns, previewLimit);
     }
-    return previewRows.map((row: any, index: any): any => ({
+    return previewRows.map((row, index) => ({
         ...row,
         __rowKey: `${object.id}-${index}`,
     }));
 }
-function renderedTableShowsOmission(object: any): any {
+function renderedTableShowsOmission(object) {
     if (object?.editorHints?.omitRows === false) {
         return false;
     }
@@ -797,14 +797,14 @@ function renderedTableShowsOmission(object: any): any {
     const totalRowCount = rows.length || tablePreviewRowCount(object, rows);
     return totalRowCount > renderedTableRows(object).length;
 }
-function tableFooterRows(object: any): any {
+function tableFooterRows(object) {
     if (object.props?.showFooter === false) {
         return [];
     }
     const columns = tableColumns(object);
     const footerData = object.props?.footerData;
     if (Array.isArray(footerData)) {
-        return footerData.map((row: any, index: any): any => ({
+        return footerData.map((row, index) => ({
             ...row,
             __rowKey: `${object.id}-footer-${index}`,
         }));
@@ -820,7 +820,7 @@ function tableFooterRows(object: any): any {
     if (object.props?.footerDataVariable) {
         return [
             {
-                ...columns.reduce((result: any, column: any): any => {
+                ...columns.reduce((result, column) => {
                     result[column.key] = `{{${object.props.footerDataVariable}.${column.key}}}`;
                     return result;
                 }, {}),
@@ -830,7 +830,7 @@ function tableFooterRows(object: any): any {
     }
     return [];
 }
-function tableBindingTokens(object: any): any {
+function tableBindingTokens(object) {
     const tokens = [];
     if (object.props?.dataVariable) {
         tokens.push({
@@ -846,7 +846,7 @@ function tableBindingTokens(object: any): any {
     }
     return tokens;
 }
-function multiLabelConfig(object: any): any {
+function multiLabelConfig(object) {
     return {
         rows: Math.max(1, Number(object?.props?.rows) || 1),
         cols: Math.max(1, Number(object?.props?.cols) || 1),
@@ -855,13 +855,13 @@ function multiLabelConfig(object: any): any {
         direction: object?.props?.direction === "column" ? "column" : "row",
     };
 }
-function multiLabelBindingLabel(object: any): any {
+function multiLabelBindingLabel(object) {
     if (object.props?.dataVariable) {
         return `数据: {{${object.props.dataVariable}}}`;
     }
     return "";
 }
-function multiLabelGridStyle(object: any): any {
+function multiLabelGridStyle(object) {
     const config = multiLabelConfig(object);
     return {
         gridTemplateColumns: `repeat(${config.cols}, minmax(0, 1fr))`,
@@ -870,7 +870,7 @@ function multiLabelGridStyle(object: any): any {
         rowGap: `${mmToCssPx(config.gapY)}px`,
     };
 }
-function multiLabelCellPosition(index: any, rows: any, cols: any, direction: any): any {
+function multiLabelCellPosition(index, rows, cols, direction) {
     if (direction === "column") {
         return {
             row: (index % rows) + 1,
@@ -882,7 +882,7 @@ function multiLabelCellPosition(index: any, rows: any, cols: any, direction: any
         col: (index % cols) + 1,
     };
 }
-function multiLabelAlignItems(textAlign: any): any {
+function multiLabelAlignItems(textAlign) {
     switch (textAlign) {
         case "center":
             return "center";
@@ -892,7 +892,7 @@ function multiLabelAlignItems(textAlign: any): any {
             return "flex-start";
     }
 }
-function multiLabelJustifyContent(verticalAlign: any): any {
+function multiLabelJustifyContent(verticalAlign) {
     switch (verticalAlign) {
         case "middle":
             return "center";
@@ -902,7 +902,7 @@ function multiLabelJustifyContent(verticalAlign: any): any {
             return "flex-start";
     }
 }
-function multiLabelCellStyle(object: any, cell: any): any {
+function multiLabelCellStyle(object, cell) {
     const style = object?.style || {};
     const fontSize = Math.max(8, Number(style.fontSize) || 10);
     const paddingMm = Math.max(0, Number(object?.props?.cellPadding ?? style.padding) || 0);
@@ -938,7 +938,7 @@ function multiLabelCellStyle(object: any, cell: any): any {
         "--multi-label-index-color": style.borderColor || color,
     };
 }
-function multiLabelPreviewLines(item: any, fallbackIndex: any, object: any): any {
+function multiLabelPreviewLines(item, fallbackIndex, object) {
     if (item == null || item === "") {
         if (object?.props?.dataVariable) {
             const base = `${object.props.dataVariable}[${fallbackIndex}]`;
@@ -962,7 +962,7 @@ function multiLabelPreviewLines(item: any, fallbackIndex: any, object: any): any
         };
     }
     if (typeof item === "object") {
-        const mapped = (path: any): any => {
+        const mapped = (path) => {
             const result = resolveRelativeRecordPath(item, path);
             return result.found && result.value != null ? String(result.value) : path ? `{{${path}}}` : "";
         };
@@ -978,11 +978,11 @@ function multiLabelPreviewLines(item: any, fallbackIndex: any, object: any): any
         tertiary: "",
     };
 }
-function multiLabelCells(object: any): any {
+function multiLabelCells(object) {
     const config = multiLabelConfig(object);
     const total = config.rows * config.cols;
     const sampleData = Array.isArray(object?.props?.sampleData) ? object.props.sampleData : [];
-    return Array.from({ length: total }, (_: any, index: any): any => {
+    return Array.from({ length: total }, (_, index) => {
         const item = sampleData[index];
         const { row, col } = multiLabelCellPosition(index, config.rows, config.cols, config.direction);
         const preview = multiLabelPreviewLines(item, index, object);
@@ -995,13 +995,13 @@ function multiLabelCells(object: any): any {
         };
     });
 }
-function previewForegroundColor(object: any): any {
+function previewForegroundColor(object) {
     return object.style?.color || object.style?.borderColor || "#111827";
 }
-function previewBackgroundColor(object: any): any {
+function previewBackgroundColor(object) {
     return object.style?.backgroundColor || "#ffffff";
 }
-function previewPanelStyle(object: any, fallbackBackground: any = "transparent"): any {
+function previewPanelStyle(object, fallbackBackground = "transparent") {
     const style = object?.style || {};
     const borderWidth = Math.max(0, Number(style.borderWidth) || 0);
     const padding = Math.max(0, Number(style.padding) || 0);
@@ -1018,10 +1018,10 @@ function previewPanelStyle(object: any, fallbackBackground: any = "transparent")
         opacity: Number.isFinite(opacity) ? opacity : 1,
     };
 }
-function imagePreviewStyle(object: any): any {
+function imagePreviewStyle(object) {
     return previewPanelStyle(object, "#f8fafc");
 }
-function hashPreviewSeed(value: any): any {
+function hashPreviewSeed(value) {
     const source = String(value || "");
     let hash = 2166136261;
     for (let index = 0; index < source.length; index += 1) {
@@ -1030,14 +1030,14 @@ function hashPreviewSeed(value: any): any {
     }
     return hash >>> 0;
 }
-function barcodePreviewStyle(object: any): any {
+function barcodePreviewStyle(object) {
     const options = machineCodeOptions(object.props);
     return {
         ...previewPanelStyle(object, "#ffffff"),
         padding: `${mmToCssPx(options.margin)}px`,
     };
 }
-function barcodeValueStyle(object: any): any {
+function barcodeValueStyle(object) {
     const options = machineCodeOptions(object.props);
     return {
         color: previewForegroundColor(object),
@@ -1049,7 +1049,7 @@ function barcodeValueStyle(object: any): any {
         marginTop: `${options.textMargin}px`,
     };
 }
-function barcodeBarsStyle(object: any): any {
+function barcodeBarsStyle(object) {
     const source = `${object.props?.format || "CODE128"}:${encodedPreviewContent(object, "未配置编码值")}`;
     const seed = hashPreviewSeed(source);
     const foreground = previewForegroundColor(object);
@@ -1076,7 +1076,7 @@ function barcodeBarsStyle(object: any): any {
         backgroundRepeat: "no-repeat",
     };
 }
-function qrCodeSize(object: any): any {
+function qrCodeSize(object) {
     const eccLevel = object.props?.eccLevel || "M";
     switch (eccLevel) {
         case "L":
@@ -1089,21 +1089,21 @@ function qrCodeSize(object: any): any {
             return 23;
     }
 }
-function isQrFinderCell(size: any, row: any, column: any): any {
+function isQrFinderCell(size, row, column) {
     const anchors = [
         { row: 0, column: 0 },
         { row: 0, column: size - 7 },
         { row: size - 7, column: 0 },
     ];
-    return anchors.some((anchor: any): any => row >= anchor.row && row < anchor.row + 7 && column >= anchor.column && column < anchor.column + 7);
+    return anchors.some((anchor) => row >= anchor.row && row < anchor.row + 7 && column >= anchor.column && column < anchor.column + 7);
 }
-function isQrFinderDark(size: any, row: any, column: any): any {
+function isQrFinderDark(size, row, column) {
     const anchors = [
         { row: 0, column: 0 },
         { row: 0, column: size - 7 },
         { row: size - 7, column: 0 },
     ];
-    const anchor = anchors.find((item: any): any => row >= item.row && row < item.row + 7 && column >= item.column && column < item.column + 7);
+    const anchor = anchors.find((item) => row >= item.row && row < item.row + 7 && column >= item.column && column < item.column + 7);
     if (!anchor) {
         return false;
     }
@@ -1113,7 +1113,7 @@ function isQrFinderDark(size: any, row: any, column: any): any {
     const onCenter = innerRow >= 2 && innerRow <= 4 && innerColumn >= 2 && innerColumn <= 4;
     return onOuter || onCenter;
 }
-function qrCodeCells(object: any): any {
+function qrCodeCells(object) {
     const size = qrCodeSize(object);
     const seed = hashPreviewSeed(`${encodedPreviewContent(object, "未配置编码值")}:${object.props?.eccLevel || "M"}`);
     const cells = [];
@@ -1135,14 +1135,14 @@ function qrCodeCells(object: any): any {
     }
     return cells;
 }
-function qrCodePreviewStyle(object: any): any {
+function qrCodePreviewStyle(object) {
     const options = machineCodeOptions(object.props);
     return {
         ...previewPanelStyle(object, "#ffffff"),
         padding: `${mmToCssPx(options.margin)}px`,
     };
 }
-function qrCodeGridStyle(object: any): any {
+function qrCodeGridStyle(object) {
     const size = qrCodeSize(object);
     return {
         gridTemplateColumns: `repeat(${size}, 1fr)`,
@@ -1150,12 +1150,12 @@ function qrCodeGridStyle(object: any): any {
         borderColor: previewForegroundColor(object),
     };
 }
-function qrCodeCellStyle(object: any, cell: any): any {
+function qrCodeCellStyle(object, cell) {
     return {
         background: cell.dark ? previewForegroundColor(object) : previewBackgroundColor(object),
     };
 }
-function pageNumberContent(object: any): any {
+function pageNumberContent(object) {
     const current = String(object.content || "1");
     const format = object.props?.format || "1";
     const totalPages = String(Math.max(1, Number(object.props?.totalPages) || 1));
@@ -1173,7 +1173,7 @@ function pageNumberContent(object: any): any {
     }
     return current;
 }
-function snapSourceLabel(source: any): any {
+function snapSourceLabel(source) {
     switch (source) {
         case "page":
             return "页面";
@@ -1185,7 +1185,7 @@ function snapSourceLabel(source: any): any {
             return "吸附";
     }
 }
-function getPointerPointMm(event: any): any {
+function getPointerPointMm(event) {
     const paper = paperRef.value;
     if (!paper) {
         return null;
@@ -1199,7 +1199,7 @@ function getPointerPointMm(event: any): any {
         y: roundMm(localY / props.pixelsPerUnit),
     };
 }
-function clearCanvasSelection(): any {
+function clearCanvasSelection() {
     selectionStore.clearSelection();
     selectionStore.hoverObjectId = null;
     selectionStore.activeHandle = null;
@@ -1208,7 +1208,7 @@ function clearCanvasSelection(): any {
         y: null,
     };
 }
-function onCanvasSurfacePointerDown(event: any): any {
+function onCanvasSurfacePointerDown(event) {
     closeContextMenu();
     const target = event.target;
     if (target instanceof Element && target.closest(".paper-canvas__interaction-layer")) {
@@ -1234,8 +1234,8 @@ function onCanvasSurfacePointerDown(event: any): any {
     window.addEventListener("pointermove", onMarqueePointerMove);
     window.addEventListener("pointerup", onMarqueePointerUp);
 }
-function openContextMenu(object: any, event: any): any {
-    const group = currentPageGroups.value.find((candidate: any): any => candidate.elementIds?.includes(object.id));
+function openContextMenu(object, event) {
+    const group = currentPageGroups.value.find((candidate) => candidate.elementIds?.includes(object.id));
     if (group) {
         selectionStore.selectGroup(group);
     }
@@ -1251,11 +1251,11 @@ function openContextMenu(object: any, event: any): any {
         y: Math.max(0, mmToCssPx(point.y)),
     };
 }
-function closeContextMenu(): any {
+function closeContextMenu() {
     contextMenu.value = null;
 }
-function groupContextSelection(): any {
-    const ids = selectedIds.value.filter((id: any): any => objectsById.value[id]?.pageId === currentPage.value?.id && !objectsById.value[id]?.locked);
+function groupContextSelection() {
+    const ids = selectedIds.value.filter((id) => objectsById.value[id]?.pageId === currentPage.value?.id && !objectsById.value[id]?.locked);
     const result = createGroupCommand(documentStore, currentPage.value?.id, ids);
     if (result) {
         executeEditorCommand(historyStore, result.command);
@@ -1263,16 +1263,16 @@ function groupContextSelection(): any {
     }
     closeContextMenu();
 }
-function ungroupContextSelection(): any {
+function ungroupContextSelection() {
     const selected = new Set(selectedIds.value);
-    const groupIds = currentPageGroups.value.filter((group: any): any => group.elementIds?.some((id: any): any => selected.has(id))).map((group: any): any => group.id);
+    const groupIds = currentPageGroups.value.filter((group) => group.elementIds?.some((id) => selected.has(id))).map((group) => group.id);
     const command = createUngroupCommand(documentStore, currentPage.value?.id, groupIds);
     if (command) {
         executeEditorCommand(historyStore, command);
     }
     closeContextMenu();
 }
-function deleteContextSelection(): any {
+function deleteContextSelection() {
     const command = createRemoveObjectsCommand(documentStore, selectedIds.value);
     if (command) {
         executeEditorCommand(historyStore, command);
@@ -1280,21 +1280,21 @@ function deleteContextSelection(): any {
     }
     closeContextMenu();
 }
-function marqueeIntersects(object: any, bounds: any): any {
+function marqueeIntersects(object, bounds) {
     const right = object.x + object.width;
     const bottom = object.y + object.height;
     return right >= bounds.left && object.x <= bounds.right && bottom >= bounds.top && object.y <= bounds.bottom;
 }
-function includeGroupedMembers(ids: any = []): any {
+function includeGroupedMembers(ids = []) {
     const selected = new Set(ids);
-    currentPageGroups.value.forEach((group: any): any => {
-        if (group.elementIds?.some((id: any): any => selected.has(id))) {
-            group.elementIds.forEach((id: any): any => selected.add(id));
+    currentPageGroups.value.forEach((group) => {
+        if (group.elementIds?.some((id) => selected.has(id))) {
+            group.elementIds.forEach((id) => selected.add(id));
         }
     });
     return [...selected];
 }
-function onMarqueePointerMove(event: any): any {
+function onMarqueePointerMove(event) {
     const marquee = selectionMarquee.value;
     const point = getPointerPointMm(event);
     if (!marquee || !point) {
@@ -1307,19 +1307,19 @@ function onMarqueePointerMove(event: any): any {
         top: Math.min(marquee.start.y, point.y),
         bottom: Math.max(marquee.start.y, point.y),
     };
-    const ids = pageObjects.value.filter((object: any): any => marqueeIntersects(object, bounds)).map((object: any): any => object.id);
+    const ids = pageObjects.value.filter((object) => marqueeIntersects(object, bounds)).map((object) => object.id);
     selectionStore.select(includeGroupedMembers([...marquee.baseIds, ...ids]));
 }
-function onMarqueePointerUp(): any {
+function onMarqueePointerUp() {
     selectionMarquee.value = null;
     window.removeEventListener("pointermove", onMarqueePointerMove);
     window.removeEventListener("pointerup", onMarqueePointerUp);
 }
-function stopObjectDrag(): any {
+function stopObjectDrag() {
     window.removeEventListener("pointermove", onObjectPointerMove);
     window.removeEventListener("pointerup", onObjectPointerUp);
 }
-function onObjectLeave(objectId: any): any {
+function onObjectLeave(objectId) {
     if (interactionState.value?.objectIds?.includes(objectId)) {
         return;
     }
@@ -1327,7 +1327,7 @@ function onObjectLeave(objectId: any): any {
         selectionStore.hoverObjectId = null;
     }
 }
-function startObjectDrag(object: any, event: any): any {
+function startObjectDrag(object, event) {
     if (event.button !== 0) {
         return;
     }
@@ -1337,14 +1337,14 @@ function startObjectDrag(object: any, event: any): any {
     }
     if (event.shiftKey || event.ctrlKey || event.metaKey) {
         const nextIds = selectedIds.value.includes(object.id)
-            ? selectedIds.value.filter((id: any): any => id !== object.id)
+            ? selectedIds.value.filter((id) => id !== object.id)
             : [...selectedIds.value, object.id];
         selectionStore.select(nextIds);
         selectionStore.hoverObjectId = object.id;
         selectionStore.activeHandle = null;
         return;
     }
-    const group = currentPageGroups.value.find((candidate: any): any => candidate.elementIds?.includes(object.id));
+    const group = currentPageGroups.value.find((candidate) => candidate.elementIds?.includes(object.id));
     if (group) {
         selectionStore.selectGroup(group);
     }
@@ -1353,11 +1353,11 @@ function startObjectDrag(object: any, event: any): any {
     }
     selectionStore.hoverObjectId = object.id;
     selectionStore.activeHandle = null;
-    const objectIds = selectedIds.value.filter((id: any): any => objectsById.value[id]?.pageId === object.pageId && !objectsById.value[id]?.locked);
+    const objectIds = selectedIds.value.filter((id) => objectsById.value[id]?.pageId === object.pageId && !objectsById.value[id]?.locked);
     if (!objectIds.length) {
         return;
     }
-    const startObjects = objectIds.map((id: any): any => ({
+    const startObjects = objectIds.map((id) => ({
         id,
         x: objectsById.value[id].x,
         y: objectsById.value[id].y,
@@ -1380,7 +1380,7 @@ function startObjectDrag(object: any, event: any): any {
     window.addEventListener("pointermove", onObjectPointerMove);
     window.addEventListener("pointerup", onObjectPointerUp);
 }
-function startObjectResize(object: any, handle: any, event: any): any {
+function startObjectResize(object, handle, event) {
     if (event.button !== 0) {
         return;
     }
@@ -1388,9 +1388,9 @@ function startObjectResize(object: any, handle: any, event: any): any {
     if (!point) {
         return;
     }
-    const group = currentPageGroups.value.find((candidate: any): any => candidate.elementIds?.includes(object.id));
-    const groupObjects = group?.elementIds?.map((id: any): any => objectsById.value[id]).filter(Boolean) || [];
-    const canResizeGroup = groupObjects.length >= 2 && groupObjects.every((item: any): any => !item.locked);
+    const group = currentPageGroups.value.find((candidate) => candidate.elementIds?.includes(object.id));
+    const groupObjects = group?.elementIds?.map((id) => objectsById.value[id]).filter(Boolean) || [];
+    const canResizeGroup = groupObjects.length >= 2 && groupObjects.every((item) => !item.locked);
     if (canResizeGroup) {
         selectionStore.selectGroup(group);
     }
@@ -1404,14 +1404,14 @@ function startObjectResize(object: any, handle: any, event: any): any {
     }
     selectionStore.activeHandle = handle;
     const startObjects = canResizeGroup
-        ? groupObjects.map((item: any): any => ({ id: item.id, x: item.x, y: item.y, width: item.width, height: item.height }))
+        ? groupObjects.map((item) => ({ id: item.id, x: item.x, y: item.y, width: item.width, height: item.height }))
         : [];
     const groupBounds = canResizeGroup ? getObjectBounds(startObjects) : null;
     interactionState.value = {
         mode: canResizeGroup ? "resize-group" : "resize",
         handle,
         objectId: object.id,
-        objectIds: canResizeGroup ? startObjects.map((item: any): any => item.id) : [object.id],
+        objectIds: canResizeGroup ? startObjects.map((item) => item.id) : [object.id],
         startObjects,
         groupBounds,
         startPointerX: point.x,
@@ -1429,14 +1429,14 @@ function startObjectResize(object: any, handle: any, event: any): any {
     window.addEventListener("pointermove", onObjectPointerMove);
     window.addEventListener("pointerup", onObjectPointerUp);
 }
-function getObjectBounds(objects: any = []): any {
-    const left = Math.min(...objects.map((item: any): any => item.x));
-    const top = Math.min(...objects.map((item: any): any => item.y));
-    const right = Math.max(...objects.map((item: any): any => item.x + item.width));
-    const bottom = Math.max(...objects.map((item: any): any => item.y + item.height));
+function getObjectBounds(objects = []) {
+    const left = Math.min(...objects.map((item) => item.x));
+    const top = Math.min(...objects.map((item) => item.y));
+    const right = Math.max(...objects.map((item) => item.x + item.width));
+    const bottom = Math.max(...objects.map((item) => item.y + item.height));
     return { x: left, y: top, width: right - left, height: bottom - top };
 }
-function clampResizeEdges(startRect: any, handle: any, deltaX: any, deltaY: any): any {
+function clampResizeEdges(startRect, handle, deltaX, deltaY) {
     const minWidth = 0.1;
     const minHeight = 0.1;
     let left = startRect.x;
@@ -1515,7 +1515,7 @@ function clampResizeEdges(startRect: any, handle: any, deltaX: any, deltaY: any)
         height,
     };
 }
-function onObjectPointerMove(event: any): any {
+function onObjectPointerMove(event) {
     const drag = interactionState.value;
     const point = getPointerPointMm(event);
     if (!drag || !point) {
@@ -1527,7 +1527,7 @@ function onObjectPointerMove(event: any): any {
         const nextBounds = clampResizeEdges(drag.groupBounds, drag.handle, point.x - drag.startPointerX, point.y - drag.startPointerY);
         const scaleX = nextBounds.width / Math.max(0.01, drag.groupBounds.width);
         const scaleY = nextBounds.height / Math.max(0.01, drag.groupBounds.height);
-        const patches = drag.startObjects.map((item: any): any => ({
+        const patches = drag.startObjects.map((item) => ({
             id: item.id,
             patch: {
                 x: roundMm(nextBounds.x + (item.x - drag.groupBounds.x) * scaleX),
@@ -1603,7 +1603,7 @@ function onObjectPointerMove(event: any): any {
     }
     const deltaX = nextX - drag.startObjectX;
     const deltaY = nextY - drag.startObjectY;
-    const patches = drag.startObjects.map((item: any): any => ({
+    const patches = drag.startObjects.map((item) => ({
         id: item.id,
         patch: {
             x: clampObjectPosition(item.x + deltaX, item.width, pageWidthMm.value),
@@ -1612,7 +1612,7 @@ function onObjectPointerMove(event: any): any {
     }));
     documentStore.applyObjectPatches(patches);
 }
-function onObjectPointerUp(): any {
+function onObjectPointerUp() {
     const drag = interactionState.value;
     if (!drag) {
         stopObjectDrag();
@@ -1621,16 +1621,16 @@ function onObjectPointerUp(): any {
     const currentObject = objectsById.value[drag.objectId];
     if (currentObject) {
         if (drag.mode === "resize-group") {
-            const patches = drag.startObjects.map((item: any): any => {
+            const patches = drag.startObjects.map((item) => {
                 const current = objectsById.value[item.id];
                 return current ? { id: item.id, patch: { x: current.x, y: current.y, width: current.width, height: current.height } } : null;
             }).filter(Boolean);
-            const changed = patches.some(({ id, patch }: any): any => {
-                const previous = drag.startObjects.find((item: any): any => item.id === id);
+            const changed = patches.some(({ id, patch }) => {
+                const previous = drag.startObjects.find((item) => item.id === id);
                 return previous && (previous.x !== patch.x || previous.y !== patch.y || previous.width !== patch.width || previous.height !== patch.height);
             });
             if (changed) {
-                executeEditorCommand(historyStore, createPatchTransactionCommand(documentStore, "Resize group", patches, { previousPatches: drag.startObjects.map((item: any): any => ({ id: item.id, patch: { x: item.x, y: item.y, width: item.width, height: item.height } })) }));
+                executeEditorCommand(historyStore, createPatchTransactionCommand(documentStore, "Resize group", patches, { previousPatches: drag.startObjects.map((item) => ({ id: item.id, patch: { x: item.x, y: item.y, width: item.width, height: item.height } })) }));
             }
         }
         else if (drag.mode === "resize") {
@@ -1654,12 +1654,12 @@ function onObjectPointerUp(): any {
             }
         }
         else {
-            const patches = drag.startObjects.map((item: any): any => {
+            const patches = drag.startObjects.map((item) => {
                 const current = objectsById.value[item.id];
                 return current ? { id: item.id, patch: { x: current.x, y: current.y } } : null;
             }).filter(Boolean);
-            const changed = patches.some(({ id, patch }: any): any => {
-                const previous = drag.startObjects.find((item: any): any => item.id === id);
+            const changed = patches.some(({ id, patch }) => {
+                const previous = drag.startObjects.find((item) => item.id === id);
                 return previous && (previous.x !== patch.x || previous.y !== patch.y);
             });
             if (changed) {
@@ -1668,7 +1668,7 @@ function onObjectPointerUp(): any {
                     executeEditorCommand(historyStore, createMoveObjectCommand(documentStore, previous.id, { x: previous.x, y: previous.y }, patches[0].patch));
                 }
                 else {
-                    executeEditorCommand(historyStore, createPatchTransactionCommand(documentStore, "Move selection", patches, { previousPatches: drag.startObjects.map((item: any): any => ({ id: item.id, patch: { x: item.x, y: item.y } })) }));
+                    executeEditorCommand(historyStore, createPatchTransactionCommand(documentStore, "Move selection", patches, { previousPatches: drag.startObjects.map((item) => ({ id: item.id, patch: { x: item.x, y: item.y } })) }));
                 }
             }
         }
@@ -1681,7 +1681,7 @@ function onObjectPointerUp(): any {
     };
     stopObjectDrag();
 }
-onBeforeUnmount((): any => {
+onBeforeUnmount(() => {
     stopObjectDrag();
     onMarqueePointerUp();
 });

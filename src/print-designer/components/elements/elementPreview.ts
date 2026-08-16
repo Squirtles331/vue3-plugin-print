@@ -1,17 +1,17 @@
 import { mmToCssPx } from "../../editor/measurement.js";
-export function previewForeground(object: any): any {
+export function previewForeground(object) {
     return object?.style?.color || object?.style?.borderColor || "#172033";
 }
-export function previewBackground(object: any, fallback: any = "#ffffff"): any {
-    const background = object?.style?.backgroundColor as any;
+export function previewBackground(object, fallback = "#ffffff") {
+    const background = object?.style?.backgroundColor;
     return background && background !== "transparent" ? background : fallback;
 }
-export function previewPanelStyle(object: any, fallbackBackground: any = "transparent"): any {
-    const style = object?.style || {} as any;
-    const borderWidth = Math.max(0, Number(style.borderWidth) || 0) as any;
-    const padding = Math.max(0, Number(style.padding) || 0) as any;
-    const radius = Math.max(0, Number(style.borderRadius) || 0) as any;
-    const opacity = Number(style.opacity) as any;
+export function previewPanelStyle(object, fallbackBackground = "transparent") {
+    const style = object?.style || {};
+    const borderWidth = Math.max(0, Number(style.borderWidth) || 0);
+    const padding = Math.max(0, Number(style.padding) || 0);
+    const radius = Math.max(0, Number(style.borderRadius) || 0);
+    const opacity = Number(style.opacity);
     return {
         boxSizing: "border-box",
         width: "100%",
@@ -25,19 +25,19 @@ export function previewPanelStyle(object: any, fallbackBackground: any = "transp
         opacity: Number.isFinite(opacity) ? opacity : 1,
     };
 }
-export function textStyle(object: any): any {
-    const verticalAlign = object?.style?.verticalAlign || "top" as any;
-    const textAlign = object?.style?.textAlign || "left" as any;
+export function textStyle(object) {
+    const verticalAlign = object?.style?.verticalAlign || "top";
+    const textAlign = object?.style?.textAlign || "left";
     const alignItems = {
         top: "flex-start",
         middle: "center",
         bottom: "flex-end",
-    } as any;
+    };
     const justifyContent = {
         left: "flex-start",
         center: "center",
         right: "flex-end",
-    } as any;
+    };
     return {
         ...previewPanelStyle(object, "transparent"),
         display: "flex",
@@ -57,35 +57,35 @@ export function textStyle(object: any): any {
         overflow: object?.props?.autoHeight ? "visible" : "hidden",
     };
 }
-export function textPreviewValue(object: any, emptyValue: any = "输入文本"): any {
+export function textPreviewValue(object, emptyValue = "输入文本") {
     if (object?.variable) {
-        const sampleValue = object?.props?.sampleValue as any;
+        const sampleValue = object?.props?.sampleValue;
         return sampleValue != null && String(sampleValue).trim() !== "" ? String(sampleValue) : `{{${object.variable}}}`;
     }
     return object?.content != null && String(object.content).trim() !== "" ? String(object.content) : emptyValue;
 }
-export function encodedPreviewValue(object: any, emptyValue: any = "未配置编码"): any {
+export function encodedPreviewValue(object, emptyValue = "未配置编码") {
     if (object?.variable) {
         return `{{${object.variable}}}`;
     }
     return object?.content != null && String(object.content).trim() !== "" ? String(object.content) : emptyValue;
 }
-export function bindingLabel(object: any): any {
+export function bindingLabel(object) {
     return object?.variable ? `{{${object.variable}}}` : "";
 }
-export function hashPreviewSeed(value: any): any {
-    const source = String(value || "") as any;
-    let hash = 2166136261 as any;
-    for (let index = 0 as any; index < source.length; index += 1) {
+export function hashPreviewSeed(value) {
+    const source = String(value || "");
+    let hash = 2166136261;
+    for (let index = 0; index < source.length; index += 1) {
         hash ^= source.charCodeAt(index);
         hash = Math.imul(hash, 16777619);
     }
     return hash >>> 0;
 }
-export function pageNumberValue(object: any): any {
-    const current = String(object?.content || "1") as any;
-    const format = object?.props?.format || "1" as any;
-    const totalPages = String(Math.max(1, Number(object?.props?.totalPages) || 1)) as any;
+export function pageNumberValue(object) {
+    const current = String(object?.content || "1");
+    const format = object?.props?.format || "1";
+    const totalPages = String(Math.max(1, Number(object?.props?.totalPages) || 1));
     if (format === "Page 1")
         return `Page ${current}`;
     if (format === "1/N")
@@ -96,14 +96,14 @@ export function pageNumberValue(object: any): any {
         return `第 ${current} 页 / 共 ${totalPages} 页`;
     return current;
 }
-export function hasBlankTableHeaders(object: any): any {
+export function hasBlankTableHeaders(object) {
     if (object?.props?.blankHeaders === true) {
         return true;
     }
-    const columns = object?.props?.columns as any;
-    return Array.isArray(columns) && columns.length > 0 && columns.every((column: any, index: any): any => {
-        const key = String(column?.key || `field${index + 1}`) as any;
-        const title = typeof column?.title === "string" ? column.title.trim() : "" as any;
+    const columns = object?.props?.columns;
+    return Array.isArray(columns) && columns.length > 0 && columns.every((column, index) => {
+        const key = String(column?.key || `field${index + 1}`);
+        const title = typeof column?.title === "string" ? column.title.trim() : "";
         return key === `field${index + 1}` && (!title || title === key || /^列\s*\d+$/.test(title));
     });
 }

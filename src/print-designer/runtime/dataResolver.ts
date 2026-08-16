@@ -1,24 +1,24 @@
 import { toRaw } from "vue";
-function clone(value: any): any {
-    const rawValue = toRaw(value) as any;
+function clone(value) {
+    const rawValue = toRaw(value);
     if (typeof structuredClone === "function") {
         return structuredClone(rawValue);
     }
     return JSON.parse(JSON.stringify(rawValue));
 }
-function normalizePath(path: any): any {
+function normalizePath(path) {
     return String(path || "")
         .trim()
         .replace(/^@/, "")
-        .replace(/\[(?:"([^"]+)"|'([^']+)'|(\d+))\]/g, (_: any, quoted: any, singleQuoted: any, numericIndex: any): any => `.${quoted || singleQuoted || numericIndex}`)
+        .replace(/\[(?:"([^"]+)"|'([^']+)'|(\d+))\]/g, (_, quoted, singleQuoted, numericIndex) => `.${quoted || singleQuoted || numericIndex}`)
         .replace(/^\.+|\.+$/g, "");
 }
-export function resolveDataPath(data: any, path: any): any {
-    const normalized = normalizePath(path) as any;
+export function resolveDataPath(data, path) {
+    const normalized = normalizePath(path);
     if (!normalized) {
         return { found: false, value: undefined, path: normalized };
     }
-    let current = data as any;
+    let current = data;
     for (const segment of normalized.split(".")) {
         if (!segment || current == null || !Object.prototype.hasOwnProperty.call(Object(current), segment)) {
             return { found: false, value: undefined, path: normalized };
@@ -27,30 +27,30 @@ export function resolveDataPath(data: any, path: any): any {
     }
     return { found: true, value: current, path: normalized };
 }
-export function bindingToken(path: any): any {
+export function bindingToken(path) {
     return `{{${String(path || "").replace(/^@/, "")}}}`;
 }
-function resolveElementValue(element: any, runtimeData: any): any {
+function resolveElementValue(element, runtimeData) {
     if (element.variable) {
-        const result = resolveDataPath(runtimeData, element.variable) as any;
+        const result = resolveDataPath(runtimeData, element.variable);
         return result.found
             ? { value: result.value == null ? "" : String(result.value), status: "resolved", path: result.path }
             : { value: bindingToken(element.variable), status: "missing", path: result.path };
     }
-    const authoredValue = element.type === "image" ? element.props?.src || element.content : element.content as any;
+    const authoredValue = element.type === "image" ? element.props?.src || element.content : element.content;
     return {
         value: authoredValue == null ? "" : String(authoredValue),
         status: authoredValue == null || authoredValue === "" ? "empty" : "authored",
         path: "",
     };
 }
-function resolveTableColumns(props: any): any {
+function resolveTableColumns(props) {
     return Array.isArray(props.columns) ? props.columns : [];
 }
-function resolveCollection(props: any, variableKey: any, dataKey: any, runtimeData: any): any {
-    const variable = props[variableKey] as any;
+function resolveCollection(props, variableKey, dataKey, runtimeData) {
+    const variable = props[variableKey];
     if (variable) {
-        const result = resolveDataPath(runtimeData, variable) as any;
+        const result = resolveDataPath(runtimeData, variable);
         return {
             value: result.found && Array.isArray(result.value) ? result.value : [],
             status: result.found && Array.isArray(result.value) ? "resolved" : "missing",
@@ -63,8 +63,8 @@ function resolveCollection(props: any, variableKey: any, dataKey: any, runtimeDa
         path: "",
     };
 }
-export function applyConstrainedTableTransform(rows: any, transform: any): any {
-    const source = Array.isArray(rows) ? [...rows] : [] as any;
+export function applyConstrainedTableTransform(rows, transform) {
+    const source = Array.isArray(rows) ? [...rows] : [];
     if (!transform || (typeof transform === "object" && !Array.isArray(transform) && Object.keys(transform).length === 0)) {
         return { rows: source, issues: [] };
     }
@@ -72,15 +72,15 @@ export function applyConstrainedTableTransform(rows: any, transform: any): any {
         return { rows: source, issues: [{ message: "Table transform must be a declarative object.", severity: "error" }] };
     }
     if (transform.type === "sort" && typeof transform.by === "string") {
-        const direction = transform.direction === "desc" ? -1 : 1 as any;
+        const direction = transform.direction === "desc" ? -1 : 1;
         return {
-            rows: source.sort((left: any, right: any): any => String(left?.[transform.by] ?? "").localeCompare(String(right?.[transform.by] ?? "")) * direction),
+            rows: source.sort((left, right) => String(left?.[transform.by] ?? "").localeCompare(String(right?.[transform.by] ?? "")) * direction),
             issues: [],
         };
     }
     if (transform.type === "filterEquals" && typeof transform.by === "string") {
         return {
-            rows: source.filter((row: any): any => row?.[transform.by] === transform.value),
+            rows: source.filter((row) => row?.[transform.by] === transform.value),
             issues: [],
         };
     }
@@ -89,12 +89,12 @@ export function applyConstrainedTableTransform(rows: any, transform: any): any {
         issues: [{ code: "invalid-table-transform", message: `Unsupported table transform: ${transform.type || "unknown"}.`, severity: "error" }],
     };
 }
-function resolveTable(element: any, runtimeData: any): any {
-    const props = element.props || {} as any;
-    const data = resolveCollection(props, "dataVariable", "sampleData", runtimeData) as any;
-    const footer = resolveCollection(props, "footerDataVariable", "footerData", runtimeData) as any;
-    const transformed = applyConstrainedTableTransform(data.value, props.transform) as any;
-    const issues = [...transformed.issues] as any;
+function resolveTable(element, runtimeData) {
+    const props = element.props || {};
+    const data = resolveCollection(props, "dataVariable", "sampleData", runtimeData);
+    const footer = resolveCollection(props, "footerDataVariable", "footerData", runtimeData);
+    const transformed = applyConstrainedTableTransform(data.value, props.transform);
+    const issues = [...transformed.issues];
     if (props.customScript) {
         issues.push({
             code: "disabled-table-script",
@@ -113,25 +113,25 @@ function resolveTable(element: any, runtimeData: any): any {
         issues,
     };
 }
-function resolveMultiLabel(element: any, runtimeData: any): any {
-    const props = element.props || {} as any;
-    const result = resolveCollection(props, "dataVariable", "sampleData", runtimeData) as any;
+function resolveMultiLabel(element, runtimeData) {
+    const props = element.props || {};
+    const result = resolveCollection(props, "dataVariable", "sampleData", runtimeData);
     return {
         rows: result.value,
         status: result.status,
         path: result.path,
     };
 }
-export function resolveRuntimeTemplate(document: any, runtimeData: any = {}): any {
-    const input = document && typeof document === "object" ? clone(document) : null as any;
+export function resolveRuntimeTemplate(document, runtimeData = {}) {
+    const input = document && typeof document === "object" ? clone(document) : null;
     if (!input) {
         return { document: null, issues: [{ path: "document", message: "A template document is required.", severity: "error" }] };
     }
-    const issues = [] as any;
-    const pages = (input.pages || []).map((page: any, pageIndex: any): any => ({
+    const issues = [];
+    const pages = (input.pages || []).map((page, pageIndex) => ({
         ...page,
-        elements: (page.elements || []).map((element: any, elementIndex: any): any => {
-            const next = { ...element, runtime: {} } as any;
+        elements: (page.elements || []).map((element, elementIndex) => {
+            const next = { ...element, runtime: {} };
             if (["text", "image", "barcode", "qrcode"].includes(element.type)) {
                 next.runtime.value = resolveElementValue(element, runtimeData);
                 if (next.runtime.value.status === "missing") {
@@ -147,7 +147,7 @@ export function resolveRuntimeTemplate(document: any, runtimeData: any = {}): an
             }
             if (element.type === "table") {
                 next.runtime.table = resolveTable(element, runtimeData);
-                next.runtime.table.issues.forEach((issue: any): any => issues.push({ ...issue, path: `element:${element.id}` }));
+                next.runtime.table.issues.forEach((issue) => issues.push({ ...issue, path: `element:${element.id}` }));
                 if (next.runtime.table.dataStatus === "missing") {
                     issues.push({
                         code: "missing-table-data",
@@ -184,6 +184,6 @@ export function resolveRuntimeTemplate(document: any, runtimeData: any = {}): an
             }
             return next;
         }),
-    })) as any;
+    }));
     return { document: { ...input, pages }, issues };
 }

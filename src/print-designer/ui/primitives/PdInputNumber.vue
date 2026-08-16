@@ -8,10 +8,10 @@ const props = defineProps({
     controlsPosition: { type: String, default: "" },
     size: { type: String, default: "default" },
     disabled: { type: Boolean, default: false },
-}) as any;
-const emit = defineEmits(["update:modelValue", "change"]) as any;
-const inputClass = computed((): any => ["pd-input-number", `pd-input-number--${props.size}`]) as any;
-function normalizeValue(value: any): any {
+});
+const emit = defineEmits(["update:modelValue", "change"]);
+const inputClass = computed(() => ["pd-input-number", `pd-input-number--${props.size}`]);
+function normalizeValue(value) {
     let next = Number(value);
     if (!Number.isFinite(next)) {
         next = 0;
@@ -27,7 +27,7 @@ function normalizeValue(value: any): any {
     }
     return next;
 }
-function updateValue(event: any): any {
+function updateValue(event) {
     const next = normalizeValue(event.target.value);
     emit("update:modelValue", next);
     emit("change", next);

@@ -1,42 +1,61 @@
 import { cloneDeep } from "../../core/clone.js";
-import { createElement } from "../../core/elementFactory.js";
-function number(value: any, fallback: any = 0): any {
-    const parsed = Number(value) as any;
+import { createElement, isElementType } from "../../core/elementFactory.js";
+import type { TemplateElement } from "../../types.js";
+
+type ObjectMap = Record<string, TemplateElement>;
+type ObjectPatch = Partial<TemplateElement>;
+type ObjectPatchEntry = { id: string; patch: ObjectPatch };
+type PageBounds = { widthMm?: number; heightMm?: number };
+type Alignment = "left" | "center" | "right" | "top" | "middle" | "bottom";
+type Axis = "horizontal" | "vertical";
+type LayerAction = "bringForward" | "sendBackward" | "bringToFront" | "sendToBack";
+type LayoutStore = {
+    objectsById: ObjectMap;
+    pageObjectMap: Record<string, string[]>;
+    currentPage: { id: string } | null;
+    addObjects(objects: readonly TemplateElement[]): boolean;
+    applyObjectPatches(patches: readonly ObjectPatchEntry[]): boolean;
+    removeObjects(ids: readonly string[]): boolean;
+    setPageObjectOrder(pageId: string, ids: readonly string[]): boolean;
+};
+
+function number(value: unknown, fallback = 0): number {
+    const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
 }
-function round(value: any): any {
+function round(value: unknown): number {
     return +number(value).toFixed(2);
 }
-function clamp(value: any, min: any, max: any): any {
+function clamp(value: number, min: number, max: number): number {
     return Math.min(max, Math.max(min, value));
 }
-function uniqueIds(ids: any = []): any {
+function uniqueIds(ids: readonly string[] = []): string[] {
     return [...new Set(ids.filter(Boolean))];
 }
-export function getEditableSelection(objectsById: any, selectedIds: any, pageId: any): any {
+export function getEditableSelection(objectsById: ObjectMap, selectedIds: readonly string[], pageId?: string): TemplateElement[] {
     return uniqueIds(selectedIds)
-        .map((id: any): any => objectsById[id])
-        .filter((object: any): any => object && !object.locked && (!pageId || object.pageId === pageId));
+        .map((id) => objectsById[id])
+        .filter((object): object is TemplateElement => object !== undefined && !object.locked && (!pageId || object.pageId === pageId));
 }
-export function getSelectionBounds(objects: any = []): any {
+export function getSelectionBounds(objects: readonly TemplateElement[] = []): { left: number; top: number; right: number; bottom: number; width: number; height: number } | null {
     if (!objects.length) {
         return null;
     }
-    const left = Math.min(...objects.map((object: any): any => number(object.x))) as any;
-    const top = Math.min(...objects.map((object: any): any => number(object.y))) as any;
-    const right = Math.max(...objects.map((object: any): any => number(object.x) + number(object.width))) as any;
-    const bottom = Math.max(...objects.map((object: any): any => number(object.y) + number(object.height))) as any;
+    const left = Math.min(...objects.map((object) => number(object.x)));
+    const top = Math.min(...objects.map((object) => number(object.y)));
+    const right = Math.max(...objects.map((object) => number(object.x) + number(object.width)));
+    const bottom = Math.max(...objects.map((object) => number(object.y) + number(object.height)));
     return { left, top, right, bottom, width: round(right - left), height: round(bottom - top) };
 }
-function clampPatch(object: any, patch: any, page: any, allowOverflow: any = false): any {
+function clampPatch(object: TemplateElement, patch: ObjectPatch, page?: PageBounds, allowOverflow = false): ObjectPatch {
     if (allowOverflow) {
-        return Object.fromEntries(Object.entries(patch).map(([key, value]: any): any => [key, round(value)]));
+        return Object.fromEntries(Object.entries(patch).map(([key, value]) => [key, round(value)])) as ObjectPatch;
     }
-    const width = number(object.width) as any;
-    const height = number(object.height) as any;
-    const pageWidth = number(page?.widthMm, Number.POSITIVE_INFINITY) as any;
-    const pageHeight = number(page?.heightMm, Number.POSITIVE_INFINITY) as any;
-    const next = { ...patch } as any;
+    const width = number(object.width);
+    const height = number(object.height);
+    const pageWidth = number(page?.widthMm, Number.POSITIVE_INFINITY);
+    const pageHeight = number(page?.heightMm, Number.POSITIVE_INFINITY);
+    const next = { ...patch };
     if (next.x != null) {
         next.x = round(clamp(number(next.x), 0, Math.max(0, pageWidth - width)));
     }
@@ -45,150 +64,168 @@ function clampPatch(object: any, patch: any, page: any, allowOverflow: any = fal
     }
     return next;
 }
-export function createAlignmentPatches(objects: any, alignment: any, page: any, { allowOverflow = false }: any = {}): any {
+export function createAlignmentPatches(objects: readonly TemplateElement[], alignment: Alignment, page?: PageBounds, { allowOverflow = false }: { allowOverflow?: boolean } = {}): ObjectPatchEntry[] {
     if (objects.length < 2) {
         return [];
     }
-    const bounds = getSelectionBounds(objects) as any;
-    const positions = {
-        left: (object: any): any => ({ x: bounds.left }),
-        center: (object: any): any => ({ x: bounds.left + (bounds.width - number(object.width)) / 2 }),
-        right: (object: any): any => ({ x: bounds.right - number(object.width) }),
-        top: (): any => ({ y: bounds.top }),
-        middle: (object: any): any => ({ y: bounds.top + (bounds.height - number(object.height)) / 2 }),
-        bottom: (object: any): any => ({ y: bounds.bottom - number(object.height) }),
-    } as any;
-    const resolver = positions[alignment] as any;
+    const bounds = getSelectionBounds(objects);
+    if (!bounds)
+        return [];
+    const positions: Record<Alignment, (object: TemplateElement) => ObjectPatch> = {
+        left: (object) => ({ x: bounds.left }),
+        center: (object) => ({ x: bounds.left + (bounds.width - number(object.width)) / 2 }),
+        right: (object) => ({ x: bounds.right - number(object.width) }),
+        top: () => ({ y: bounds.top }),
+        middle: (object) => ({ y: bounds.top + (bounds.height - number(object.height)) / 2 }),
+        bottom: (object) => ({ y: bounds.bottom - number(object.height) }),
+    };
+    const resolver = positions[alignment];
     if (!resolver) {
         return [];
     }
-    return objects.map((object: any): any => ({
+    return objects.map((object) => ({
         id: object.id,
         patch: clampPatch(object, resolver(object), page, allowOverflow),
     }));
 }
-export function createDistributionPatches(objects: any, axis: any, page: any, { allowOverflow = false }: any = {}): any {
+export function createDistributionPatches(objects: readonly TemplateElement[], axis: Axis, page?: PageBounds, { allowOverflow = false }: { allowOverflow?: boolean } = {}): ObjectPatchEntry[] {
     if (objects.length < 3 || !["horizontal", "vertical"].includes(axis)) {
         return [];
     }
-    const coordinate = axis === "horizontal" ? "x" : "y" as any;
-    const dimension = axis === "horizontal" ? "width" : "height" as any;
-    const sorted = [...objects].sort((left: any, right: any): any => number(left[coordinate]) - number(right[coordinate])) as any;
-    const first = sorted[0] as any;
-    const last = sorted[sorted.length - 1] as any;
-    const span = number(last[coordinate]) + number(last[dimension]) - number(first[coordinate]) as any;
-    const used = sorted.reduce((total: any, object: any): any => total + number(object[dimension]), 0) as any;
-    const gap = (span - used) / (sorted.length - 1) as any;
-    let cursor = number(first[coordinate]) as any;
-    return sorted.map((object: any, index: any): any => {
-        const patch = index === 0 ? {} : { [coordinate]: cursor } as any;
+    const coordinate = axis === "horizontal" ? "x" : "y";
+    const dimension = axis === "horizontal" ? "width" : "height";
+    const sorted = [...objects].sort((left, right) => number(left[coordinate]) - number(right[coordinate]));
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+    if (!first || !last)
+        return [];
+    const span = number(last[coordinate]) + number(last[dimension]) - number(first[coordinate]);
+    const used = sorted.reduce((total, object) => total + number(object[dimension]), 0);
+    const gap = (span - used) / (sorted.length - 1);
+    let cursor = number(first[coordinate]);
+    return sorted.map((object, index) => {
+        const patch = index === 0 ? {} : { [coordinate]: cursor };
         cursor += number(object[dimension]) + gap;
         return { id: object.id, patch: clampPatch(object, patch, page, allowOverflow) };
     });
 }
-export function createDuplicateObjects(objects: any, page: any, { offsetMm = 4, allowOverflow = false }: any = {}): any {
-    return objects.map((object: any, index: any): any => {
-        const { id, zIndex, ...copy } = cloneDeep(object) as any;
+export function createDuplicateObjects(objects: readonly TemplateElement[], page?: PageBounds, { offsetMm = 4, allowOverflow = false }: { offsetMm?: number; allowOverflow?: boolean } = {}): TemplateElement[] {
+    return objects.map((object, index) => {
+        const { id, zIndex, ...copy } = cloneDeep(object);
+        if (!isElementType(object.type))
+            throw new Error(`Unknown element type: ${object.type}`);
         const candidate = createElement(object.type, {
             ...copy,
             x: number(object.x) + offsetMm,
             y: number(object.y) + offsetMm,
             zIndex: number(object.zIndex) + index + 1,
-        }) as any;
-        const position = clampPatch(candidate, { x: candidate.x, y: candidate.y }, page, allowOverflow) as any;
+        });
+        const position = clampPatch(candidate, { x: candidate.x, y: candidate.y }, page, allowOverflow);
         return { ...candidate, ...position };
     });
 }
-function unlockedOrder(currentIds: any, objectsById: any, selectedIds: any, action: any): any {
-    const selected = new Set(selectedIds) as any;
+function unlockedOrder(currentIds: readonly string[], objectsById: ObjectMap, selectedIds: readonly string[], action: "front" | "back"): string[] {
+    const selected = new Set(selectedIds);
     const unlockedSlots = currentIds
-        .map((id: any, index: any): any => ({ id, index, object: objectsById[id] }))
-        .filter(({ object }: any): any => object && !object.locked) as any;
-    const movableIds = unlockedSlots.map(({ id }: any): any => id) as any;
-    const active = movableIds.filter((id: any): any => selected.has(id)) as any;
+        .map((id, index) => ({ id, index, object: objectsById[id] }))
+        .filter(({ object }) => object && !object.locked);
+    const movableIds = unlockedSlots.map(({ id }) => id);
+    const active = movableIds.filter((id) => selected.has(id));
     if (!active.length) {
-        return currentIds;
+        return [...currentIds];
     }
-    const rest = movableIds.filter((id: any): any => !selected.has(id)) as any;
-    const ordered = action === "back" ? [...active, ...rest] : [...rest, ...active] as any;
-    const next = [...currentIds] as any;
-    unlockedSlots.forEach(({ index }: any, orderIndex: any): any => {
-        next[index] = ordered[orderIndex];
+    const rest = movableIds.filter((id) => !selected.has(id));
+    const ordered = action === "back" ? [...active, ...rest] : [...rest, ...active];
+    const next = [...currentIds];
+    unlockedSlots.forEach(({ index }, orderIndex) => {
+        const id = ordered[orderIndex];
+        if (id)
+            next[index] = id;
     });
     return next;
 }
-export function createOrderIds(currentIds: any, objectsById: any, selectedIds: any, action: any): any {
+export function createOrderIds(currentIds: readonly string[], objectsById: ObjectMap, selectedIds: readonly string[], action: "front" | "back"): string[] {
     return unlockedOrder(currentIds, objectsById, selectedIds, action);
 }
-export function createPatchTransactionCommand(documentStore: any, label: any, patches: any, { previousPatches = null }: any = {}): any {
-    const effective = patches.filter(({ id, patch }: any): any => documentStore.objectsById[id] && Object.keys(patch || {}).length) as any;
-    const previous = Array.isArray(previousPatches) ? cloneDeep(previousPatches) : effective.map(({ id, patch }: any): any => {
-        const object = documentStore.objectsById[id] as any;
-        return { id, patch: Object.fromEntries(Object.keys(patch).map((key: any): any => [key, object[key]])) };
-    }) as any;
+export function createPatchTransactionCommand(documentStore: LayoutStore, label: string, patches: readonly ObjectPatchEntry[], { previousPatches = null }: { previousPatches?: readonly ObjectPatchEntry[] | null } = {}) {
+    const effective = patches.filter(({ id, patch }) => documentStore.objectsById[id] && Object.keys(patch || {}).length);
+    const previous = Array.isArray(previousPatches) ? cloneDeep(previousPatches) : effective.map(({ id, patch }) => {
+        const object = documentStore.objectsById[id];
+        if (!object)
+            return { id, patch };
+        return { id, patch: Object.fromEntries(Object.keys(patch).map((key) => [key, object[key]])) };
+    });
     if (!effective.length) {
         return null;
     }
     return {
         id: `layout-${label}-${Date.now()}`,
         label,
-        execute(): any {
+        execute() {
             documentStore.applyObjectPatches(effective);
         },
-        undo(): any {
+        undo() {
             documentStore.applyObjectPatches(previous);
         },
     };
 }
-export function createDuplicateCommand(documentStore: any, objects: any): any {
+export function createDuplicateCommand(documentStore: LayoutStore, objects: readonly TemplateElement[]) {
     if (!objects.length) {
         return null;
     }
-    const copies = cloneDeep(objects) as any;
+    const copies = cloneDeep(objects);
     return {
         id: `duplicate-elements-${Date.now()}`,
         label: "Duplicate elements",
-        execute(): any {
+        execute() {
             documentStore.addObjects(copies);
         },
-        undo(): any {
-            documentStore.removeObjects(copies.map((object: any): any => object.id));
+        undo() {
+            documentStore.removeObjects(copies.map((object) => object.id));
         },
     };
 }
-export function createOrderTransactionCommand(documentStore: any, pageId: any, nextIds: any, label: any): any {
-    const previousIds = [...(documentStore.pageObjectMap[pageId] || [])] as any;
+export function createOrderTransactionCommand(documentStore: LayoutStore, pageId: string, nextIds: readonly string[], label: string) {
+    const previousIds = [...(documentStore.pageObjectMap[pageId] || [])];
     if (!nextIds.length || previousIds.join("|") === nextIds.join("|")) {
         return null;
     }
     return {
         id: `layout-order-${Date.now()}`,
         label,
-        execute(): any {
+        execute() {
             documentStore.setPageObjectOrder(pageId, nextIds);
         },
-        undo(): any {
+        undo() {
             documentStore.setPageObjectOrder(pageId, previousIds);
         },
     };
 }
-export function createReorderObjectCommand(documentStore: any, objectId: any, action: any): any {
-    const object = documentStore.objectsById[objectId] as any;
+export function createReorderObjectCommand(documentStore: LayoutStore, objectId: string, action: LayerAction) {
+    const object = documentStore.objectsById[objectId];
     if (!object || object.locked) {
         return null;
     }
-    const pageId = object.pageId || documentStore.currentPage?.id || "page-1" as any;
-    const previousIds = [...(documentStore.pageObjectMap[pageId] || [])] as any;
-    const currentIndex = previousIds.indexOf(objectId) as any;
-    const nextIds = [...previousIds] as any;
+    const pageId = object.pageId || documentStore.currentPage?.id || "page-1";
+    const previousIds = [...(documentStore.pageObjectMap[pageId] || [])];
+    const currentIndex = previousIds.indexOf(objectId);
+    const nextIds = [...previousIds];
     if (currentIndex < 0) {
         return null;
     }
     if (action === "bringForward" && currentIndex < nextIds.length - 1) {
-        [nextIds[currentIndex], nextIds[currentIndex + 1]] = [nextIds[currentIndex + 1], nextIds[currentIndex]];
+        const nextId = nextIds[currentIndex + 1];
+        if (!nextId)
+            return null;
+        nextIds[currentIndex] = nextId;
+        nextIds[currentIndex + 1] = objectId;
     }
     else if (action === "sendBackward" && currentIndex > 0) {
-        [nextIds[currentIndex], nextIds[currentIndex - 1]] = [nextIds[currentIndex - 1], nextIds[currentIndex]];
+        const previousId = nextIds[currentIndex - 1];
+        if (!previousId)
+            return null;
+        nextIds[currentIndex] = previousId;
+        nextIds[currentIndex - 1] = objectId;
     }
     else if (action === "bringToFront" && currentIndex < nextIds.length - 1) {
         nextIds.splice(currentIndex, 1);
@@ -204,19 +241,19 @@ export function createReorderObjectCommand(documentStore: any, objectId: any, ac
     if (previousIds.join("|") === nextIds.join("|")) {
         return null;
     }
-    const labels = {
+    const labels: Record<LayerAction, string> = {
         bringForward: "Bring layer forward",
         sendBackward: "Send layer backward",
         bringToFront: "Bring layer to front",
         sendToBack: "Send layer to back",
-    } as any;
+    };
     return {
         id: `layout-layer-order-${objectId}-${action}-${Date.now()}`,
-        label: labels[action] || "Reorder layer",
-        execute(): any {
+        label: labels[action],
+        execute() {
             documentStore.setPageObjectOrder(pageId, nextIds);
         },
-        undo(): any {
+        undo() {
             documentStore.setPageObjectOrder(pageId, previousIds);
         },
     };

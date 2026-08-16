@@ -3,12 +3,12 @@ const props = defineProps({
     modelValue: { type: [String, Number, Boolean], default: undefined },
     value: { type: [String, Number, Boolean], required: true },
     disabled: { type: Boolean, default: false },
-}) as any;
-const emit = defineEmits(["update:modelValue", "change"]) as any;
-const group = inject("pdRadioGroup", null) as any;
-const currentValue = computed((): any => (group ? group.props.modelValue : props.modelValue)) as any;
-const checked = computed((): any => currentValue.value === props.value) as any;
-function selectValue(): any {
+});
+const emit = defineEmits(["update:modelValue", "change"]);
+const group = inject("pdRadioGroup", null);
+const currentValue = computed(() => (group ? group.props.modelValue : props.modelValue));
+const checked = computed(() => currentValue.value === props.value);
+function selectValue() {
     if (props.disabled) {
         return;
     }

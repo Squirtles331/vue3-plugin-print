@@ -1,19 +1,19 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
-export const useEditorHistoryStore = defineStore("printDesignerHistory", (): any => {
-    const undoStack = ref([]) as any;
-    const redoStack = ref([]) as any;
-    const isApplyingHistory = ref(false) as any;
-    const lastCommandName = ref("No commands yet") as any;
-    const canUndo = computed((): any => undoStack.value.length > 0) as any;
-    const canRedo = computed((): any => redoStack.value.length > 0) as any;
-    const historyEntries = computed((): any => undoStack.value
-        .map((command: any, index: any): any => ({
+export const useEditorHistoryStore = defineStore("printDesignerHistory", () => {
+    const undoStack = ref([]);
+    const redoStack = ref([]);
+    const isApplyingHistory = ref(false);
+    const lastCommandName = ref("No commands yet");
+    const canUndo = computed(() => undoStack.value.length > 0);
+    const canRedo = computed(() => redoStack.value.length > 0);
+    const historyEntries = computed(() => undoStack.value
+        .map((command, index) => ({
         id: command.id || `command-${index}`,
         label: command.label || command.id || `Command ${index + 1}`,
     }))
-        .reverse()) as any;
-    function execute(command: any): any {
+        .reverse());
+    function execute(command) {
         if (!command?.execute || !command?.undo) {
             return;
         }
@@ -22,8 +22,8 @@ export const useEditorHistoryStore = defineStore("printDesignerHistory", (): any
         redoStack.value = [];
         lastCommandName.value = command.label || command.id || "Unnamed command";
     }
-    function undo(): any {
-        const command = undoStack.value[undoStack.value.length - 1] as any;
+    function undo() {
+        const command = undoStack.value[undoStack.value.length - 1];
         if (!command) {
             return;
         }
@@ -34,8 +34,8 @@ export const useEditorHistoryStore = defineStore("printDesignerHistory", (): any
         redoStack.value = [...redoStack.value, command];
         lastCommandName.value = `Undo ${command.label || command.id || "command"}`;
     }
-    function redo(): any {
-        const command = redoStack.value[redoStack.value.length - 1] as any;
+    function redo() {
+        const command = redoStack.value[redoStack.value.length - 1];
         if (!command) {
             return;
         }
@@ -46,7 +46,7 @@ export const useEditorHistoryStore = defineStore("printDesignerHistory", (): any
         undoStack.value = [...undoStack.value, command];
         lastCommandName.value = `Redo ${command.label || command.id || "command"}`;
     }
-    function reset(): any {
+    function reset() {
         undoStack.value = [];
         redoStack.value = [];
         lastCommandName.value = "No commands yet";
@@ -64,4 +64,4 @@ export const useEditorHistoryStore = defineStore("printDesignerHistory", (): any
         redo,
         reset,
     };
-}) as any;
+});

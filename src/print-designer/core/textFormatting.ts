@@ -5,7 +5,7 @@ export const TEXT_PRESET_OPTIONS = [
     { label: "标签值", value: "labelValue" },
     { label: "金额", value: "amount" },
     { label: "备注", value: "note" },
-] as any;
+];
 export const FONT_FAMILY_OPTIONS = [
     { label: "默认", value: "" },
     { label: "Microsoft YaHei", value: "Microsoft YaHei" },
@@ -13,9 +13,9 @@ export const FONT_FAMILY_OPTIONS = [
     { label: "Arial", value: "Arial" },
     { label: "Helvetica", value: "Helvetica" },
     { label: "Times New Roman", value: "Times New Roman" },
-] as any;
-export const FONT_SIZE_OPTIONS = [10, 11, 12, 14, 16, 18, 20, 24, 28, 32] as any;
-export const LINE_HEIGHT_OPTIONS = [1, 1.2, 1.4, 1.6, 1.8, 2] as any;
+];
+export const FONT_SIZE_OPTIONS = [10, 11, 12, 14, 16, 18, 20, 24, 28, 32];
+export const LINE_HEIGHT_OPTIONS = [1, 1.2, 1.4, 1.6, 1.8, 2];
 export const TEXT_PRESET_DEFINITIONS = {
     title: {
         style: {
@@ -125,7 +125,7 @@ export const TEXT_PRESET_DEFINITIONS = {
             writingMode: "horizontal-tb",
         },
     },
-} as any;
-export function getTextPresetDefinition(preset: any): any {
+};
+export function getTextPresetDefinition(preset) {
     return TEXT_PRESET_DEFINITIONS[preset] || null;
 }

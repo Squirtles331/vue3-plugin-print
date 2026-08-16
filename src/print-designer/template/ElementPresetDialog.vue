@@ -16,10 +16,10 @@
 
 <script setup lang="ts">import PdButton from "../ui/primitives/PdButton.vue";
 import PdDialog from "../ui/primitives/PdDialog.vue";
-defineProps({ visible: { type: Boolean, default: false }, presets: { type: Array as any, default: (): any => [] } });
-const emit = defineEmits(["update:visible", "insert", "rename", "remove"]) as any;
-const TYPE_LABELS = { text: "文本", image: "图片", table: "表格", barcode: "条码", qrcode: "二维码", pageNumber: "页码", line: "线条", rect: "矩形", circle: "圆形", multiLabel: "多标签" } as any;
-function typeLabel(type: any): any { return TYPE_LABELS[type] || type; }
+defineProps({ visible: { type: Boolean, default: false }, presets: { type: Array, default: () => [] } });
+const emit = defineEmits(["update:visible", "insert", "rename", "remove"]);
+const TYPE_LABELS = { text: "文本", image: "图片", table: "表格", barcode: "条码", qrcode: "二维码", pageNumber: "页码", line: "线条", rect: "矩形", circle: "圆形", multiLabel: "多标签" };
+function typeLabel(type) { return TYPE_LABELS[type] || type; }
 </script>
 
 <style scoped>

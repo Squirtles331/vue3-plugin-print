@@ -188,22 +188,22 @@ import PdSelect from "../../ui/primitives/PdSelect.vue";
 import PdSwitch from "../../ui/primitives/PdSwitch.vue";
 import { CUSTOM_PAPER_SIZE_KEY, PAPER_SIZE_PRESETS } from "../paperSizePresets";
 import { useEditorDocumentStore } from "../stores/documentStore";
-const documentStore = useEditorDocumentStore() as any;
-const { currentPaperPresetKey, unit, pageWidthMm, pageHeightMm, marginTopMm, marginRightMm, marginBottomMm, marginLeftMm, pageBackground, pageCornerVisible, headerLineVisible, footerLineVisible, headerOffsetMm, footerOffsetMm, printMarksVisible, documentName, currentPageTitle, } = storeToRefs(documentStore) as any;
-const paperSizeGroups = PAPER_SIZE_PRESETS as any;
-const recommendedPaperOptions = paperSizeGroups[0]?.options || [] as any;
-const orientation = computed((): any => (pageWidthMm.value > pageHeightMm.value ? "landscape" : "portrait")) as any;
-const orientationLabel = computed((): any => (orientation.value === "landscape" ? "横向" : "纵向")) as any;
-const paperSizeLabel = computed((): any => {
+const documentStore = useEditorDocumentStore();
+const { currentPaperPresetKey, unit, pageWidthMm, pageHeightMm, marginTopMm, marginRightMm, marginBottomMm, marginLeftMm, pageBackground, pageCornerVisible, headerLineVisible, footerLineVisible, headerOffsetMm, footerOffsetMm, printMarksVisible, documentName, currentPageTitle, } = storeToRefs(documentStore);
+const paperSizeGroups = PAPER_SIZE_PRESETS;
+const recommendedPaperOptions = paperSizeGroups[0]?.options || [];
+const orientation = computed(() => (pageWidthMm.value > pageHeightMm.value ? "landscape" : "portrait"));
+const orientationLabel = computed(() => (orientation.value === "landscape" ? "横向" : "纵向"));
+const paperSizeLabel = computed(() => {
     if (currentPaperPresetKey.value === CUSTOM_PAPER_SIZE_KEY) {
         return "自定义";
     }
     return paperSizeGroups
-        .flatMap((group: any): any => group.options || [])
-        .find((option: any): any => option.key === currentPaperPresetKey.value)?.label || "纸张";
-}) as any;
-const marginSummary = computed((): any => `${marginTopMm.value}/${marginRightMm.value}/${marginBottomMm.value}/${marginLeftMm.value} mm`) as any;
-const helperSummary = computed((): any => {
+        .flatMap((group) => group.options || [])
+        .find((option) => option.key === currentPaperPresetKey.value)?.label || "纸张";
+});
+const marginSummary = computed(() => `${marginTopMm.value}/${marginRightMm.value}/${marginBottomMm.value}/${marginLeftMm.value} mm`);
+const helperSummary = computed(() => {
     const active = [
         pageCornerVisible.value ? "角标" : "",
         printMarksVisible.value ? "标记" : "",
@@ -211,15 +211,15 @@ const helperSummary = computed((): any => {
         footerLineVisible.value ? "页脚线" : "",
     ].filter(Boolean);
     return active.length ? active.join(" · ") : "已关闭";
-}) as any;
-const pageSummary = computed((): any => ({
+});
+const pageSummary = computed(() => ({
     shortLabel: paperSizeLabel.value,
     detail: `${pageWidthMm.value} x ${pageHeightMm.value} mm`,
-})) as any;
-function onWidthChange(value: any): any {
+}));
+function onWidthChange(value) {
     documentStore.setPageDimensions(value, pageHeightMm.value);
 }
-function onHeightChange(value: any): any {
+function onHeightChange(value) {
     documentStore.setPageDimensions(pageWidthMm.value, value);
 }
 </script>

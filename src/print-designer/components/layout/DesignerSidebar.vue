@@ -43,46 +43,46 @@ import PagesPanel from "../sidebar/PagesPanel.vue";
 import SidebarTabs from "../sidebar/SidebarTabs.vue";
 const props = defineProps({
     tabs: {
-        type: Array as any,
-        default: (): any => [],
+        type: Array,
+        default: () => [],
     },
     sections: {
-        type: Array as any,
-        default: (): any => [],
+        type: Array,
+        default: () => [],
     },
     palette: {
-        type: Array as any,
-        default: (): any => [],
+        type: Array,
+        default: () => [],
     },
     pages: {
-        type: Array as any,
-        default: (): any => [],
+        type: Array,
+        default: () => [],
     },
     layers: {
-        type: Array as any,
-        default: (): any => [],
+        type: Array,
+        default: () => [],
     },
     variables: {
-        type: Array as any,
-        default: (): any => [],
+        type: Array,
+        default: () => [],
     },
     initialTab: {
         type: String,
         default: "insert",
     },
-}) as any;
-const emit = defineEmits(["palette-dragstart", "tab-change"]) as any;
-const documentStore = useEditorDocumentStore() as any;
-const selectionStore = useEditorSelectionStore() as any;
-const activeTab = ref(props.initialTab) as any;
-watch((): any => props.initialTab, (value: any): any => {
+});
+const emit = defineEmits(["palette-dragstart", "tab-change"]);
+const documentStore = useEditorDocumentStore();
+const selectionStore = useEditorSelectionStore();
+const activeTab = ref(props.initialTab);
+watch(() => props.initialTab, (value) => {
     activeTab.value = value;
 });
-watch(activeTab, (value: any): any => {
+watch(activeTab, (value) => {
     emit("tab-change", value);
 });
-const currentSection = computed((): any => props.sections.find((item: any): any => item.key === activeTab.value) || props.sections[0] || {}) as any;
-function onPageSelect(page: any): any {
+const currentSection = computed(() => props.sections.find((item) => item.key === activeTab.value) || props.sections[0] || {});
+function onPageSelect(page) {
     if (!page?.id) {
         return;
     }

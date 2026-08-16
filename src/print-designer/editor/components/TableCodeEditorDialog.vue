@@ -55,15 +55,15 @@ const props = defineProps({
         type: String,
         default: "json",
     },
-}) as any;
-const emit = defineEmits(["update:modelValue", "update:visible", "save", "cancel"]) as any;
-const editorHost = ref(null) as any;
-const languageLabel = computed((): any => (props.language === "javascript" ? "JAVASCRIPT" : "JSON")) as any;
-let editorView = null as any;
-function languageExtension(): any {
+});
+const emit = defineEmits(["update:modelValue", "update:visible", "save", "cancel"]);
+const editorHost = ref(null);
+const languageLabel = computed(() => (props.language === "javascript" ? "JAVASCRIPT" : "JSON"));
+let editorView = null;
+function languageExtension() {
     return props.language === "javascript" ? javascript() : json();
 }
-function buildEditorState(doc: any = ""): any {
+function buildEditorState(doc = "") {
     return EditorState.create({
         doc,
         extensions: [
@@ -71,7 +71,7 @@ function buildEditorState(doc: any = ""): any {
             EditorView.lineWrapping,
             oneDark,
             languageExtension(),
-            EditorView.updateListener.of((update: any): any => {
+            EditorView.updateListener.of((update) => {
                 if (update.docChanged) {
                     emit("update:modelValue", update.state.doc.toString());
                 }
@@ -79,7 +79,7 @@ function buildEditorState(doc: any = ""): any {
         ],
     });
 }
-async function ensureEditor(): Promise<any> {
+async function ensureEditor() {
     if (!props.visible) {
         return;
     }
@@ -96,7 +96,7 @@ async function ensureEditor(): Promise<any> {
     }
     syncEditorContent(props.modelValue);
 }
-function syncEditorContent(value: any): any {
+function syncEditorContent(value) {
     if (!editorView) {
         return;
     }
@@ -112,7 +112,7 @@ function syncEditorContent(value: any): any {
         },
     });
 }
-function recreateEditor(): any {
+function recreateEditor() {
     if (editorView) {
         editorView.destroy();
         editorView = null;
@@ -121,14 +121,14 @@ function recreateEditor(): any {
         ensureEditor();
     }
 }
-function onDialogVisibleChange(value: any): any {
+function onDialogVisibleChange(value) {
     if (!value) {
         emit("cancel");
         return;
     }
     emit("update:visible", true);
 }
-watch((): any => props.visible, (visible: any): any => {
+watch(() => props.visible, (visible) => {
     if (!visible) {
         if (editorView) {
             editorView.destroy();
@@ -138,13 +138,13 @@ watch((): any => props.visible, (visible: any): any => {
     }
     ensureEditor();
 }, { immediate: true });
-watch((): any => props.modelValue, (value: any): any => {
+watch(() => props.modelValue, (value) => {
     syncEditorContent(value);
 });
-watch((): any => props.language, (): any => {
+watch(() => props.language, () => {
     recreateEditor();
 });
-onBeforeUnmount((): any => {
+onBeforeUnmount(() => {
     if (editorView) {
         editorView.destroy();
         editorView = null;

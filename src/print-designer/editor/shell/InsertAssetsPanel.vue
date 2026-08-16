@@ -72,34 +72,34 @@ const props = defineProps({
         type: String,
         default: "",
     },
-}) as any;
-const emit = defineEmits(["bind", "runtime-data"]) as any;
-const documentStore = useEditorDocumentStore() as any;
-const dragStore = useEditorDragStore() as any;
-const historyStore = useEditorHistoryStore() as any;
-const selectionStore = useEditorSelectionStore() as any;
-const shellStore = useEditorShellStore() as any;
-const viewportStore = useEditorViewportStore() as any;
-const previewStore = useEditorPreviewStore() as any;
-const { palette, pages, layers, variables, objectsById, pageWidthMm, pageHeightMm } = storeToRefs(documentStore) as any;
-const { selectedIds } = storeToRefs(selectionStore) as any;
-const { runtimeData } = storeToRefs(previewStore) as any;
-const { allowOverflowDrag } = storeToRefs(viewportStore) as any;
-const resolvedPanelKey = computed((): any => {
+});
+const emit = defineEmits(["bind", "runtime-data"]);
+const documentStore = useEditorDocumentStore();
+const dragStore = useEditorDragStore();
+const historyStore = useEditorHistoryStore();
+const selectionStore = useEditorSelectionStore();
+const shellStore = useEditorShellStore();
+const viewportStore = useEditorViewportStore();
+const previewStore = useEditorPreviewStore();
+const { palette, pages, layers, variables, objectsById, pageWidthMm, pageHeightMm } = storeToRefs(documentStore);
+const { selectedIds } = storeToRefs(selectionStore);
+const { runtimeData } = storeToRefs(previewStore);
+const { allowOverflowDrag } = storeToRefs(viewportStore);
+const resolvedPanelKey = computed(() => {
     if (props.panelKey === "insert") {
         return "template";
     }
     return props.panelKey || "pages";
-}) as any;
-const currentPageSize = computed((): any => ({ widthMm: pageWidthMm.value, heightMm: pageHeightMm.value })) as any;
-function runCommand(command: any): any {
+});
+const currentPageSize = computed(() => ({ widthMm: pageWidthMm.value, heightMm: pageHeightMm.value }));
+function runCommand(command) {
     if (!command) {
         return false;
     }
     executeEditorCommand(historyStore, command);
     return true;
 }
-function onPaletteDragStart(payload: any): any {
+function onPaletteDragStart(payload) {
     const [item, event] = Array.isArray(payload) ? payload : [payload];
     if (!item || !event) {
         return;
@@ -110,14 +110,14 @@ function onPaletteDragStart(payload: any): any {
     }
     writePaletteDragPayload(event, item);
 }
-function onPaletteDragEnd(): any {
+function onPaletteDragEnd() {
     dragStore.clearPaletteDrag();
 }
-function onPaletteInsert(item: any): any {
+function onPaletteInsert(item) {
     dragStore.requestPaletteInsert(item);
     shellStore.openRightDock("properties");
 }
-function onPageSelect(page: any): any {
+function onPageSelect(page) {
     if (!page?.id) {
         return;
     }
@@ -129,34 +129,34 @@ function onPageSelect(page: any): any {
     selectionStore.focusedPageId = page.id;
     selectionStore.hoverObjectId = null;
 }
-function syncPageFocus(): any {
+function syncPageFocus() {
     selectionStore.clearSelection();
     selectionStore.focusedPageId = documentStore.currentPage?.id || "page-1";
     selectionStore.hoverObjectId = null;
 }
-function onCreatePage(): any {
+function onCreatePage() {
     if (runCommand(createAddPageCommand(documentStore, { afterPageId: documentStore.currentPage?.id }))) {
         syncPageFocus();
     }
 }
-function onDuplicatePage(page: any): any {
+function onDuplicatePage(page) {
     if (runCommand(createDuplicatePageCommand(documentStore, page?.id))) {
         syncPageFocus();
     }
 }
-function onRemovePage(page: any): any {
+function onRemovePage(page) {
     if (runCommand(createRemovePageCommand(documentStore, page?.id))) {
         syncPageFocus();
     }
 }
-function onRenamePage({ page, title }: any): any {
+function onRenamePage({ page, title }) {
     runCommand(createRenamePageCommand(documentStore, page?.id, title));
 }
-function onMovePage({ page, direction }: any): any {
+function onMovePage({ page, direction }) {
     runCommand(createMovePageCommand(documentStore, page?.id, direction));
 }
-function onLayerSelect(layerId: any): any {
-    const group = documentStore.currentPage?.groups?.find((candidate: any): any => candidate.elementIds?.includes(layerId));
+function onLayerSelect(layerId) {
+    const group = documentStore.currentPage?.groups?.find((candidate) => candidate.elementIds?.includes(layerId));
     if (group) {
         selectionStore.selectGroup(group);
     }
@@ -166,41 +166,41 @@ function onLayerSelect(layerId: any): any {
     selectionStore.focusedPageId = documentStore.currentPage?.id || "page-1";
     selectionStore.hoverObjectId = null;
 }
-function onToggleLayerVisible(layer: any): any {
+function onToggleLayerVisible(layer) {
     if (!layer?.id) {
         return;
     }
     runCommand(createUpdateObjectPropsCommand(documentStore, layer.id, { visible: !layer.visible }));
     selectionStore.select(layer.id);
 }
-function onToggleLayerLock(layer: any): any {
+function onToggleLayerLock(layer) {
     if (!layer?.id) {
         return;
     }
     runCommand(createUpdateObjectPropsCommand(documentStore, layer.id, { locked: !layer.locked }));
     selectionStore.select(layer.id);
 }
-function onMoveLayer({ layer, action }: any): any {
+function onMoveLayer({ layer, action }) {
     if (runCommand(createReorderObjectCommand(documentStore, layer?.id, action))) {
         selectionStore.select(layer.id);
     }
 }
-function onDuplicateLayer(layer: any): any {
+function onDuplicateLayer(layer) {
     const object = objectsById.value[layer?.id];
     if (!object || object.locked) {
         return;
     }
     const copies = createDuplicateObjects([object], currentPageSize.value, { allowOverflow: allowOverflowDrag.value });
     if (runCommand(createDuplicateCommand(documentStore, copies))) {
-        selectionStore.select(copies.map((copy: any): any => copy.id));
+        selectionStore.select(copies.map((copy) => copy.id));
     }
 }
-function onRemoveLayer(layer: any): any {
+function onRemoveLayer(layer) {
     if (runCommand(createRemoveObjectsCommand(documentStore, [layer?.id]))) {
         selectionStore.clearSelection();
     }
 }
-onBeforeUnmount((): any => {
+onBeforeUnmount(() => {
     dragStore.clearPaletteDrag();
 });
 </script>

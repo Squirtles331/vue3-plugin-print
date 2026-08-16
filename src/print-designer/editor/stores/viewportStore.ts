@@ -1,20 +1,27 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { createViewStateModel } from "../documentModel.js";
-const MIN_ZOOM = 0.2 as any;
-const MAX_ZOOM = 4 as any;
-const ZOOM_STEP = 0.1 as any;
-function clampZoom(value: any): any {
+const MIN_ZOOM = 0.2;
+const MAX_ZOOM = 4;
+const ZOOM_STEP = 0.1;
+type GuideOrientation = "horizontal" | "vertical";
+type ZoomAnchor = { mode: "center" | "pointer"; clientX: number; clientY: number; token: number };
+type ZoomAnchorInput = Partial<Omit<ZoomAnchor, "token">>;
+type GuideRef = { orientation: GuideOrientation; position: number };
+type GuideDraft = GuideRef & { displayPosition: number; visible: boolean; mode: "create" | "edit" };
+type GuideDrag = { orientation: GuideOrientation; sourcePosition: number | null; mode: "create" | "edit" };
+type CoordinateReadout = { source: "idle" | "pointer" | "guide"; x: number | null; y: number | null; insidePage: boolean; guideOrientation: GuideOrientation | null; guidePosition: number | null };
+function clampZoom(value: number): number {
     return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, +value.toFixed(2)));
 }
-function normalizeGuidePosition(position: any): any {
+function normalizeGuidePosition(position: number): number {
     return +position.toFixed(2);
 }
-function normalizeCoordinateValue(value: any): any {
+function normalizeCoordinateValue(value: number): number | null {
     return Number.isFinite(value) ? +value.toFixed(2) : null;
 }
-function createGuideRef(orientation: any, position: any): any {
-    if (!orientation || !Number.isFinite(position)) {
+function createGuideRef(orientation: GuideOrientation | undefined, position: number | null): GuideRef | null {
+    if (!orientation || position === null || !Number.isFinite(position)) {
         return null;
     }
     return {
@@ -22,40 +29,40 @@ function createGuideRef(orientation: any, position: any): any {
         position: normalizeGuidePosition(position),
     };
 }
-export const useEditorViewportStore = defineStore("printDesignerViewport", (): any => {
-    const zoom = ref(0.9) as any;
-    const zoomAnchor = ref({
+export const useEditorViewportStore = defineStore("printDesignerViewport", () => {
+    const zoom = ref(0.9);
+    const zoomAnchor = ref<ZoomAnchor>({
         mode: "center",
         clientX: 0,
         clientY: 0,
         token: 0,
-    }) as any;
-    const scrollLeft = ref(0) as any;
-    const scrollTop = ref(0) as any;
-    const viewportWidth = ref(0) as any;
-    const viewportHeight = ref(0) as any;
-    const guidesVisible = ref(true) as any;
-    const gridVisible = ref(true) as any;
-    const safeAreaVisible = ref(false) as any;
-    const snapEnabled = ref(true) as any;
-    const pageOutlineVisible = ref(true) as any;
-    const allowOverflowDrag = ref(false) as any;
-    const textQuickToolbarVisible = ref(false) as any;
-    const horizontalGuides = ref([]) as any;
-    const verticalGuides = ref([]) as any;
-    const hoveredGuide = ref(null) as any;
-    const activeGuide = ref(null) as any;
-    const draggingGuide = ref(null) as any;
-    const activeGuideDraft = ref(null) as any;
-    const coordinateReadout = ref({
+    });
+    const scrollLeft = ref(0);
+    const scrollTop = ref(0);
+    const viewportWidth = ref(0);
+    const viewportHeight = ref(0);
+    const guidesVisible = ref(true);
+    const gridVisible = ref(true);
+    const safeAreaVisible = ref(false);
+    const snapEnabled = ref(true);
+    const pageOutlineVisible = ref(true);
+    const allowOverflowDrag = ref(false);
+    const textQuickToolbarVisible = ref(false);
+    const horizontalGuides = ref<number[]>([]);
+    const verticalGuides = ref<number[]>([]);
+    const hoveredGuide = ref<GuideRef | null>(null);
+    const activeGuide = ref<GuideRef | null>(null);
+    const draggingGuide = ref<GuideDrag | null>(null);
+    const activeGuideDraft = ref<GuideDraft | null>(null);
+    const coordinateReadout = ref<CoordinateReadout>({
         source: "idle",
         x: null,
         y: null,
         insidePage: false,
         guideOrientation: null,
         guidePosition: null,
-    }) as any;
-    const viewStateModel = computed((): any => createViewStateModel({
+    });
+    const viewStateModel = computed(() => createViewStateModel({
         zoom: zoom.value,
         scrollLeft: scrollLeft.value,
         scrollTop: scrollTop.value,
@@ -70,62 +77,62 @@ export const useEditorViewportStore = defineStore("printDesignerViewport", (): a
         textQuickToolbarVisible: textQuickToolbarVisible.value,
         horizontalGuides: horizontalGuides.value,
         verticalGuides: verticalGuides.value,
-    })) as any;
-    function updateZoomAnchor(anchor: any = {}): any {
+    }));
+    function updateZoomAnchor(anchor: ZoomAnchorInput = {}) {
         zoomAnchor.value = {
-            mode: anchor.mode || "center",
-            clientX: anchor.clientX || 0,
-            clientY: anchor.clientY || 0,
+            mode: anchor.mode === "pointer" ? "pointer" : "center",
+            clientX: anchor.clientX ?? 0,
+            clientY: anchor.clientY ?? 0,
             token: zoomAnchor.value.token + 1,
         };
     }
-    function setZoom(nextZoom: any, anchor: any): any {
+    function setZoom(nextZoom: number, anchor?: ZoomAnchorInput) {
         updateZoomAnchor(anchor);
         zoom.value = clampZoom(nextZoom);
     }
-    function zoomIn(anchor: any): any {
+    function zoomIn(anchor?: ZoomAnchorInput) {
         setZoom(zoom.value + ZOOM_STEP, anchor);
     }
-    function zoomOut(anchor: any): any {
+    function zoomOut(anchor?: ZoomAnchorInput) {
         setZoom(zoom.value - ZOOM_STEP, anchor);
     }
-    function resetZoom(anchor: any): any {
+    function resetZoom(anchor?: ZoomAnchorInput) {
         setZoom(1, anchor);
     }
-    function setScroll(left: any, top: any): any {
+    function setScroll(left: number, top: number) {
         scrollLeft.value = left;
         scrollTop.value = top;
     }
-    function setViewportSize(width: any, height: any): any {
+    function setViewportSize(width: number, height: number) {
         viewportWidth.value = Math.max(0, Math.round(width || 0));
         viewportHeight.value = Math.max(0, Math.round(height || 0));
     }
-    function toggleGuides(): any {
+    function toggleGuides() {
         guidesVisible.value = !guidesVisible.value;
     }
-    function toggleGrid(): any {
+    function toggleGrid() {
         gridVisible.value = !gridVisible.value;
     }
-    function toggleSnap(): any {
+    function toggleSnap() {
         snapEnabled.value = !snapEnabled.value;
     }
-    function toggleSafeArea(): any {
+    function toggleSafeArea() {
         safeAreaVisible.value = !safeAreaVisible.value;
     }
-    function togglePageOutline(): any {
+    function togglePageOutline() {
         pageOutlineVisible.value = !pageOutlineVisible.value;
     }
-    function toggleAllowOverflowDrag(): any {
+    function toggleAllowOverflowDrag() {
         allowOverflowDrag.value = !allowOverflowDrag.value;
     }
-    function toggleTextQuickToolbar(): any {
+    function toggleTextQuickToolbar() {
         textQuickToolbarVisible.value = !textQuickToolbarVisible.value;
     }
-    function startGuideDraft(orientation: any): any {
+    function startGuideDraft(orientation: GuideOrientation) {
         startGuideInteraction(orientation, null);
     }
-    function startGuideInteraction(orientation: any, sourcePosition: any = null): any {
-        const guideRef = createGuideRef(orientation, sourcePosition) as any;
+    function startGuideInteraction(orientation: GuideOrientation, sourcePosition: number | null = null) {
+        const guideRef = createGuideRef(orientation, sourcePosition);
         draggingGuide.value = {
             orientation,
             sourcePosition: guideRef?.position ?? null,
@@ -140,7 +147,7 @@ export const useEditorViewportStore = defineStore("printDesignerViewport", (): a
             mode: guideRef ? "edit" : "create",
         };
     }
-    function updateGuideDraft(position: any, visible: any, displayPosition: any = position): any {
+    function updateGuideDraft(position: number, visible: boolean, displayPosition = position) {
         if (!activeGuideDraft.value) {
             return;
         }
@@ -154,52 +161,52 @@ export const useEditorViewportStore = defineStore("printDesignerViewport", (): a
             ? createGuideRef(activeGuideDraft.value.orientation, activeGuideDraft.value.position)
             : null;
     }
-    function finishGuideInteraction(position: any, visible: any = true): any {
+    function finishGuideInteraction(position: number, visible = true) {
         activeGuide.value =
             visible && Number.isFinite(position)
                 ? createGuideRef(activeGuideDraft.value?.orientation || draggingGuide.value?.orientation, position)
                 : null;
         clearGuideDraft();
     }
-    function clearGuideDraft(): any {
+    function clearGuideDraft() {
         activeGuideDraft.value = null;
         draggingGuide.value = null;
     }
-    function setHoveredGuide(orientation: any, position: any): any {
+    function setHoveredGuide(orientation: GuideOrientation, position: number) {
         hoveredGuide.value = createGuideRef(orientation, position);
     }
-    function clearHoveredGuide(): any {
+    function clearHoveredGuide() {
         hoveredGuide.value = null;
     }
-    function setActiveGuide(orientation: any, position: any): any {
+    function setActiveGuide(orientation: GuideOrientation, position: number) {
         activeGuide.value = createGuideRef(orientation, position);
     }
-    function clearActiveGuide(): any {
+    function clearActiveGuide() {
         activeGuide.value = null;
     }
-    function addGuide(orientation: any, position: any): any {
-        const target = orientation === "vertical" ? verticalGuides : horizontalGuides as any;
-        const normalized = normalizeGuidePosition(position) as any;
+    function addGuide(orientation: GuideOrientation, position: number) {
+        const target = orientation === "vertical" ? verticalGuides : horizontalGuides;
+        const normalized = normalizeGuidePosition(position);
         if (target.value.includes(normalized)) {
             return;
         }
-        target.value = [...target.value, normalized].sort((a: any, b: any): any => a - b);
+        target.value = [...target.value, normalized].sort((a, b) => a - b);
     }
-    function removeGuide(orientation: any, position: any): any {
-        const target = orientation === "vertical" ? verticalGuides : horizontalGuides as any;
-        const normalized = normalizeGuidePosition(position) as any;
-        target.value = target.value.filter((item: any): any => item !== normalized);
+    function removeGuide(orientation: GuideOrientation, position: number) {
+        const target = orientation === "vertical" ? verticalGuides : horizontalGuides;
+        const normalized = normalizeGuidePosition(position);
+        target.value = target.value.filter((item) => item !== normalized);
     }
-    function moveGuide(orientation: any, fromPosition: any, toPosition: any): any {
-        const normalizedFrom = normalizeGuidePosition(fromPosition) as any;
-        const normalizedTo = normalizeGuidePosition(toPosition) as any;
+    function moveGuide(orientation: GuideOrientation, fromPosition: number, toPosition: number) {
+        const normalizedFrom = normalizeGuidePosition(fromPosition);
+        const normalizedTo = normalizeGuidePosition(toPosition);
         if (normalizedFrom === normalizedTo) {
             return;
         }
         removeGuide(orientation, normalizedFrom);
         addGuide(orientation, normalizedTo);
     }
-    function setPointerCoordinate(x: any, y: any, insidePage: any): any {
+    function setPointerCoordinate(x: number, y: number, insidePage: boolean) {
         coordinateReadout.value = {
             source: "pointer",
             x: normalizeCoordinateValue(x),
@@ -209,8 +216,8 @@ export const useEditorViewportStore = defineStore("printDesignerViewport", (): a
             guidePosition: null,
         };
     }
-    function setGuideCoordinate(orientation: any, position: any, visible: any): any {
-        const normalizedPosition = normalizeCoordinateValue(position) as any;
+    function setGuideCoordinate(orientation: GuideOrientation, position: number, visible: boolean) {
+        const normalizedPosition = normalizeCoordinateValue(position);
         coordinateReadout.value = {
             source: "guide",
             x: orientation === "vertical" && visible ? normalizedPosition : null,
@@ -220,7 +227,7 @@ export const useEditorViewportStore = defineStore("printDesignerViewport", (): a
             guidePosition: visible ? normalizedPosition : null,
         };
     }
-    function clearCoordinateReadout(): any {
+    function clearCoordinateReadout() {
         coordinateReadout.value = {
             source: "idle",
             x: null,
@@ -284,4 +291,4 @@ export const useEditorViewportStore = defineStore("printDesignerViewport", (): a
         setGuideCoordinate,
         clearCoordinateReadout,
     };
-}) as any;
+});

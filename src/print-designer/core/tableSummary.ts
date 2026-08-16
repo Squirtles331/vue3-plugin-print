@@ -1,30 +1,30 @@
-function numberValue(value: any): any {
-    const numeric = Number(value) as any;
+function numberValue(value) {
+    const numeric = Number(value);
     return Number.isFinite(numeric) ? numeric : 0;
 }
-export function calculateTableSummary(rows: any = []): any {
-    return (Array.isArray(rows) ? rows : []).reduce((summary: any, row: any): any => ({
+export function calculateTableSummary(rows = []) {
+    return (Array.isArray(rows) ? rows : []).reduce((summary, row) => ({
         totalQty: summary.totalQty + numberValue(row?.qty),
         totalAmount: summary.totalAmount + numberValue(row?.total),
     }), { totalQty: 0, totalAmount: 0 });
 }
-export function digitUppercase(value: any): any {
-    const fraction: any = ["角", "分"] as any;
-    const digit: any = ["零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖"] as any;
-    const unit: any = [
+export function digitUppercase(value) {
+    const fraction = ["角", "分"];
+    const digit = ["零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖"];
+    const unit = [
         ["元", "万", "亿"],
         ["", "拾", "佰", "仟"],
-    ] as any;
-    let amount = Math.abs(numberValue(value)) as any;
-    let result = "" as any;
-    for (let index = 0 as any; index < fraction.length; index += 1) {
+    ];
+    let amount = Math.abs(numberValue(value));
+    let result = "";
+    for (let index = 0; index < fraction.length; index += 1) {
         result += (digit[Math.floor(amount * 10 * 10 ** index) % 10] + fraction[index]).replace(/零./, "");
     }
     result = result || "整";
     amount = Math.floor(amount);
-    for (let unitIndex = 0 as any; unitIndex < unit[0].length && amount > 0; unitIndex += 1) {
-        let part = "" as any;
-        for (let digitIndex = 0 as any; digitIndex < unit[1].length && amount > 0; digitIndex += 1) {
+    for (let unitIndex = 0; unitIndex < unit[0].length && amount > 0; unitIndex += 1) {
+        let part = "";
+        for (let digitIndex = 0; digitIndex < unit[1].length && amount > 0; digitIndex += 1) {
             part = digit[amount % 10] + unit[1][digitIndex] + part;
             amount = Math.floor(amount / 10);
         }
@@ -32,7 +32,7 @@ export function digitUppercase(value: any): any {
     }
     return result.replace(/(零.)*零元/, "元").replace(/(零.)+/g, "零").replace(/^整$/, "零元整");
 }
-function authoredCellValue(value: any): any {
+function authoredCellValue(value) {
     if (value && typeof value === "object" && !Array.isArray(value)) {
         if (value.result != null && value.result !== "") {
             return String(value.result);
@@ -46,13 +46,13 @@ function authoredCellValue(value: any): any {
     }
     return value == null ? "" : String(value);
 }
-export function formatTableSummaryCell(value: any, { pageRows = [], totalRows = pageRows }: any = {}): any {
-    const source = authoredCellValue(value) as any;
+export function formatTableSummaryCell(value, { pageRows = [], totalRows = pageRows } = {}) {
+    const source = authoredCellValue(value);
     if (!source.includes("{#")) {
         return source;
     }
-    const page = calculateTableSummary(pageRows) as any;
-    const total = calculateTableSummary(totalRows) as any;
+    const page = calculateTableSummary(pageRows);
+    const total = calculateTableSummary(totalRows);
     return source
         .replaceAll("{#pageQty}", String(page.totalQty))
         .replaceAll("{#totalQty}", String(total.totalQty))

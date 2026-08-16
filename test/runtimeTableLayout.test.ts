@@ -5,7 +5,7 @@ import { test } from "vitest";
 import { calculateTableSummary, formatTableSummaryCell } from "../src/print-designer/core/tableSummary.js";
 import RuntimeDocument from "../src/print-designer/runtime/RuntimeDocument.vue";
 import { createBlankTemplateDocument } from "../src/print-designer/template/templateDocument.js";
-function createTableDocument(props: any): any {
+function createTableDocument(props) {
     return createBlankTemplateDocument({
         pages: [{
                 id: "page-1",
@@ -23,20 +23,20 @@ function createTableDocument(props: any): any {
             }],
     });
 }
-test("summary tokens format page and document totals from shared table helpers", (): any => {
-    const pageRows = [{ qty: "1", total: "10" }, { qty: "2", total: "20" }] as any;
-    const totalRows = [...pageRows, { qty: "3", total: "30" }] as any;
+test("summary tokens format page and document totals from shared table helpers", () => {
+    const pageRows = [{ qty: "1", total: "10" }, { qty: "2", total: "20" }];
+    const totalRows = [...pageRows, { qty: "3", total: "30" }];
     assert.deepEqual(calculateTableSummary(totalRows), { totalQty: 6, totalAmount: 60 });
     assert.equal(formatTableSummaryCell("{#pageQty}/{#totalQty}/{#pageSum}/{#totalSum}", { pageRows, totalRows }), "3/6/30.00/60.00");
     assert.doesNotMatch(formatTableSummaryCell("{#totalCap}", { pageRows, totalRows }), /\{#/);
 });
-test("runtime table summaries use fragment rows for page totals and all rows for grand totals", (): any => {
+test("runtime table summaries use fragment rows for page totals and all rows for grand totals", () => {
     const sampleData = [
         { name: "A", qty: "1", total: "10" },
         { name: "B", qty: "2", total: "20" },
         { name: "C", qty: "3", total: "30" },
-    ] as any;
-    const footerData = [{ name: "Summary", qty: "{#pageQty}", total: "{#totalSum}" }] as any;
+    ];
+    const footerData = [{ name: "Summary", qty: "{#pageQty}", total: "{#totalSum}" }];
     const document = createTableDocument({
         columns: [{ key: "name" }, { key: "qty" }, { key: "total" }],
         sampleData,
@@ -46,18 +46,18 @@ test("runtime table summaries use fragment rows for page totals and all rows for
         rowHeight: 8,
         footerHeight: 8,
         autoPaginate: true,
-    }) as any;
-    const wrapper = mount(RuntimeDocument, { props: { document, runtimeData: {}, mode: "preview" } }) as any;
-    const pages = wrapper.findAll(".runtime-page") as any;
+    });
+    const wrapper = mount(RuntimeDocument, { props: { document, runtimeData: {}, mode: "preview" } });
+    const pages = wrapper.findAll(".runtime-page");
     assert.equal(pages.length, 2);
-    assert.deepEqual(pages[0].findAll("tfoot td").map((cell: any): any => cell.text()), ["Summary", "3", "60.00"]);
-    assert.deepEqual(pages[1].findAll("tfoot td").map((cell: any): any => cell.text()), ["Summary", "3", "60.00"]);
+    assert.deepEqual(pages[0].findAll("tfoot td").map((cell) => cell.text()), ["Summary", "3", "60.00"]);
+    assert.deepEqual(pages[1].findAll("tfoot td").map((cell) => cell.text()), ["Summary", "3", "60.00"]);
     wrapper.unmount();
 });
-test("runtime table uses a single preview placeholder row and omits it when printing", (): any => {
-    const document = createTableDocument({ columns: [{ key: "name" }], sampleData: [], footerData: [], showFooter: false, autoPaginate: true }) as any;
-    const preview = mount(RuntimeDocument, { props: { document, runtimeData: {}, mode: "preview" } }) as any;
-    const printed = mount(RuntimeDocument, { props: { document, runtimeData: {}, mode: "print" } }) as any;
+test("runtime table uses a single preview placeholder row and omits it when printing", () => {
+    const document = createTableDocument({ columns: [{ key: "name" }], sampleData: [], footerData: [], showFooter: false, autoPaginate: true });
+    const preview = mount(RuntimeDocument, { props: { document, runtimeData: {}, mode: "preview" } });
+    const printed = mount(RuntimeDocument, { props: { document, runtimeData: {}, mode: "print" } });
     assert.equal(preview.findAll(".runtime-table tbody tr").length, 1);
     assert.equal(preview.find(".runtime-table__empty").text(), "No data");
     assert.equal(preview.find(".runtime-element--table").element.style.height, "auto");
@@ -65,7 +65,7 @@ test("runtime table uses a single preview placeholder row and omits it when prin
     preview.unmount();
     printed.unmount();
 });
-test("runtime pagination keeps a merged row group in one table fragment", (): any => {
+test("runtime pagination keeps a merged row group in one table fragment", () => {
     const document = createTableDocument({
         columns: [{ key: "name" }, { key: "amount" }],
         sampleData: [
@@ -78,13 +78,13 @@ test("runtime pagination keeps a merged row group in one table fragment", (): an
         headerHeight: 5,
         rowHeight: 8,
         autoPaginate: true,
-    }) as any;
+    });
     document.pages[0].elements[0].height = 20;
-    const wrapper = mount(RuntimeDocument, { props: { document, runtimeData: {}, mode: "preview" } }) as any;
-    const pages = wrapper.findAll(".runtime-page") as any;
+    const wrapper = mount(RuntimeDocument, { props: { document, runtimeData: {}, mode: "preview" } });
+    const pages = wrapper.findAll(".runtime-page");
     assert.equal(pages.length, 2);
     assert.equal(pages[0].findAll("tbody tr").length, 2);
     assert.equal(pages[0].find("tbody td").attributes("rowspan"), "2");
-    assert.deepEqual(pages[1].findAll("tbody td").map((cell: any): any => cell.text()), ["Last", "3"]);
+    assert.deepEqual(pages[1].findAll("tbody td").map((cell) => cell.text()), ["Last", "3"]);
     wrapper.unmount();
 });

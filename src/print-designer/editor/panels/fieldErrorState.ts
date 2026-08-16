@@ -1,10 +1,10 @@
-export function fieldErrorKey(field: any): any {
+export function fieldErrorKey(field) {
     if (!field?.source || !field?.key) {
         return "";
     }
     return `${field.source}:${field.key}`;
 }
-export function getFieldError(errors: any, field: any): any {
-    const key = fieldErrorKey(field) as any;
+export function getFieldError(errors, field) {
+    const key = fieldErrorKey(field);
     return key ? errors?.[key] || "" : "";
 }

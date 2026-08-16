@@ -11,9 +11,9 @@ const props = defineProps({
         type: Object,
         required: true,
     },
-}) as any;
-const value = computed((): any => pageNumberValue(props.object)) as any;
-const contentStyle = computed((): any => textStyle(props.object)) as any;
+});
+const value = computed(() => pageNumberValue(props.object));
+const contentStyle = computed(() => textStyle(props.object));
 </script>
 
 <style scoped lang="scss">

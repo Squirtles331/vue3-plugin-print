@@ -23,8 +23,8 @@ defineProps({
         required: true,
     },
     tabs: {
-        type: Array as any,
-        default: (): any => [],
+        type: Array,
+        default: () => [],
     },
 });
 defineEmits(["update:modelValue"]);

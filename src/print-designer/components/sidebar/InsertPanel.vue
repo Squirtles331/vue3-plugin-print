@@ -41,14 +41,14 @@
 import PdIcon from "../../ui/primitives/PdIcon.vue";
 const props = defineProps({
     palette: {
-        type: Array as any,
-        default: (): any => [],
+        type: Array,
+        default: () => [],
     },
     searchQuery: {
         type: String,
         default: "",
     },
-}) as any;
+});
 defineEmits(["insert", "palette-dragstart", "palette-dragend"]);
 const GROUP_DEFINITIONS = [
     {
@@ -67,31 +67,31 @@ const GROUP_DEFINITIONS = [
         label: "扩展",
         types: ["multiLabel"],
     },
-] as any;
-const normalizedQuery = computed((): any => String(props.searchQuery || "").trim().toLowerCase()) as any;
-const groupedPalette = computed((): any => {
-    return GROUP_DEFINITIONS.map((group: any): any => ({
+];
+const normalizedQuery = computed(() => String(props.searchQuery || "").trim().toLowerCase());
+const groupedPalette = computed(() => {
+    return GROUP_DEFINITIONS.map((group) => ({
         label: group.label,
         items: group.types
-            .map((type: any): any => props.palette.find((item: any): any => item.type === type))
+            .map((type) => props.palette.find((item) => item.type === type))
             .filter(Boolean),
-    })).filter((group: any): any => group.items.length > 0);
-}) as any;
-const filteredGroups = computed((): any => {
+    })).filter((group) => group.items.length > 0);
+});
+const filteredGroups = computed(() => {
     const query = normalizedQuery.value;
     if (!query) {
         return groupedPalette.value;
     }
     return groupedPalette.value
-        .map((group: any): any => ({
+        .map((group) => ({
         ...group,
-        items: group.items.filter((item: any): any => {
+        items: group.items.filter((item) => {
             const haystack = `${item.label || ""} ${item.type || ""}`.toLowerCase();
             return haystack.includes(query);
         }),
     }))
-        .filter((group: any): any => group.items.length > 0);
-}) as any;
+        .filter((group) => group.items.length > 0);
+});
 </script>
 
 <style scoped lang="scss">

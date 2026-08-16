@@ -7,13 +7,21 @@ import { createTemplateModel } from "../documentModel.js";
 import { mmToRoundedCssPx } from "../measurement.js";
 import { CUSTOM_PAPER_SIZE_KEY, getPaperPreset } from "../paperSizePresets";
 import { createBlankTemplateDocument, validateTemplateDocument } from "../../template/templateDocument.js";
-const DEFAULT_PAPER_KEY = "A4" as any;
-const DEFAULT_PAPER_PRESET = getPaperPreset(DEFAULT_PAPER_KEY) as any;
-function createInitialObjects(): any {
+import type { EditorPageSnapshot, EditorPageState, TemplateElement, TemplateGroup, UnknownRecord } from "../../types.js";
+const DEFAULT_PAPER_KEY = "A4";
+const DEFAULT_PAPER_PRESET = getPaperPreset(DEFAULT_PAPER_KEY);
+type Layer = Pick<TemplateElement, "id" | "name" | "type" | "locked" | "visible" | "printable" | "zIndex">;
+type PageObjectMap = Record<string, string[]>;
+type ObjectMap = Record<string, TemplateElement>;
+type ObjectPatch = Partial<TemplateElement>;
+type ObjectPatchEntry = { id: string; patch: ObjectPatch };
+type ReorderAction = "bringForward" | "sendBackward" | "bringToFront" | "sendToBack";
+type MarginPatch = Partial<{ top: unknown; right: unknown; bottom: unknown; left: unknown }>;
+function createInitialObjects(): ObjectMap {
     return {};
 }
-function updateCurrentPageMeta(pages: any, size: any, orientation: any): any {
-    return pages.map((page: any): any => {
+function updateCurrentPageMeta(pages: readonly EditorPageState[], size: string, orientation: string): EditorPageState[] {
+    return pages.map((page) => {
         if (!page.isCurrent) {
             return page;
         }
@@ -24,51 +32,54 @@ function updateCurrentPageMeta(pages: any, size: any, orientation: any): any {
         };
     });
 }
-function syncCurrentPageFlags(pages: any, pageId: any): any {
-    const nextPageId = pages.some((page: any): any => page.id === pageId) ? pageId : pages[0]?.id || "page-1" as any;
+function syncCurrentPageFlags(pages: readonly EditorPageState[], pageId: string): { currentPageId: string; pages: EditorPageState[] } {
+    const nextPageId = pages.some((page) => page.id === pageId) ? pageId : pages[0]?.id || "page-1";
     return {
         currentPageId: nextPageId,
-        pages: pages.map((page: any): any => ({
+        pages: pages.map((page) => ({
             ...page,
             isCurrent: page.id === nextPageId,
         })),
     };
 }
-export const useEditorDocumentStore = defineStore("printDesignerDocument", (): any => {
-    const initialDocument = createBlankTemplateDocument() as any;
-    const templateId = ref(initialDocument.id) as any;
-    const documentName = ref(initialDocument.meta.name) as any;
-    const saveStatus = ref("未保存") as any;
-    const unit: any = ref("mm") as any;
-    const palette = shallowRef(paletteItems) as any;
-    const pages = ref([...pageCards]) as any;
-    const variables = ref([]) as any;
-    const objectsById = ref(createInitialObjects()) as any;
-    const pageObjectMap = ref(Object.fromEntries(pages.value.map((page: any): any => [page.id, []]))) as any;
-    const dirty = ref(false) as any;
-    const currentPaperPresetKey = ref(DEFAULT_PAPER_KEY) as any;
-    const currentPageId = ref(initialDocument.pages?.find((page: any): any => page.isCurrent)?.id || pageCards[0]?.id || "page-1") as any;
-    const pageWidthMm = ref(DEFAULT_PAPER_PRESET?.widthMm || 210) as any;
-    const pageHeightMm = ref(DEFAULT_PAPER_PRESET?.heightMm || 297) as any;
-    const marginTopMm = ref(8) as any;
-    const marginRightMm = ref(8) as any;
-    const marginBottomMm = ref(8) as any;
-    const marginLeftMm = ref(8) as any;
-    const pageBackground = ref("#ffffff") as any;
-    const pageCornerVisible = ref(true) as any;
-    const headerLineVisible = ref(false) as any;
-    const footerLineVisible = ref(false) as any;
-    const headerOffsetMm = ref(26.5) as any;
-    const footerOffsetMm = ref(26.5) as any;
-    const printMarksVisible = ref(false) as any;
-    const totalPages = computed((): any => pages.value.length) as any;
-    const currentPage = computed((): any => pages.value.find((page: any): any => page.id === currentPageId.value) || pages.value[0] || null) as any;
-    const currentPageGroups = computed((): any => Array.isArray(currentPage.value?.groups) ? currentPage.value.groups : []) as any;
-    const currentPageNumber = computed((): any => currentPage.value ? pages.value.findIndex((page: any): any => page.id === currentPage.value.id) + 1 : 1) as any;
-    const orderedObjectIds = computed((): any => pageObjectMap.value[currentPage.value?.id || currentPageId.value || "page-1"] || []) as any;
-    const layers = computed((): any => orderedObjectIds.value
-        .map((id: any): any => {
-        const object = objectsById.value[id] as any;
+export const useEditorDocumentStore = defineStore("printDesignerDocument", () => {
+    const initialDocument = createBlankTemplateDocument();
+    const templateId = ref(initialDocument.id);
+    const documentName = ref(initialDocument.meta.name);
+    const saveStatus = ref("未保存");
+    const unit = ref("mm");
+    const palette = shallowRef(paletteItems);
+    const pages = ref<EditorPageState[]>(pageCards.map((page) => ({ ...page, groups: [] })));
+    const variables = ref<string[]>([]);
+    const objectsById = ref<ObjectMap>(createInitialObjects());
+    const pageObjectMap = ref<PageObjectMap>(Object.fromEntries(pages.value.map((page) => [page.id, []])));
+    const dirty = ref(false);
+    const currentPaperPresetKey = ref(DEFAULT_PAPER_KEY);
+    const currentPageId = ref(initialDocument.pages[0]?.id || pageCards[0]?.id || "page-1");
+    const pageWidthMm = ref(DEFAULT_PAPER_PRESET?.widthMm || 210);
+    const pageHeightMm = ref(DEFAULT_PAPER_PRESET?.heightMm || 297);
+    const marginTopMm = ref(8);
+    const marginRightMm = ref(8);
+    const marginBottomMm = ref(8);
+    const marginLeftMm = ref(8);
+    const pageBackground = ref("#ffffff");
+    const pageCornerVisible = ref(true);
+    const headerLineVisible = ref(false);
+    const footerLineVisible = ref(false);
+    const headerOffsetMm = ref(26.5);
+    const footerOffsetMm = ref(26.5);
+    const printMarksVisible = ref(false);
+    const totalPages = computed(() => pages.value.length);
+    const currentPage = computed(() => pages.value.find((page) => page.id === currentPageId.value) || pages.value[0] || null);
+    const currentPageGroups = computed(() => Array.isArray(currentPage.value?.groups) ? currentPage.value.groups : []);
+    const currentPageNumber = computed(() => {
+        const page = currentPage.value;
+        return page ? pages.value.findIndex((item) => item.id === page.id) + 1 : 1;
+    });
+    const orderedObjectIds = computed(() => pageObjectMap.value[currentPage.value?.id ?? currentPageId.value] ?? []);
+    const layers = computed<Layer[]>(() => orderedObjectIds.value
+        .map((id) => {
+        const object = objectsById.value[id];
         if (!object) {
             return null;
         }
@@ -82,19 +93,19 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
             zIndex: Number.isFinite(Number(object.zIndex)) ? Number(object.zIndex) : 0,
         };
     })
-        .filter(Boolean)) as any;
-    const currentPaperPreset = computed((): any => getPaperPreset(currentPaperPresetKey.value)) as any;
-    const currentPaperLabel = computed((): any => {
+        .filter((layer): layer is Layer => layer !== null));
+    const currentPaperPreset = computed(() => getPaperPreset(currentPaperPresetKey.value));
+    const currentPaperLabel = computed(() => {
         if (currentPaperPresetKey.value === CUSTOM_PAPER_SIZE_KEY) {
             return "自定义尺寸";
         }
         return currentPaperPreset.value?.label || "页面";
-    }) as any;
-    const pageWidthPx = computed((): any => mmToRoundedCssPx(pageWidthMm.value)) as any;
-    const pageHeightPx = computed((): any => mmToRoundedCssPx(pageHeightMm.value)) as any;
-    const pageOrientation = computed((): any => (pageWidthMm.value > pageHeightMm.value ? "横向" : "纵向")) as any;
-    const currentPageTitle = computed((): any => currentPage.value?.title || "Page 1") as any;
-    const templateModel = computed((): any => createTemplateModel({
+    });
+    const pageWidthPx = computed(() => mmToRoundedCssPx(pageWidthMm.value));
+    const pageHeightPx = computed(() => mmToRoundedCssPx(pageHeightMm.value));
+    const pageOrientation = computed(() => (pageWidthMm.value > pageHeightMm.value ? "横向" : "纵向"));
+    const currentPageTitle = computed(() => currentPage.value?.title || "Page 1");
+    const templateModel = computed(() => createTemplateModel({
         documentName: documentName.value,
         unit: unit.value,
         currentPaperPresetKey: currentPaperPresetKey.value,
@@ -114,19 +125,19 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
         pages: pages.value,
         pageObjectMap: pageObjectMap.value,
         objectsById: objectsById.value,
-    })) as any;
-    function syncCurrentPageMeta(): any {
+    }));
+    function syncCurrentPageMeta() {
         pages.value = updateCurrentPageMeta(pages.value, currentPaperLabel.value, pageOrientation.value);
     }
-    function markDirty(nextStatus: any = "未保存"): any {
+    function markDirty(nextStatus = "未保存") {
         dirty.value = true;
         saveStatus.value = nextStatus;
     }
-    function markSaved(): any {
+    function markSaved() {
         dirty.value = false;
         saveStatus.value = "已保存";
     }
-    function capturePageState(): any {
+    function capturePageState() {
         return {
             pages: cloneDeep(pages.value),
             objectsById: cloneDeep(objectsById.value),
@@ -134,19 +145,19 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
             currentPageId: currentPageId.value,
         };
     }
-    function applyPageState(snapshot: any): any {
-        const nextPages = Array.isArray(snapshot?.pages) ? cloneDeep(snapshot.pages) : [] as any;
-        const nextObjectsById = snapshot?.objectsById && typeof snapshot.objectsById === "object" ? cloneDeep(snapshot.objectsById) : {} as any;
-        const nextPageObjectMap = snapshot?.pageObjectMap && typeof snapshot.pageObjectMap === "object" ? cloneDeep(snapshot.pageObjectMap) : {} as any;
-        const { currentPageId: resolvedCurrentPageId, pages: normalizedPages } = syncCurrentPageFlags(nextPages, snapshot?.currentPageId || currentPageId.value) as any;
+    function applyPageState(snapshot: EditorPageSnapshot) {
+        const nextPages = cloneDeep(snapshot.pages);
+        const nextObjectsById = cloneDeep(snapshot.objectsById);
+        const nextPageObjectMap = cloneDeep(snapshot.pageObjectMap);
+        const { currentPageId: resolvedCurrentPageId, pages: normalizedPages } = syncCurrentPageFlags(nextPages, snapshot.currentPageId || currentPageId.value);
         pages.value = normalizedPages;
         objectsById.value = nextObjectsById;
-        pageObjectMap.value = Object.fromEntries(normalizedPages.map((page: any): any => [page.id, [...(nextPageObjectMap[page.id] || [])]]));
+        pageObjectMap.value = Object.fromEntries(normalizedPages.map((page) => [page.id, [...(nextPageObjectMap[page.id] || [])]]));
         currentPageId.value = resolvedCurrentPageId;
         markDirty();
     }
-    function loadTemplateDocument(source: any, { markAsDirty = false }: any = {}): any {
-        const { document, issues } = validateTemplateDocument(source) as any;
+    function loadTemplateDocument(source: unknown, { markAsDirty = false }: { markAsDirty?: boolean } = {}) {
+        const { document, issues } = validateTemplateDocument(source);
         if (!document) {
             return { document: null, issues };
         }
@@ -167,18 +178,18 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
         headerOffsetMm.value = Number(document.pageSettings.headerLine?.offsetMm) || 26.5;
         footerOffsetMm.value = Number(document.pageSettings.footerLine?.offsetMm) || 26.5;
         printMarksVisible.value = document.pageSettings.printMarks?.visible === true;
-        const nextObjects = {} as any;
-        const nextPageObjectMap = {} as any;
-        pages.value = document.pages.map((page: any, index: any): any => {
-            const { elements = [], ...pageData } = page as any;
-            const pageId = pageData.id || `page-${index + 1}` as any;
-            nextPageObjectMap[pageId] = elements.map((element: any, elementIndex: any): any => {
+        const nextObjects: ObjectMap = {};
+        const nextPageObjectMap: PageObjectMap = {};
+        pages.value = document.pages.map((page, index) => {
+            const { elements = [], ...pageData } = page;
+            const pageId = pageData.id || `page-${index + 1}`;
+            nextPageObjectMap[pageId] = elements.map((element, elementIndex) => {
                 const object = {
                     ...element,
                     id: element.id || `${pageId}-element-${elementIndex + 1}`,
                     pageId,
                     zIndex: Number.isFinite(Number(element.zIndex)) ? Number(element.zIndex) : elementIndex,
-                } as any;
+                };
                 nextObjects[object.id] = object;
                 return object.id;
             });
@@ -188,7 +199,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
                 isCurrent: index === 0,
             };
         });
-        currentPageId.value = pages.value.find((page: any): any => page.isCurrent)?.id || pages.value[0]?.id || "page-1";
+        currentPageId.value = pages.value.find((page) => page.isCurrent)?.id || pages.value[0]?.id || "page-1";
         objectsById.value = nextObjects;
         pageObjectMap.value = nextPageObjectMap;
         variables.value = [];
@@ -200,37 +211,37 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
         }
         return { document, issues };
     }
-    function createNewTemplate(overrides: any = {}): any {
+    function createNewTemplate(overrides: UnknownRecord = {}) {
         return loadTemplateDocument(createBlankTemplateDocument(overrides), { markAsDirty: true });
     }
-    function setVariables(nextVariables: any = []): any {
+    function setVariables(nextVariables: unknown = []) {
         variables.value = [...new Set((Array.isArray(nextVariables) ? nextVariables : [])
-                .map((value: any): any => String(value || "").trim())
+                .map((value) => String(value || "").trim())
                 .filter(Boolean))];
     }
-    function addObject(object: any): any {
+    function addObject(object: TemplateElement) {
         objectsById.value = {
             ...objectsById.value,
             [object.id]: object,
         };
-        const pageId = object.pageId || currentPage.value?.id || "page-1" as any;
-        const objectIds = pageObjectMap.value[pageId] || [] as any;
+        const pageId = object.pageId || currentPage.value?.id || "page-1";
+        const objectIds = pageObjectMap.value[pageId] || [];
         pageObjectMap.value = {
             ...pageObjectMap.value,
             [pageId]: [...objectIds, object.id],
         };
         markDirty();
     }
-    function addObjects(objects: any = []): any {
-        const nextObjects = { ...objectsById.value } as any;
-        const nextPageObjectMap = Object.fromEntries(Object.entries(pageObjectMap.value).map(([pageId, ids]: any): any => [pageId, [...ids]])) as any;
-        let added = 0 as any;
-        objects.forEach((object: any): any => {
+    function addObjects(objects: readonly TemplateElement[] = []) {
+        const nextObjects = { ...objectsById.value };
+        const nextPageObjectMap: PageObjectMap = Object.fromEntries(Object.entries(pageObjectMap.value).map(([pageId, ids]) => [pageId, [...ids]]));
+        let added = 0;
+        objects.forEach((object) => {
             if (!object?.id || nextObjects[object.id]) {
                 return;
             }
-            const pageId = object.pageId || currentPage.value?.id || "page-1" as any;
-            const ids = nextPageObjectMap[pageId] || [] as any;
+            const pageId = object.pageId || currentPage.value?.id || "page-1";
+            const ids = nextPageObjectMap[pageId] || [];
             nextObjects[object.id] = {
                 ...object,
                 pageId,
@@ -247,49 +258,57 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
         markDirty();
         return true;
     }
-    function removeObject(objectId: any): any {
+    function removeObject(objectId: string) {
         if (objectsById.value[objectId]?.locked) {
             return false;
         }
-        const nextObjects = { ...objectsById.value } as any;
+        const nextObjects = { ...objectsById.value };
         delete nextObjects[objectId];
         objectsById.value = nextObjects;
-        pageObjectMap.value = Object.fromEntries(Object.entries(pageObjectMap.value).map(([pageId, ids]: any): any => [pageId, ids.filter((id: any): any => id !== objectId)]));
+        pageObjectMap.value = Object.fromEntries(Object.entries(pageObjectMap.value).map(([pageId, ids]) => [pageId, ids.filter((id) => id !== objectId)]));
         prunePageGroups([objectId]);
         markDirty();
         return true;
     }
-    function removeObjects(objectIds: any = []): any {
-        const removableIds = [...new Set(objectIds)].filter((id: any): any => objectsById.value[id] && !objectsById.value[id].locked) as any;
+    function removeObjects(objectIds: readonly string[] = []) {
+        const removableIds = [...new Set(objectIds)].filter((id) => objectsById.value[id] && !objectsById.value[id].locked);
         if (!removableIds.length) {
             return false;
         }
-        const removable = new Set(removableIds) as any;
-        const nextObjects = { ...objectsById.value } as any;
-        removableIds.forEach((id: any): any => delete nextObjects[id]);
+        const removable = new Set(removableIds);
+        const nextObjects = { ...objectsById.value };
+        removableIds.forEach((id) => delete nextObjects[id]);
         objectsById.value = nextObjects;
-        pageObjectMap.value = Object.fromEntries(Object.entries(pageObjectMap.value).map(([pageId, ids]: any): any => [pageId, ids.filter((id: any): any => !removable.has(id))]));
+        pageObjectMap.value = Object.fromEntries(Object.entries(pageObjectMap.value).map(([pageId, ids]) => [pageId, ids.filter((id) => !removable.has(id))]));
         prunePageGroups(removableIds);
         markDirty();
         return true;
     }
-    function reorderObject(objectId: any, action: any): any {
-        const object = objectsById.value[objectId] as any;
+    function reorderObject(objectId: string, action: ReorderAction) {
+        const object = objectsById.value[objectId];
         if (!object || object.locked) {
             return false;
         }
-        const pageId = object.pageId || currentPage.value?.id || "page-1" as any;
-        const objectIds = [...(pageObjectMap.value[pageId] || [])] as any;
-        const currentIndex = objectIds.indexOf(objectId) as any;
+        const pageId = object.pageId || currentPage.value?.id || "page-1";
+        const objectIds = [...(pageObjectMap.value[pageId] || [])];
+        const currentIndex = objectIds.indexOf(objectId);
         if (currentIndex === -1) {
             return false;
         }
-        const nextIds = [...objectIds] as any;
+        const nextIds = [...objectIds];
         if (action === "bringForward" && currentIndex < nextIds.length - 1) {
-            [nextIds[currentIndex], nextIds[currentIndex + 1]] = [nextIds[currentIndex + 1], nextIds[currentIndex]];
+            const nextId = nextIds[currentIndex + 1];
+            if (!nextId)
+                return false;
+            nextIds[currentIndex] = nextId;
+            nextIds[currentIndex + 1] = objectId;
         }
         else if (action === "sendBackward" && currentIndex > 0) {
-            [nextIds[currentIndex], nextIds[currentIndex - 1]] = [nextIds[currentIndex - 1], nextIds[currentIndex]];
+            const previousId = nextIds[currentIndex - 1];
+            if (!previousId)
+                return false;
+            nextIds[currentIndex] = previousId;
+            nextIds[currentIndex - 1] = objectId;
         }
         else if (action === "bringToFront" && currentIndex < nextIds.length - 1) {
             nextIds.splice(currentIndex, 1);
@@ -306,8 +325,8 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
             ...pageObjectMap.value,
             [pageId]: nextIds,
         };
-        const nextObjectsById = { ...objectsById.value } as any;
-        nextIds.forEach((id: any, index: any): any => {
+        const nextObjectsById = { ...objectsById.value };
+        nextIds.forEach((id, index) => {
             if (!nextObjectsById[id]) {
                 return;
             }
@@ -320,13 +339,13 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
         markDirty();
         return true;
     }
-    function updateObjectProps(objectId: any, patch: any): any {
-        const object = objectsById.value[objectId] as any;
+    function updateObjectProps(objectId: string, patch: ObjectPatch) {
+        const object = objectsById.value[objectId];
         if (!object) {
             return false;
         }
-        const patchKeys = Object.keys(patch || {}) as any;
-        const lockSafePatch = patchKeys.length > 0 && patchKeys.every((key: any): any => ["locked", "visible", "printable"].includes(key)) as any;
+        const patchKeys = Object.keys(patch || {});
+        const lockSafePatch = patchKeys.length > 0 && patchKeys.every((key) => ["locked", "visible", "printable"].includes(key));
         if (object.locked && !lockSafePatch) {
             return false;
         }
@@ -340,8 +359,8 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
         markDirty();
         return true;
     }
-    function restoreObjectSnapshot(objectId: any, snapshot: any): any {
-        if (!objectsById.value[objectId] || !snapshot || typeof snapshot !== "object") {
+    function restoreObjectSnapshot(objectId: string, snapshot: TemplateElement | null) {
+        if (!objectsById.value[objectId] || !snapshot) {
             return false;
         }
         objectsById.value = {
@@ -354,11 +373,11 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
         markDirty();
         return true;
     }
-    function applyObjectPatches(patches: any = []): any {
-        const nextObjects = { ...objectsById.value } as any;
-        let changed = false as any;
-        patches.forEach(({ id, patch }: any): any => {
-            const object = nextObjects[id] as any;
+    function applyObjectPatches(patches: readonly ObjectPatchEntry[] = []) {
+        const nextObjects = { ...objectsById.value };
+        let changed = false;
+        patches.forEach(({ id, patch }) => {
+            const object = nextObjects[id];
             if (!object || object.locked || !patch || !Object.keys(patch).length) {
                 return;
             }
@@ -375,16 +394,16 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
         markDirty();
         return true;
     }
-    function setPageObjectOrder(pageId: any, objectIds: any = []): any {
-        const currentIds = pageObjectMap.value[pageId] || [] as any;
-        const currentSet = new Set(currentIds) as any;
-        const nextIds = [...objectIds] as any;
-        if (nextIds.length !== currentIds.length || new Set(nextIds).size !== nextIds.length || nextIds.some((id: any): any => !currentSet.has(id))) {
+    function setPageObjectOrder(pageId: string, objectIds: readonly string[] = []) {
+        const currentIds = pageObjectMap.value[pageId] || [];
+        const currentSet = new Set(currentIds);
+        const nextIds = [...objectIds];
+        if (nextIds.length !== currentIds.length || new Set(nextIds).size !== nextIds.length || nextIds.some((id) => !currentSet.has(id))) {
             return false;
         }
-        const nextObjects = { ...objectsById.value } as any;
-        nextIds.forEach((id: any, index: any): any => {
-            const object = nextObjects[id] as any;
+        const nextObjects = { ...objectsById.value };
+        nextIds.forEach((id, index) => {
+            const object = nextObjects[id];
             if (object && !object.locked) {
                 nextObjects[id] = { ...object, zIndex: index };
             }
@@ -397,69 +416,69 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
         markDirty();
         return true;
     }
-    function setPageGroups(pageId: any, groups: any = []): any {
-        const knownIds = new Set(pageObjectMap.value[pageId] || []) as any;
-        const claimedIds = new Set() as any;
-        const groupIds = new Set() as any;
-        const normalizedGroups = (Array.isArray(groups) ? groups : []).reduce((result: any, group: any, index: any): any => {
-            const id = String(group?.id || `group-${index + 1}`).trim() as any;
+    function setPageGroups(pageId: string, groups: readonly TemplateGroup[] = []) {
+        const knownIds = new Set(pageObjectMap.value[pageId] || []);
+        const claimedIds = new Set<string>();
+        const groupIds = new Set<string>();
+        const normalizedGroups = groups.reduce<TemplateGroup[]>((result, group, index) => {
+            const id = String(group.id || `group-${index + 1}`).trim();
             if (!id || groupIds.has(id)) {
                 return result;
             }
-            const elementIds = [...new Set(Array.isArray(group?.elementIds) ? group.elementIds.map((item: any): any => String(item || "").trim()) : [])]
-                .filter((elementId: any): any => elementId && knownIds.has(elementId) && !claimedIds.has(elementId)) as any;
+            const elementIds = [...new Set(group.elementIds.map((item) => String(item || "").trim()))]
+                .filter((elementId) => elementId && knownIds.has(elementId) && !claimedIds.has(elementId));
             if (elementIds.length < 2) {
                 return result;
             }
             groupIds.add(id);
-            elementIds.forEach((elementId: any): any => claimedIds.add(elementId));
-            result.push({ id, name: String(group?.name || `Group ${result.length + 1}`).trim() || `Group ${result.length + 1}`, elementIds });
+            elementIds.forEach((elementId) => claimedIds.add(elementId));
+            result.push({ id, name: String(group.name || `Group ${result.length + 1}`).trim() || `Group ${result.length + 1}`, elementIds });
             return result;
-        }, []) as any;
-        pages.value = pages.value.map((page: any): any => (page.id === pageId ? { ...page, groups: normalizedGroups } : page));
+        }, []);
+        pages.value = pages.value.map((page) => (page.id === pageId ? { ...page, groups: normalizedGroups } : page));
         markDirty();
         return normalizedGroups;
     }
-    function prunePageGroups(removedIds: any = []): any {
-        const removed = new Set(removedIds) as any;
+    function prunePageGroups(removedIds: readonly string[] = []) {
+        const removed = new Set(removedIds);
         if (!removed.size) {
             return;
         }
-        pages.value = pages.value.map((page: any): any => {
-            const groups = Array.isArray(page.groups) ? page.groups : [] as any;
+        pages.value = pages.value.map((page) => {
+            const groups = Array.isArray(page.groups) ? page.groups : [];
             const nextGroups = groups
-                .map((group: any): any => ({ ...group, elementIds: (group.elementIds || []).filter((id: any): any => !removed.has(id)) }))
-                .filter((group: any): any => group.elementIds.length >= 2) as any;
-            return nextGroups.length === groups.length && nextGroups.every((group: any, index: any): any => group.elementIds.length === groups[index].elementIds.length)
+                .map((group) => ({ ...group, elementIds: (group.elementIds || []).filter((id) => !removed.has(id)) }))
+                .filter((group) => group.elementIds.length >= 2);
+            return nextGroups.length === groups.length && nextGroups.every((group, index) => group.elementIds.length === groups[index]?.elementIds.length)
                 ? page
                 : { ...page, groups: nextGroups };
         });
     }
-    function createPageGroup(pageId: any, elementIds: any = [], name: any = ""): any {
-        const ids = [...new Set(elementIds)].filter((id: any): any => objectsById.value[id]?.pageId === pageId) as any;
+    function createPageGroup(pageId: string, elementIds: readonly string[] = [], name = ""): TemplateGroup | null {
+        const ids = [...new Set(elementIds)].filter((id) => objectsById.value[id]?.pageId === pageId);
         if (ids.length < 2) {
             return null;
         }
-        const groups = Array.isArray(pages.value.find((page: any): any => page.id === pageId)?.groups) ? pages.value.find((page: any): any => page.id === pageId).groups : [] as any;
-        const group = { id: createId("group"), name: String(name || `Group ${groups.length + 1}`).trim() || `Group ${groups.length + 1}`, elementIds: ids } as any;
+        const groups = pages.value.find((page) => page.id === pageId)?.groups ?? [];
+        const group = { id: createId("group"), name: String(name || `Group ${groups.length + 1}`).trim() || `Group ${groups.length + 1}`, elementIds: ids };
         setPageGroups(pageId, [...groups, group]);
         return group;
     }
-    function removePageGroup(pageId: any, groupId: any): any {
-        const page = pages.value.find((item: any): any => item.id === pageId) as any;
-        if (!page || !Array.isArray(page.groups) || !page.groups.some((group: any): any => group.id === groupId)) {
+    function removePageGroup(pageId: string, groupId: string) {
+        const page = pages.value.find((item) => item.id === pageId);
+        if (!page || !Array.isArray(page.groups) || !page.groups.some((group) => group.id === groupId)) {
             return false;
         }
-        setPageGroups(pageId, page.groups.filter((group: any): any => group.id !== groupId));
+        setPageGroups(pageId, page.groups.filter((group) => group.id !== groupId));
         return true;
     }
-    function setPaperPreset(presetKey: any): any {
+    function setPaperPreset(presetKey: string) {
         if (presetKey === CUSTOM_PAPER_SIZE_KEY) {
             currentPaperPresetKey.value = CUSTOM_PAPER_SIZE_KEY;
             markDirty();
             return;
         }
-        const preset = getPaperPreset(presetKey) as any;
+        const preset = getPaperPreset(presetKey);
         if (!preset) {
             return;
         }
@@ -469,9 +488,9 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
         syncCurrentPageMeta();
         markDirty();
     }
-    function setPageDimensions(width: any, height: any): any {
-        const nextWidth = Number(width) as any;
-        const nextHeight = Number(height) as any;
+    function setPageDimensions(width: unknown, height: unknown) {
+        const nextWidth = Number(width);
+        const nextHeight = Number(height);
         if (!Number.isFinite(nextWidth) || !Number.isFinite(nextHeight)) {
             return;
         }
@@ -481,15 +500,21 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
         syncCurrentPageMeta();
         markDirty();
     }
-    function setMargins(patch: any = {}): any {
+    function setMargins(patch: MarginPatch = {}) {
         const values = {
             top: patch.top ?? marginTopMm.value,
             right: patch.right ?? marginRightMm.value,
             bottom: patch.bottom ?? marginBottomMm.value,
             left: patch.left ?? marginLeftMm.value,
-        } as any;
-        const normalized = Object.fromEntries(Object.entries(values).map(([key, value]: any): any => [key, Number.isFinite(Number(value)) ? Math.max(0, +Number(value).toFixed(1)) : null])) as any;
-        if (Object.values(normalized).some((value: any): any => value == null)) {
+        };
+        const normalizeMargin = (value: unknown): number | null => Number.isFinite(Number(value)) ? Math.max(0, +Number(value).toFixed(1)) : null;
+        const normalized = {
+            top: normalizeMargin(values.top),
+            right: normalizeMargin(values.right),
+            bottom: normalizeMargin(values.bottom),
+            left: normalizeMargin(values.left),
+        };
+        if (normalized.top === null || normalized.right === null || normalized.bottom === null || normalized.left === null) {
             return;
         }
         marginTopMm.value = normalized.top;
@@ -498,64 +523,67 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
         marginLeftMm.value = normalized.left;
         markDirty();
     }
-    function setMarginX(value: any): any {
-        const nextValue = Number(value) as any;
+    function setMarginX(value: unknown) {
+        const nextValue = Number(value);
         if (!Number.isFinite(nextValue)) {
             return;
         }
         setMargins({ left: nextValue, right: nextValue });
     }
-    function setMarginY(value: any): any {
-        const nextValue = Number(value) as any;
+    function setMarginY(value: unknown) {
+        const nextValue = Number(value);
         if (!Number.isFinite(nextValue)) {
             return;
         }
         setMargins({ top: nextValue, bottom: nextValue });
     }
-    function setUnit(nextUnit: any): any {
+    function setUnit(nextUnit: string) {
         if (nextUnit !== "mm" || unit.value === "mm") {
             return;
         }
         unit.value = "mm";
         markDirty();
     }
-    function setDocumentName(value: any): any {
-        const name = String(value ?? "").trim() as any;
+    function setDocumentName(value: unknown) {
+        const name = String(value ?? "").trim();
         if (!name) {
             return;
         }
         documentName.value = name.slice(0, 160);
         markDirty();
     }
-    function setCurrentPageTitle(value: any): any {
-        const title = String(value ?? "").trim() as any;
+    function setCurrentPageTitle(value: unknown) {
+        const title = String(value ?? "").trim();
         if (!title || !currentPage.value) {
             return;
         }
-        pages.value = pages.value.map((page: any): any => (page.id === currentPage.value.id ? { ...page, title: title.slice(0, 160) } : page));
+        const page = currentPage.value;
+        if (!page)
+            return;
+        pages.value = pages.value.map((item) => (item.id === page.id ? { ...item, title: title.slice(0, 160) } : item));
         markDirty();
     }
-    function setCurrentPage(pageId: any): any {
-        const nextPageId = String(pageId || "").trim() as any;
+    function setCurrentPage(pageId: unknown) {
+        const nextPageId = String(pageId || "").trim();
         if (!nextPageId || nextPageId === currentPageId.value) {
             return false;
         }
-        const hasPage = pages.value.some((page: any): any => page.id === nextPageId) as any;
+        const hasPage = pages.value.some((page) => page.id === nextPageId);
         if (!hasPage) {
             return false;
         }
-        const { currentPageId: resolvedCurrentPageId, pages: normalizedPages } = syncCurrentPageFlags(pages.value, nextPageId) as any;
+        const { currentPageId: resolvedCurrentPageId, pages: normalizedPages } = syncCurrentPageFlags(pages.value, nextPageId);
         currentPageId.value = resolvedCurrentPageId;
         pages.value = normalizedPages;
         return true;
     }
-    function setPageTitle(pageId: any, title: any): any {
-        const nextTitle = String(title ?? "").trim() as any;
+    function setPageTitle(pageId: string, title: unknown) {
+        const nextTitle = String(title ?? "").trim();
         if (!nextTitle) {
             return false;
         }
-        let changed = false as any;
-        pages.value = pages.value.map((page: any): any => {
+        let changed = false;
+        pages.value = pages.value.map((page) => {
             if (page.id !== pageId || page.title === nextTitle.slice(0, 160)) {
                 return page;
             }
@@ -571,61 +599,63 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
         markDirty();
         return true;
     }
-    function movePage(pageId: any, direction: any): any {
-        const index = pages.value.findIndex((page: any): any => page.id === pageId) as any;
-        const targetIndex = direction === "up" ? index - 1 : index + 1 as any;
+    function movePage(pageId: string, direction: "up" | "down") {
+        const index = pages.value.findIndex((page) => page.id === pageId);
+        const targetIndex = direction === "up" ? index - 1 : index + 1;
         if (index < 0 || targetIndex < 0 || targetIndex >= pages.value.length) {
             return false;
         }
-        const nextPages = [...pages.value] as any;
-        const [page] = nextPages.splice(index, 1) as any;
+        const nextPages = [...pages.value];
+        const page = nextPages.splice(index, 1)[0];
+        if (!page)
+            return false;
         nextPages.splice(targetIndex, 0, page);
-        const { currentPageId: resolvedCurrentPageId, pages: normalizedPages } = syncCurrentPageFlags(nextPages, currentPageId.value) as any;
+        const { currentPageId: resolvedCurrentPageId, pages: normalizedPages } = syncCurrentPageFlags(nextPages, currentPageId.value);
         pages.value = normalizedPages;
         currentPageId.value = resolvedCurrentPageId;
         markDirty();
         return true;
     }
-    function setOrientation(orientation: any): any {
+    function setOrientation(orientation: "portrait" | "landscape") {
         if (!['portrait', 'landscape'].includes(orientation)) {
             return;
         }
-        const isLandscape = pageWidthMm.value > pageHeightMm.value as any;
+        const isLandscape = pageWidthMm.value > pageHeightMm.value;
         if ((orientation === 'landscape') === isLandscape) {
             return;
         }
         setPageDimensions(pageHeightMm.value, pageWidthMm.value);
     }
-    function setPageBackground(color: any): any {
+    function setPageBackground(color: string) {
         pageBackground.value = color;
         markDirty();
     }
-    function togglePageCorner(forceVisible: any): any {
+    function togglePageCorner(forceVisible?: boolean) {
         pageCornerVisible.value = typeof forceVisible === "boolean" ? forceVisible : !pageCornerVisible.value;
         markDirty();
     }
-    function toggleHeaderLine(forceVisible: any): any {
+    function toggleHeaderLine(forceVisible?: boolean) {
         headerLineVisible.value = typeof forceVisible === "boolean" ? forceVisible : !headerLineVisible.value;
         markDirty();
     }
-    function toggleFooterLine(forceVisible: any): any {
+    function toggleFooterLine(forceVisible?: boolean) {
         footerLineVisible.value = typeof forceVisible === "boolean" ? forceVisible : !footerLineVisible.value;
         markDirty();
     }
-    function togglePrintMarks(forceVisible: any): any {
+    function togglePrintMarks(forceVisible?: boolean) {
         printMarksVisible.value = typeof forceVisible === "boolean" ? forceVisible : !printMarksVisible.value;
         markDirty();
     }
-    function setHeaderOffset(value: any): any {
-        const nextValue = Number(value) as any;
+    function setHeaderOffset(value: unknown) {
+        const nextValue = Number(value);
         if (!Number.isFinite(nextValue)) {
             return;
         }
         headerOffsetMm.value = Math.max(0, +nextValue.toFixed(1));
         markDirty();
     }
-    function setFooterOffset(value: any): any {
-        const nextValue = Number(value) as any;
+    function setFooterOffset(value: unknown) {
+        const nextValue = Number(value);
         if (!Number.isFinite(nextValue)) {
             return;
         }
@@ -709,4 +739,4 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", (): a
         setHeaderOffset,
         setFooterOffset,
     };
-}) as any;
+});

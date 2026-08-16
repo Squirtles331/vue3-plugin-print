@@ -34,24 +34,24 @@ import PdInput from "../../ui/primitives/PdInput.vue";
 import DataPanel from "../../components/sidebar/DataPanel.vue";
 const props = defineProps({
     variables: {
-        type: Array as any,
-        default: (): any => [],
+        type: Array,
+        default: () => [],
     },
-}) as any;
-const emit = defineEmits(["bind"]) as any;
-const searchQuery = ref("") as any;
-const variableCount = computed((): any => props.variables.length) as any;
-const filteredCount = computed((): any => {
+});
+const emit = defineEmits(["bind"]);
+const searchQuery = ref("");
+const variableCount = computed(() => props.variables.length);
+const filteredCount = computed(() => {
     const query = String(searchQuery.value || "").trim().toLowerCase();
     if (!query) {
         return variableCount.value;
     }
-    return props.variables.filter((variable: any): any => String(variable).toLowerCase().includes(query)).length;
-}) as any;
-const toolbarNote = computed((): any => {
+    return props.variables.filter((variable) => String(variable).toLowerCase().includes(query)).length;
+});
+const toolbarNote = computed(() => {
     const query = String(searchQuery.value || "").trim();
     return query ? `正在筛选 “${query}”` : "按字段路径快速查找";
-}) as any;
+});
 </script>
 
 <style scoped lang="scss">

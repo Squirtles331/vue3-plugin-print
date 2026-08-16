@@ -4,9 +4,9 @@ const props = defineProps({
     name: { type: String, default: "" },
     size: { type: [Number, String], default: 16 },
     title: { type: String, default: "" },
-}) as any;
-const paths = computed((): any => ICON_PATHS[props.name] || ICON_PATHS.Document) as any;
-const sizeValue = computed((): any => (typeof props.size === "number" ? `${props.size}px` : props.size)) as any;
+});
+const paths = computed(() => ICON_PATHS[props.name] || ICON_PATHS.Document);
+const sizeValue = computed(() => (typeof props.size === "number" ? `${props.size}px` : props.size));
 </script>
 
 <template>

@@ -127,31 +127,31 @@ import { useEditorViewportStore } from "../stores/viewportStore";
 import { createWorkspaceProjection, getPixelsPerUnit } from "./workspaceProjection.js";
 import DesignerCanvasViewport from "../../components/layout/DesignerCanvasViewport.vue";
 import DesignerRuler from "../../components/layout/DesignerRuler.vue";
-const viewportStore = useEditorViewportStore() as any;
-const historyStore = useEditorHistoryStore() as any;
-const documentStore = useEditorDocumentStore() as any;
-const selectionStore = useEditorSelectionStore() as any;
-const dragStore = useEditorDragStore() as any;
-const { zoom, zoomAnchor, scrollLeft, scrollTop, viewportWidth, viewportHeight, guidesVisible, horizontalGuides, verticalGuides, hoveredGuide, activeGuide, draggingGuide, activeGuideDraft, } = storeToRefs(viewportStore) as any;
-const { currentPage, unit, pageWidthMm, pageHeightMm, pageWidthPx, pageHeightPx, marginTopMm, marginRightMm, marginBottomMm, marginLeftMm } = storeToRefs(documentStore) as any;
-const { requestedPaletteInsert } = storeToRefs(dragStore) as any;
-const viewportRef = ref(null) as any;
-const canvasViewportRef = ref(null) as any;
-const paperOffsetLeft = ref(0) as any;
-const paperOffsetTop = ref(0) as any;
-const pendingTableInsert = ref(null) as any;
-const tableDialogVisible = ref(false) as any;
-let viewportResizeObserver = null as any;
-let clickInsertOffset = 0 as any;
-const scaledPaperWidth = computed((): any => Math.round(pageWidthPx.value * zoom.value)) as any;
-const scaledPaperHeight = computed((): any => Math.round(pageHeightPx.value * zoom.value)) as any;
-const pagePixelsPerUnit = computed((): any => getPixelsPerUnit(unit.value, 1)) as any;
-const visibleVerticalGuides = computed((): any => (guidesVisible.value ? verticalGuides.value : [])) as any;
-const visibleHorizontalGuides = computed((): any => (guidesVisible.value ? horizontalGuides.value : [])) as any;
-const visibleGuideDraft = computed((): any => (guidesVisible.value ? activeGuideDraft.value : null)) as any;
-const visibleHoveredGuide = computed((): any => (guidesVisible.value ? hoveredGuide.value : null)) as any;
-const visibleActiveGuide = computed((): any => (guidesVisible.value ? activeGuide.value : null)) as any;
-const projection = computed((): any => createWorkspaceProjection({
+const viewportStore = useEditorViewportStore();
+const historyStore = useEditorHistoryStore();
+const documentStore = useEditorDocumentStore();
+const selectionStore = useEditorSelectionStore();
+const dragStore = useEditorDragStore();
+const { zoom, zoomAnchor, scrollLeft, scrollTop, viewportWidth, viewportHeight, guidesVisible, horizontalGuides, verticalGuides, hoveredGuide, activeGuide, draggingGuide, activeGuideDraft, } = storeToRefs(viewportStore);
+const { currentPage, unit, pageWidthMm, pageHeightMm, pageWidthPx, pageHeightPx, marginTopMm, marginRightMm, marginBottomMm, marginLeftMm } = storeToRefs(documentStore);
+const { requestedPaletteInsert } = storeToRefs(dragStore);
+const viewportRef = ref(null);
+const canvasViewportRef = ref(null);
+const paperOffsetLeft = ref(0);
+const paperOffsetTop = ref(0);
+const pendingTableInsert = ref(null);
+const tableDialogVisible = ref(false);
+let viewportResizeObserver = null;
+let clickInsertOffset = 0;
+const scaledPaperWidth = computed(() => Math.round(pageWidthPx.value * zoom.value));
+const scaledPaperHeight = computed(() => Math.round(pageHeightPx.value * zoom.value));
+const pagePixelsPerUnit = computed(() => getPixelsPerUnit(unit.value, 1));
+const visibleVerticalGuides = computed(() => (guidesVisible.value ? verticalGuides.value : []));
+const visibleHorizontalGuides = computed(() => (guidesVisible.value ? horizontalGuides.value : []));
+const visibleGuideDraft = computed(() => (guidesVisible.value ? activeGuideDraft.value : null));
+const visibleHoveredGuide = computed(() => (guidesVisible.value ? hoveredGuide.value : null));
+const visibleActiveGuide = computed(() => (guidesVisible.value ? activeGuide.value : null));
+const projection = computed(() => createWorkspaceProjection({
     unit: unit.value,
     zoom: zoom.value,
     viewportWidth: viewportWidth.value,
@@ -162,26 +162,26 @@ const projection = computed((): any => createWorkspaceProjection({
     pageOffsetTop: paperOffsetTop.value,
     pageWidthMm: pageWidthMm.value,
     pageHeightMm: pageHeightMm.value,
-})) as any;
-const renderedVerticalGuides = computed((): any => {
+}));
+const renderedVerticalGuides = computed(() => {
     if (!guidesVisible.value) {
         return [];
     }
     if (draggingGuide.value?.orientation !== "vertical" || draggingGuide.value.sourcePosition === null) {
         return visibleVerticalGuides.value;
     }
-    return visibleVerticalGuides.value.filter((guide: any): any => guide !== draggingGuide.value.sourcePosition);
-}) as any;
-const renderedHorizontalGuides = computed((): any => {
+    return visibleVerticalGuides.value.filter((guide) => guide !== draggingGuide.value.sourcePosition);
+});
+const renderedHorizontalGuides = computed(() => {
     if (!guidesVisible.value) {
         return [];
     }
     if (draggingGuide.value?.orientation !== "horizontal" || draggingGuide.value.sourcePosition === null) {
         return visibleHorizontalGuides.value;
     }
-    return visibleHorizontalGuides.value.filter((guide: any): any => guide !== draggingGuide.value.sourcePosition);
-}) as any;
-const visibleGuideFeedback = computed((): any => {
+    return visibleHorizontalGuides.value.filter((guide) => guide !== draggingGuide.value.sourcePosition);
+});
+const visibleGuideFeedback = computed(() => {
     if (!guidesVisible.value || !visibleGuideDraft.value) {
         return null;
     }
@@ -191,15 +191,15 @@ const visibleGuideFeedback = computed((): any => {
         displayPosition: visibleGuideDraft.value.displayPosition ?? visibleGuideDraft.value.position,
         visible: visibleGuideDraft.value.visible,
     };
-}) as any;
-const guideFeedbackLabel = computed((): any => {
+});
+const guideFeedbackLabel = computed(() => {
     if (!visibleGuideFeedback.value) {
         return "";
     }
     const axis = visibleGuideFeedback.value.orientation === "vertical" ? "X" : "Y";
     return `${axis}: ${visibleGuideFeedback.value.position.toFixed(2)} mm`;
-}) as any;
-const guideFeedbackStyle = computed((): any => {
+});
+const guideFeedbackStyle = computed(() => {
     if (!visibleGuideFeedback.value) {
         return {};
     }
@@ -214,11 +214,11 @@ const guideFeedbackStyle = computed((): any => {
         left: "6px",
         top: `${guideToViewportY(guide.position)}px`,
     };
-}) as any;
-function getPageStackShellElement(): any {
+});
+function getPageStackShellElement() {
     return canvasViewportRef.value?.getPageStackShellElement?.() || null;
 }
-function getViewportLocalPoint(event: any): any {
+function getViewportLocalPoint(event) {
     const viewport = viewportRef.value;
     if (!viewport) {
         return null;
@@ -229,7 +229,7 @@ function getViewportLocalPoint(event: any): any {
         y: event.clientY - viewportRect.top,
     };
 }
-function getDocumentPoint(event: any): any {
+function getDocumentPoint(event) {
     const localPoint = getViewportLocalPoint(event);
     if (!localPoint) {
         return null;
@@ -245,13 +245,13 @@ function getDocumentPoint(event: any): any {
         insidePage,
     };
 }
-function roundMm(value: any): any {
+function roundMm(value) {
     return Number.isFinite(value) ? +value.toFixed(2) : 0;
 }
-function clamp(value: any, min: any, max: any): any {
+function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
 }
-function clampSafeInsertPosition(position: any, size: any, pageSize: any, startMargin: any, endMargin: any): any {
+function clampSafeInsertPosition(position, size, pageSize, startMargin, endMargin) {
     if (viewportStore.allowOverflowDrag) {
         return roundMm(position);
     }
@@ -259,7 +259,7 @@ function clampSafeInsertPosition(position: any, size: any, pageSize: any, startM
     const max = Math.max(min, Number(pageSize) - (Number(endMargin) || 0) - Number(size));
     return clamp(roundMm(position), min, max);
 }
-function defaultInsertPoint(item: any): any {
+function defaultInsertPoint(item) {
     const preview = createElement(item.type, { pageId: currentPage.value?.id || "page-1" });
     const offset = (clickInsertOffset++ % 6) * 4;
     return {
@@ -267,7 +267,7 @@ function defaultInsertPoint(item: any): any {
         y: clampSafeInsertPosition((Number(marginTopMm.value) || 0) + 8 + offset, preview.height, pageHeightMm.value, marginTopMm.value, marginBottomMm.value),
     };
 }
-function insertPaletteItem(payload: any, point: any): any {
+function insertPaletteItem(payload, point) {
     if (!payload?.type || !point) {
         return false;
     }
@@ -286,22 +286,22 @@ function insertPaletteItem(payload: any, point: any): any {
     selectionStore.hoverObjectId = null;
     return true;
 }
-function guideToViewportX(position: any): any {
+function guideToViewportX(position) {
     return Math.round(projection.value.documentToScreenX(position || 0));
 }
-function guideToViewportY(position: any): any {
+function guideToViewportY(position) {
     return Math.round(projection.value.documentToScreenY(position || 0));
 }
-function isSameGuide(guideRef: any, orientation: any, position: any): any {
+function isSameGuide(guideRef, orientation, position) {
     return guideRef?.orientation === orientation && guideRef?.position === position;
 }
-function guideClasses(orientation: any, position: any): any {
+function guideClasses(orientation, position) {
     return {
         "is-hovered": isSameGuide(visibleHoveredGuide.value, orientation, position),
         "is-active": isSameGuide(visibleActiveGuide.value, orientation, position),
     };
 }
-function updateViewportMetrics(): any {
+function updateViewportMetrics() {
     const viewport = viewportRef.value;
     const paper = getPageStackShellElement();
     if (!viewport || !paper) {
@@ -313,15 +313,15 @@ function updateViewportMetrics(): any {
     paperOffsetLeft.value = Math.round(paperRect.left - viewportRect.left + viewport.scrollLeft);
     paperOffsetTop.value = Math.round(paperRect.top - viewportRect.top + viewport.scrollTop);
 }
-function clampViewportScrollLeft(viewport: any, value: any): any {
+function clampViewportScrollLeft(viewport, value) {
     const maxScrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
     return Math.min(maxScrollLeft, Math.max(0, Math.round(value)));
 }
-function clampViewportScrollTop(viewport: any, value: any): any {
+function clampViewportScrollTop(viewport, value) {
     const maxScrollTop = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
     return Math.min(maxScrollTop, Math.max(0, Math.round(value)));
 }
-function applyViewportScroll(left: any, top: any): any {
+function applyViewportScroll(left, top) {
     const viewport = viewportRef.value;
     if (!viewport) {
         return;
@@ -330,7 +330,7 @@ function applyViewportScroll(left: any, top: any): any {
     viewport.scrollTop = clampViewportScrollTop(viewport, top);
     viewportStore.setScroll(viewport.scrollLeft, viewport.scrollTop);
 }
-function resolveZoomAnchorPoint(): any {
+function resolveZoomAnchorPoint() {
     const viewport = viewportRef.value;
     if (!viewport) {
         return null;
@@ -353,11 +353,11 @@ function resolveZoomAnchorPoint(): any {
         localY: Math.min(viewport.clientHeight, Math.max(0, anchor.clientY - viewportRect.top)),
     };
 }
-function onViewportScroll(event: any): any {
+function onViewportScroll(event) {
     viewportStore.setScroll(event.target.scrollLeft, event.target.scrollTop);
     updateViewportMetrics();
 }
-function onViewportPointerDown(event: any): any {
+function onViewportPointerDown(event) {
     const target = event.target;
     if (!(target instanceof Element)) {
         selectionStore.clearSelection();
@@ -372,7 +372,7 @@ function onViewportPointerDown(event: any): any {
     selectionStore.clearSelection();
     selectionStore.hoverObjectId = null;
 }
-function onViewportDragOver(event: any): any {
+function onViewportDragOver(event) {
     if (!dragStore.isPaletteDragging) {
         return;
     }
@@ -382,7 +382,7 @@ function onViewportDragOver(event: any): any {
     }
     syncPointerCoordinate(event);
 }
-function onViewportDrop(event: any): any {
+function onViewportDrop(event) {
     const payload = dragStore.activePaletteItem;
     if (!payload) {
         return;
@@ -398,12 +398,12 @@ function onViewportDrop(event: any): any {
     dragStore.clearPaletteDrag();
     viewportStore.setPointerCoordinate(point.documentX, point.documentY, true);
 }
-function cancelTableInsert(): any {
+function cancelTableInsert() {
     pendingTableInsert.value = null;
     tableDialogVisible.value = false;
     viewportStore.clearCoordinateReadout();
 }
-function confirmTableInsert(config: any): any {
+function confirmTableInsert(config) {
     const pendingInsert = pendingTableInsert.value;
     if (!pendingInsert) {
         cancelTableInsert();
@@ -423,7 +423,7 @@ function confirmTableInsert(config: any): any {
     pendingTableInsert.value = null;
     viewportStore.setPointerCoordinate(nextObject.x, nextObject.y, true);
 }
-function syncPointerCoordinate(event: any): any {
+function syncPointerCoordinate(event) {
     const point = getDocumentPoint(event);
     if (!point || !point.insidePage) {
         viewportStore.clearCoordinateReadout();
@@ -431,13 +431,13 @@ function syncPointerCoordinate(event: any): any {
     }
     viewportStore.setPointerCoordinate(point.documentX, point.documentY, true);
 }
-function onViewportPointerMove(event: any): any {
+function onViewportPointerMove(event) {
     if (activeGuideDraft.value) {
         return;
     }
     syncPointerCoordinate(event);
 }
-function onViewportPointerLeave(): any {
+function onViewportPointerLeave() {
     if (!activeGuideDraft.value) {
         viewportStore.clearCoordinateReadout();
     }
@@ -445,7 +445,7 @@ function onViewportPointerLeave(): any {
         viewportStore.clearHoveredGuide();
     }
 }
-watch(zoom, async (nextZoom: any, previousZoom: any): Promise<any> => {
+watch(zoom, async (nextZoom, previousZoom) => {
     const viewport = viewportRef.value;
     if (!viewport || nextZoom === previousZoom) {
         return;
@@ -463,18 +463,18 @@ watch(zoom, async (nextZoom: any, previousZoom: any): Promise<any> => {
     applyViewportScroll(viewport.scrollLeft + (nextAnchorLocalX - anchorPoint.localX), viewport.scrollTop + (nextAnchorLocalY - anchorPoint.localY));
     updateViewportMetrics();
 });
-watch([pageWidthPx, pageHeightPx], async (): Promise<any> => {
+watch([pageWidthPx, pageHeightPx], async () => {
     await nextTick();
     updateViewportMetrics();
 });
-watch(requestedPaletteInsert, (request: any): any => {
+watch(requestedPaletteInsert, (request) => {
     if (!request?.item) {
         return;
     }
     insertPaletteItem(request.item, defaultInsertPoint(request.item));
     dragStore.consumePaletteInsert(request.id);
 });
-function getGuideDraft(event: any, orientation: any): any {
+function getGuideDraft(event, orientation) {
     const point = getDocumentPoint(event);
     if (!point) {
         return null;
@@ -488,7 +488,7 @@ function getGuideDraft(event: any, orientation: any): any {
         visible: documentPosition >= 0 && documentPosition <= pageEnd,
     };
 }
-function syncDraftPosition(event: any): any {
+function syncDraftPosition(event) {
     if (!activeGuideDraft.value) {
         return;
     }
@@ -501,14 +501,14 @@ function syncDraftPosition(event: any): any {
     viewportStore.updateGuideDraft(draft.position, draft.visible, draft.displayPosition);
     viewportStore.setGuideCoordinate(activeGuideDraft.value.orientation, draft.position, draft.visible);
 }
-function onGuidePointerMove(event: any): any {
+function onGuidePointerMove(event) {
     syncDraftPosition(event);
 }
-function stopGuideDrag(): any {
+function stopGuideDrag() {
     window.removeEventListener("pointermove", onGuidePointerMove);
     window.removeEventListener("pointerup", onGuidePointerUp);
 }
-function onGuidePointerUp(event: any): any {
+function onGuidePointerUp(event) {
     syncDraftPosition(event);
     const draft = activeGuideDraft.value;
     const drag = draggingGuide.value;
@@ -541,7 +541,7 @@ function onGuidePointerUp(event: any): any {
     syncPointerCoordinate(event);
     stopGuideDrag();
 }
-function startGuideDrag(orientation: any, event: any, sourcePosition: any = null): any {
+function startGuideDrag(orientation, event, sourcePosition = null) {
     if (event.button !== 0) {
         return;
     }
@@ -552,13 +552,13 @@ function startGuideDrag(orientation: any, event: any, sourcePosition: any = null
     window.addEventListener("pointermove", onGuidePointerMove);
     window.addEventListener("pointerup", onGuidePointerUp);
 }
-function onGuideEditStart(payload: any): any {
+function onGuideEditStart(payload) {
     if (!payload?.event) {
         return;
     }
     startGuideDrag(payload.orientation, payload.event, payload.position);
 }
-function onGuideHover(guide: any = null): any {
+function onGuideHover(guide = null) {
     if (draggingGuide.value) {
         return;
     }
@@ -568,7 +568,7 @@ function onGuideHover(guide: any = null): any {
     }
     viewportStore.setHoveredGuide(guide.orientation, guide.position);
 }
-onMounted(async (): Promise<any> => {
+onMounted(async () => {
     await nextTick();
     const viewport = viewportRef.value;
     if (viewport) {
@@ -576,14 +576,14 @@ onMounted(async (): Promise<any> => {
     }
     updateViewportMetrics();
     if (viewport) {
-        viewportResizeObserver = new ResizeObserver((): any => {
+        viewportResizeObserver = new ResizeObserver(() => {
             updateViewportMetrics();
         });
         viewportResizeObserver.observe(viewport);
     }
     window.addEventListener("resize", updateViewportMetrics);
 });
-onBeforeUnmount((): any => {
+onBeforeUnmount(() => {
     dragStore.clearPaletteDrag();
     pendingTableInsert.value = null;
     stopGuideDrag();

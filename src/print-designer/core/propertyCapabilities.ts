@@ -19,7 +19,7 @@ const COMMON_FIELDS = [
     { source: "style", key: "borderColor", type: "color", runtimeEffect: "border" },
     { source: "style", key: "borderRadius", type: "number", min: 0, max: 999, runtimeEffect: "border" },
     { source: "style", key: "padding", type: "number", min: 0, max: 100, runtimeEffect: "spacing" },
-] as any;
+];
 const TEXT_STYLE_FIELDS = [
     { source: "style", key: "fontFamily", type: "string", maxLength: 200, runtimeEffect: "typography" },
     { source: "style", key: "fontSize", type: "number", min: 1, max: 240, runtimeEffect: "typography" },
@@ -31,20 +31,20 @@ const TEXT_STYLE_FIELDS = [
     { source: "style", key: "verticalAlign", type: "enum", values: ["top", "middle", "bottom"], runtimeEffect: "typography" },
     { source: "style", key: "lineHeight", type: "number", min: 0.5, max: 5, runtimeEffect: "typography" },
     { source: "style", key: "letterSpacing", type: "number", min: -20, max: 100, runtimeEffect: "typography" },
-] as any;
+];
 const TEXT_FIELDS = [
     { source: "root", key: "content", type: "string", maxLength: 100000, runtimeEffect: "content" },
     { source: "props", key: "autoHeight", type: "boolean", runtimeEffect: "layout" },
     { source: "props", key: "whiteSpace", type: "enum", values: ["pre-wrap", "nowrap", "pre"], runtimeEffect: "typography" },
     { source: "props", key: "writingMode", type: "enum", values: ["horizontal-tb", "vertical-rl"], runtimeEffect: "typography" },
-] as any;
+];
 const CAPABILITY_DEFAULTS = Object.freeze({
     root: { visible: true, locked: false, printable: true, repeatPerPage: false, rotation: 0, zIndex: 0, variable: "" },
     style: { opacity: 1, backgroundColor: "transparent", borderWidth: 0, borderStyle: "solid", borderColor: "#000000", borderRadius: 0, padding: 0, fontFamily: "", fontSize: 14, fontWeight: "normal", fontStyle: "normal", textDecoration: "none", color: "#000000", textAlign: "left", verticalAlign: "top", lineHeight: 1.4, letterSpacing: 0, objectFit: "contain", objectPosition: "50% 50%" },
     props: { autoHeight: false, whiteSpace: "pre-wrap", writingMode: "horizontal-tb", keepAspectRatio: true, displayValue: true, margin: 0, textMargin: 2, textFontSize: 10, eccLevel: "M", rows: 5, cols: 3, gapX: 12, gapY: 12, direction: "row", cellPadding: 2, primaryPath: "title", secondaryPath: "code", tertiaryPath: "" },
     editorHints: { omitRows: true, rowCount: 10 },
-}) as any;
-function fields(...groups: any): any {
+});
+function fields(...groups) {
     return groups.flat();
 }
 export const ELEMENT_PROPERTY_CAPABILITIES = Object.freeze({
@@ -123,32 +123,32 @@ export const ELEMENT_PROPERTY_CAPABILITIES = Object.freeze({
             { source: "props", key: "cellPadding", type: "number", min: 0, max: 40, runtimeEffect: "layout" },
         ]),
     },
-}) as any;
-function readFieldValue(element: any, field: any): any {
+});
+function readFieldValue(element, field) {
     return field.source === "root" ? element?.[field.key] : element?.[field.source]?.[field.key];
 }
-function isValidBindingPath(value: any): any {
+function isValidBindingPath(value) {
     return !value || /^@?[A-Za-z_$][\w$]*(?:\.(?:[A-Za-z_$][\w$]*|\d+)|\[(?:\d+|"[^"]+"|'[^']+')\])*$/.test(value);
 }
-function isValidColor(value: any): any {
+function isValidColor(value) {
     return !value || value === "transparent" || /^#[\da-f]{3,8}$/i.test(value) || /^rgba?\([^\n]+\)$/i.test(value);
 }
-function validateTableColumns(value: any): any {
+function validateTableColumns(value) {
     if (!Array.isArray(value) || !value.length) {
         return "Table requires at least one column.";
     }
-    if (value.length > 100 || value.some((column: any): any => !column || typeof column.key !== "string" || !column.key.trim())) {
+    if (value.length > 100 || value.some((column) => !column || typeof column.key !== "string" || !column.key.trim())) {
         return "Each table column requires a key and at most 100 columns are allowed.";
     }
-    if (value.some((column: any): any => column.formatter && (!Object.hasOwn(column.formatter, "type") || !["number", "currency", "date"].includes(column.formatter.type)))) {
+    if (value.some((column) => column.formatter && (!Object.hasOwn(column.formatter, "type") || !["number", "currency", "date"].includes(column.formatter.type)))) {
         return "Table column formatter must be number, currency, or date.";
     }
-    if (value.some((column: any): any => column.valuePath && !isValidBindingPath(column.valuePath))) {
+    if (value.some((column) => column.valuePath && !isValidBindingPath(column.valuePath))) {
         return "Table column value paths must be safe dotted paths.";
     }
     return "";
 }
-function validateTableTransform(value: any): any {
+function validateTableTransform(value) {
     if (!value || Object.keys(value).length === 0) {
         return "";
     }
@@ -157,39 +157,39 @@ function validateTableTransform(value: any): any {
     }
     return "";
 }
-function validateTableRowHeights(value: any): any {
+function validateTableRowHeights(value) {
     if (!value || typeof value !== "object" || Array.isArray(value)) {
         return "Table row heights must be an object.";
     }
     for (const section of ["body", "footer"]) {
-        const heights = value[section] as any;
+        const heights = value[section];
         if (heights == null)
             continue;
         if (!heights || typeof heights !== "object" || Array.isArray(heights)) {
             return `Table ${section} row heights must be an object.`;
         }
-        if (Object.entries(heights).some(([index, height]: any): any => !/^\d+$/.test(index) || !Number.isFinite(Number(height)) || Number(height) < 1 || Number(height) > 200)) {
+        if (Object.entries(heights).some(([index, height]) => !/^\d+$/.test(index) || !Number.isFinite(Number(height)) || Number(height) < 1 || Number(height) > 200)) {
             return "Table row heights must use non-negative row indexes and values between 1 and 200.";
         }
     }
     return "";
 }
-export function getElementPropertyCapabilities(type: any): any {
-    const definition = ELEMENT_PROPERTY_CAPABILITIES[type] || { fields: [] } as any;
+export function getElementPropertyCapabilities(type) {
+    const definition = ELEMENT_PROPERTY_CAPABILITIES[type] || { fields: [] };
     return {
         ...definition,
-        fields: definition.fields.map((field: any): any => ({
+        fields: definition.fields.map((field) => ({
             default: CAPABILITY_DEFAULTS[field.source]?.[field.key] ?? null,
             editorOnly: false,
             ...field,
         })),
     };
 }
-export function getElementPropertyCapability(type: any, source: any, key: any): any {
-    return getElementPropertyCapabilities(type).fields.find((field: any): any => field.source === source && field.key === key) || null;
+export function getElementPropertyCapability(type, source, key) {
+    return getElementPropertyCapabilities(type).fields.find((field) => field.source === source && field.key === key) || null;
 }
-export function validateElementProperty(type: any, source: any, key: any, value: any): any {
-    const capability = getElementPropertyCapability(type, source, key) as any;
+export function validateElementProperty(type, source, key, value) {
+    const capability = getElementPropertyCapability(type, source, key);
     if (!capability || value == null || value === "") {
         return null;
     }
@@ -231,9 +231,9 @@ export function validateElementProperty(type: any, source: any, key: any, value:
     }
     return null;
 }
-export function validateElementProperties(element: any): any {
+export function validateElementProperties(element) {
     return getElementPropertyCapabilities(element?.type).fields
-        .map((field: any): any => ({ field, message: validateElementProperty(element?.type, field.source, field.key, readFieldValue(element, field)) }))
-        .filter((result: any): any => result.message)
-        .map(({ field, message }: any): any => ({ path: `${field.source}.${field.key}`, message, severity: "error" }));
+        .map((field) => ({ field, message: validateElementProperty(element?.type, field.source, field.key, readFieldValue(element, field)) }))
+        .filter((result) => result.message)
+        .map(({ field, message }) => ({ path: `${field.source}.${field.key}`, message, severity: "error" }));
 }

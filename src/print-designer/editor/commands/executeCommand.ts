@@ -1,3 +1,3 @@
-export function executeEditorCommand(historyStore: any, command: any): any {
+export function executeEditorCommand(historyStore, command) {
     historyStore.execute(command);
 }

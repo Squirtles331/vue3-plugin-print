@@ -47,34 +47,34 @@ import PdButton from "../ui/primitives/PdButton.vue";
 import PdDialog from "../ui/primitives/PdDialog.vue";
 import PdInput from "../ui/primitives/PdInput.vue";
 import { computed, shallowRef, ref, watch } from "vue";
-const props = defineProps({ visible: { type: Boolean, default: false }, templates: { type: Array as any, default: (): any => [] } }) as any;
-const emit = defineEmits(["update:visible", "create"]) as any;
-const selectedCategory = ref("") as any;
-const selectedId = ref("") as any;
-const searchQuery = shallowRef("") as any;
-const categories = computed((): any => {
+const props = defineProps({ visible: { type: Boolean, default: false }, templates: { type: Array, default: () => [] } });
+const emit = defineEmits(["update:visible", "create"]);
+const selectedCategory = ref("");
+const selectedId = ref("");
+const searchQuery = shallowRef("");
+const categories = computed(() => {
     const categoryMap = new Map();
-    props.templates.forEach((template: any): any => {
+    props.templates.forEach((template) => {
         const current = categoryMap.get(template.category) || { id: template.category, label: template.categoryLabel, count: 0 };
         categoryMap.set(template.category, { ...current, count: current.count + 1 });
     });
     return [...categoryMap.values()];
-}) as any;
-const filteredTemplates = computed((): any => {
+});
+const filteredTemplates = computed(() => {
     const query = String(searchQuery.value || "").trim().toLowerCase();
-    return props.templates.filter((template: any): any => {
+    return props.templates.filter((template) => {
         const matchesCategory = !selectedCategory.value || template.category === selectedCategory.value;
         const haystack = `${template.name || ""} ${template.categoryLabel || ""} ${template.description || ""}`.toLowerCase();
         return matchesCategory && (!query || haystack.includes(query));
     });
-}) as any;
-const selectedTemplate = computed((): any => filteredTemplates.value.find((template: any): any => template.id === selectedId.value) || filteredTemplates.value[0] || null) as any;
-watch(filteredTemplates, (templates: any): any => {
-    if (!templates.some((template: any): any => template.id === selectedId.value)) {
+});
+const selectedTemplate = computed(() => filteredTemplates.value.find((template) => template.id === selectedId.value) || filteredTemplates.value[0] || null);
+watch(filteredTemplates, (templates) => {
+    if (!templates.some((template) => template.id === selectedId.value)) {
         selectedId.value = templates[0]?.id || "";
     }
 }, { immediate: true });
-function blockStyle(block: any): any {
+function blockStyle(block) {
     return { left: `${block.x}%`, top: `${block.y}%`, width: `${block.w}%`, height: `${block.h}%` };
 }
 </script>

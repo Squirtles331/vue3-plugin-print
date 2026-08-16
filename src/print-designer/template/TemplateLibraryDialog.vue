@@ -32,12 +32,12 @@ import { Search } from "../ui/icons.js";
 import PdButton from "../ui/primitives/PdButton.vue";
 import PdDialog from "../ui/primitives/PdDialog.vue";
 import PdInput from "../ui/primitives/PdInput.vue";
-const props = defineProps({ visible: { type: Boolean, default: false }, templates: { type: Array as any, default: (): any => [] }, loading: { type: Boolean, default: false } }) as any;
-const emit = defineEmits(["update:visible", "refresh", "select", "remove", "clear"]) as any;
-const searchQuery = shallowRef("") as any;
-const filteredTemplates = computed((): any => {
+const props = defineProps({ visible: { type: Boolean, default: false }, templates: { type: Array, default: () => [] }, loading: { type: Boolean, default: false } });
+const emit = defineEmits(["update:visible", "refresh", "select", "remove", "clear"]);
+const searchQuery = shallowRef("");
+const filteredTemplates = computed(() => {
     const query = String(searchQuery.value || "").trim().toLowerCase();
-    const list = [...props.templates].sort((left: any, right: any): any => {
+    const list = [...props.templates].sort((left, right) => {
         const leftTime = new Date(left.updatedAt || 0).getTime();
         const rightTime = new Date(right.updatedAt || 0).getTime();
         return rightTime - leftTime;
@@ -45,16 +45,16 @@ const filteredTemplates = computed((): any => {
     if (!query) {
         return list;
     }
-    return list.filter((template: any): any => `${template.name || ""} ${template.id || ""}`.toLowerCase().includes(query));
-}) as any;
-const summaryText = computed((): any => {
+    return list.filter((template) => `${template.name || ""} ${template.id || ""}`.toLowerCase().includes(query));
+});
+const summaryText = computed(() => {
     if (props.loading) {
         return "正在加载模板库...";
     }
     return `共 ${props.templates.length} 个模板`;
-}) as any;
-const emptyText = computed((): any => props.templates.length ? "没有匹配的模板，清空搜索后可查看全部。" : "本地模板库还是空的，先新建或导入一个模板。") as any;
-async function confirmRemove(template: any): Promise<any> {
+});
+const emptyText = computed(() => props.templates.length ? "没有匹配的模板，清空搜索后可查看全部。" : "本地模板库还是空的，先新建或导入一个模板。");
+async function confirmRemove(template) {
     try {
         await PdMessageBox.confirm(`Delete “${template.name}” from this browser? This cannot be undone.`, "Delete saved template", { type: "warning" });
     }
@@ -63,7 +63,7 @@ async function confirmRemove(template: any): Promise<any> {
     }
     emit("remove", template.id);
 }
-async function confirmClear(): Promise<any> {
+async function confirmClear() {
     try {
         await PdMessageBox.confirm("Remove every saved template from this browser? This cannot be undone.", "Clear local template library", { type: "warning" });
     }
@@ -72,7 +72,7 @@ async function confirmClear(): Promise<any> {
     }
     emit("clear");
 }
-function formatUpdatedAt(value: any): any {
+function formatUpdatedAt(value) {
     if (!value) {
         return "未保存到本地";
     }

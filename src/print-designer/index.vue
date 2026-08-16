@@ -20,22 +20,22 @@ const props = defineProps({
     repository: { type: Object, default: null },
     storageKey: { type: String, default: "default" },
     height: { type: [String, Number], default: 720 },
-    printPolicy: { type: Object, default: (): any => ({}) },
-}) as any;
-const emit = defineEmits(["update:template", "update:runtimeData", "template-change", "error", "ready"]) as any;
-const mountTargetRef = ref(null) as any;
-let editorApp = null as any;
-let editorRoot = null as any;
-let lastTemplateSignature = "" as any;
-let lastRuntimeSignature = "" as any;
-let resolveReady = null as any;
-const readyPromise = new Promise((resolve: any): any => {
+    printPolicy: { type: Object, default: () => ({}) },
+});
+const emit = defineEmits(["update:template", "update:runtimeData", "template-change", "error", "ready"]);
+const mountTargetRef = ref(null);
+let editorApp = null;
+let editorRoot = null;
+let lastTemplateSignature = "";
+let lastRuntimeSignature = "";
+let resolveReady = null;
+const readyPromise = new Promise((resolve) => {
     resolveReady = resolve;
-}) as any;
-const containerStyle = computed((): any => ({
+});
+const containerStyle = computed(() => ({
     height: typeof props.height === "number" ? `${props.height}px` : props.height || "720px",
-})) as any;
-function localStorageKeys(storageKey: any): any {
+}));
+function localStorageKeys(storageKey) {
     if (!storageKey || storageKey === "default") {
         return {
             templates: "print-template-studio:templates:v2",
@@ -50,7 +50,7 @@ function localStorageKeys(storageKey: any): any {
         runtimeDataDrafts: `print-template-studio:${namespace}:runtime-data-drafts:v2`,
     };
 }
-function templateSignature(value: any): any {
+function templateSignature(value) {
     if (!value || typeof value !== "object") {
         return "";
     }
@@ -59,10 +59,10 @@ function templateSignature(value: any): any {
     const meta = document.meta && typeof document.meta === "object" ? document.meta : {};
     return JSON.stringify({ ...document, meta: { ...meta, createdAt: "", updatedAt: "" } });
 }
-function runtimeSignature(value: any): any {
+function runtimeSignature(value) {
     return JSON.stringify(value && typeof value === "object" && !Array.isArray(value) ? value : {});
 }
-async function applyTemplate(value: any): Promise<any> {
+async function applyTemplate(value) {
     const signature = templateSignature(value);
     if (!editorRoot || !value || signature === lastTemplateSignature) {
         return;
@@ -72,7 +72,7 @@ async function applyTemplate(value: any): Promise<any> {
         lastTemplateSignature = signature;
     }
 }
-function applyRuntimeData(value: any): any {
+function applyRuntimeData(value) {
     if (value === undefined || value === null) {
         return;
     }
@@ -83,22 +83,22 @@ function applyRuntimeData(value: any): any {
     lastRuntimeSignature = signature;
     editorRoot.setHostRuntimeData(value);
 }
-function applyPrintPolicy(value: any): any {
+function applyPrintPolicy(value) {
     editorRoot?.setPrintPolicy(value);
 }
-function onTemplateChange(document: any): any {
+function onTemplateChange(document) {
     lastTemplateSignature = templateSignature(document);
     emit("update:template", document);
     emit("template-change", document);
 }
-function onRuntimeDataChange(data: any): any {
+function onRuntimeDataChange(data) {
     lastRuntimeSignature = runtimeSignature(data);
     emit("update:runtimeData", data);
 }
-function onError(payload: any): any {
+function onError(payload) {
     emit("error", payload);
 }
-onMounted((): any => {
+onMounted(() => {
     const keys = localStorageKeys(props.storageKey);
     const repository = props.repository || createLocalTemplateRepository({ key: keys.templates });
     const presetRepository = createLocalElementPresetRepository({ key: keys.presets });
@@ -122,41 +122,41 @@ onMounted((): any => {
     resolveReady?.(editorRoot);
     resolveReady = null;
 });
-onBeforeUnmount((): any => {
+onBeforeUnmount(() => {
     editorApp?.unmount();
     editorApp = null;
     editorRoot = null;
 });
-watch((): any => props.template, (value: any): any => { void applyTemplate(value); }, { deep: true });
-watch((): any => props.runtimeData, applyRuntimeData, { deep: true });
-watch((): any => props.printPolicy, applyPrintPolicy, { deep: true });
+watch(() => props.template, (value) => { void applyTemplate(value); }, { deep: true });
+watch(() => props.runtimeData, applyRuntimeData, { deep: true });
+watch(() => props.printPolicy, applyPrintPolicy, { deep: true });
 defineExpose({
-    whenReady(): any {
+    whenReady() {
         return readyPromise;
     },
-    loadTemplateDocument(document: any): any {
+    loadTemplateDocument(document) {
         lastTemplateSignature = templateSignature(document);
         return editorRoot?.loadTemplateDocument(document);
     },
-    async replaceTemplateDocument(document: any): Promise<any> {
-        const result = await editorRoot?.replaceTemplateDocument(document) as any;
+    async replaceTemplateDocument(document) {
+        const result = await editorRoot?.replaceTemplateDocument(document);
         if (result?.document) {
             lastTemplateSignature = templateSignature(document);
         }
         return result;
     },
-    getTemplateDocument(): any {
+    getTemplateDocument() {
         return editorRoot?.getTemplateDocument();
     },
-    getPublishReadyTemplatePayload(): any {
+    getPublishReadyTemplatePayload() {
         return editorRoot?.getPublishReadyTemplatePayload();
     },
-    setRuntimeData(data: any): any {
+    setRuntimeData(data) {
         lastRuntimeSignature = runtimeSignature(data);
         return editorRoot?.setHostRuntimeData(data);
     },
-    async print(data: any): Promise<any> {
-        const root = editorRoot || await readyPromise as any;
+    async print(data) {
+        const root = editorRoot || await readyPromise;
         if (data !== undefined) {
             lastRuntimeSignature = runtimeSignature(data);
             root.setHostRuntimeData(data);

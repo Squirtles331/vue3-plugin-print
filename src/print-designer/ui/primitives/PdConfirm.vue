@@ -4,14 +4,14 @@ const props = defineProps({
     confirmButtonText: { type: String, default: "确认" },
     cancelButtonText: { type: String, default: "取消" },
     disabled: { type: Boolean, default: false },
-}) as any;
-const emit = defineEmits(["confirm", "cancel"]) as any;
-const open = shallowRef(false) as any;
-function confirm(): any {
+});
+const emit = defineEmits(["confirm", "cancel"]);
+const open = shallowRef(false);
+function confirm() {
     open.value = false;
     emit("confirm");
 }
-function cancel(): any {
+function cancel() {
     open.value = false;
     emit("cancel");
 }

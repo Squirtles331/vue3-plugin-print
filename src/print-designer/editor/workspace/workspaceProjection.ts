@@ -1,13 +1,13 @@
 import { MM_TO_CSS_PX } from "../measurement.js";
-function roundUnit(value: any): any {
+function roundUnit(value) {
     return Number.isFinite(value) ? +value.toFixed(4) : 0;
 }
-function createAxisProjection({ axisLengthPx, originPx, pixelsPerUnit, pageSizeMm }: any): any {
-    const safePixelsPerUnit = pixelsPerUnit || 1 as any;
-    const safeAxisLength = axisLengthPx || 0 as any;
-    const safeOrigin = Number.isFinite(originPx) ? originPx : 0 as any;
-    const screenToDocument = (screenPx: any): any => roundUnit((screenPx - safeOrigin) / safePixelsPerUnit) as any;
-    const documentToScreen = (documentMm: any): any => safeOrigin + documentMm * safePixelsPerUnit as any;
+function createAxisProjection({ axisLengthPx, originPx, pixelsPerUnit, pageSizeMm }) {
+    const safePixelsPerUnit = pixelsPerUnit || 1;
+    const safeAxisLength = axisLengthPx || 0;
+    const safeOrigin = Number.isFinite(originPx) ? originPx : 0;
+    const screenToDocument = (screenPx) => roundUnit((screenPx - safeOrigin) / safePixelsPerUnit);
+    const documentToScreen = (documentMm) => safeOrigin + documentMm * safePixelsPerUnit;
     return {
         axisLengthPx: safeAxisLength,
         originPx: safeOrigin,
@@ -20,30 +20,30 @@ function createAxisProjection({ axisLengthPx, originPx, pixelsPerUnit, pageSizeM
         documentToScreen,
     };
 }
-export function getPixelsPerUnit(unit: any, zoom: any): any {
-    const safeZoom = Number.isFinite(zoom) ? zoom : 1 as any;
+export function getPixelsPerUnit(unit, zoom) {
+    const safeZoom = Number.isFinite(zoom) ? zoom : 1;
     switch (unit) {
         case "mm":
         default:
             return MM_TO_CSS_PX * safeZoom;
     }
 }
-export function createWorkspaceProjection({ unit = "mm", zoom = 1, viewportWidth = 0, viewportHeight = 0, scrollLeft = 0, scrollTop = 0, pageOffsetLeft = 0, pageOffsetTop = 0, pageWidthMm = 0, pageHeightMm = 0, }: any): any {
-    const pixelsPerUnit = getPixelsPerUnit(unit, zoom) as any;
-    const xOriginPx = pageOffsetLeft - scrollLeft as any;
-    const yOriginPx = pageOffsetTop - scrollTop as any;
+export function createWorkspaceProjection({ unit = "mm", zoom = 1, viewportWidth = 0, viewportHeight = 0, scrollLeft = 0, scrollTop = 0, pageOffsetLeft = 0, pageOffsetTop = 0, pageWidthMm = 0, pageHeightMm = 0, }) {
+    const pixelsPerUnit = getPixelsPerUnit(unit, zoom);
+    const xOriginPx = pageOffsetLeft - scrollLeft;
+    const yOriginPx = pageOffsetTop - scrollTop;
     const x = createAxisProjection({
         axisLengthPx: viewportWidth,
         originPx: xOriginPx,
         pixelsPerUnit,
         pageSizeMm: pageWidthMm,
-    }) as any;
+    });
     const y = createAxisProjection({
         axisLengthPx: viewportHeight,
         originPx: yOriginPx,
         pixelsPerUnit,
         pageSizeMm: pageHeightMm,
-    }) as any;
+    });
     return {
         unit,
         zoom,

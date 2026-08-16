@@ -19,3 +19,10 @@
 ## 4. Validation
 
 - [x] 4.1 Run strict type checking, linting, all tests, performance checks, builds, package checks, and packed-consumer checks.
+
+## 5. Zero-any Hardening
+
+- [x] 5.1 Restore strict lint gates for explicit `any` and every TypeScript suppression directive across source, tests, scripts, configuration, and Vue SFCs.
+- [ ] 5.2 Replace all remaining core, template, runtime, editor, store, and component `any` annotations with domain types, discriminated unions, generics, and validated `unknown` boundaries.
+- [ ] 5.3 Replace all remaining test and Node/tooling `any` annotations with precise test fixtures and platform/library interfaces.
+- [ ] 5.4 Regenerate declarations and validate strict type checking, linting, tests, builds, artifacts, and packed TypeScript consumption with zero violations.

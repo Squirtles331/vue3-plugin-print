@@ -1252,35 +1252,35 @@ import { useEditorHistoryStore } from "../stores/historyStore";
 import { useEditorSelectionStore } from "../stores/selectionStore";
 import { createLocalElementPresetRepository } from "../../template/elementPresetRepository.js";
 import { fieldErrorKey, getFieldError } from "./fieldErrorState.js";
-const documentStore = useEditorDocumentStore() as any;
-const historyStore = useEditorHistoryStore() as any;
-const selectionStore = useEditorSelectionStore() as any;
-const presetRepository = createLocalElementPresetRepository() as any;
-const { objectsById } = storeToRefs(documentStore) as any;
-const { selectedIds, tableSelection } = storeToRefs(selectionStore) as any;
-const activeTab = ref(INSPECTOR_TABS.PROPERTY) as any;
+const documentStore = useEditorDocumentStore();
+const historyStore = useEditorHistoryStore();
+const selectionStore = useEditorSelectionStore();
+const presetRepository = createLocalElementPresetRepository();
+const { objectsById } = storeToRefs(documentStore);
+const { selectedIds, tableSelection } = storeToRefs(selectionStore);
+const activeTab = ref(INSPECTOR_TABS.PROPERTY);
 const TABLE_ALIGN_OPTIONS = [
     { label: "Left", value: "left" },
     { label: "Center", value: "center" },
     { label: "Right", value: "right" },
-] as any;
+];
 const TABLE_TEXT_ALIGN_OPTIONS = [
     { label: "左对齐", value: "left" },
     { label: "居中", value: "center" },
     { label: "右对齐", value: "right" },
-] as any;
+];
 const TABLE_FORMATTER_OPTIONS = [
     { label: "不格式化", value: "" },
     { label: "数字", value: "number" },
     { label: "货币", value: "currency" },
     { label: "日期", value: "date" },
-] as any;
+];
 const TABLE_BORDER_STYLE_OPTIONS = [
     { label: "实线", value: "solid" },
     { label: "虚线", value: "dashed" },
     { label: "点线", value: "dotted" },
     { label: "双线", value: "double" },
-] as any;
+];
 const STRUCTURED_FIELD_CONTROLS = new Set([
     FIELD_CONTROL.TABLE_COLUMNS,
     FIELD_CONTROL.TABLE_SAMPLE_ROWS,
@@ -1288,49 +1288,49 @@ const STRUCTURED_FIELD_CONTROLS = new Set([
     FIELD_CONTROL.MULTI_LABEL_ITEMS,
     FIELD_CONTROL.ACTIONS,
     FIELD_CONTROL.BUTTONS,
-]) as any;
-const SQUARE_DIMENSION_TYPES = new Set(["circle", "qrcode"]) as any;
+]);
+const SQUARE_DIMENSION_TYPES = new Set(["circle", "qrcode"]);
 const tableColumnsField = {
     source: "props",
     key: "columns",
     control: FIELD_CONTROL.TABLE_COLUMNS,
-} as any;
-const selectedObject = computed((): any => {
+};
+const selectedObject = computed(() => {
     if (selectedIds.value.length !== 1) {
         return null;
     }
     const objectId = selectedIds.value[0];
     return objectId ? objectsById.value[objectId] || null : null;
-}) as any;
-const isMultipleSelection = computed((): any => selectedIds.value.length > 1) as any;
-const multipleSelectedObjects = computed((): any => selectedIds.value.map((id: any): any => objectsById.value[id]).filter(Boolean)) as any;
-const isTableObject = computed((): any => selectedObject.value?.type === "table") as any;
-const selectedTableCells = computed((): any => {
+});
+const isMultipleSelection = computed(() => selectedIds.value.length > 1);
+const multipleSelectedObjects = computed(() => selectedIds.value.map((id) => objectsById.value[id]).filter(Boolean));
+const isTableObject = computed(() => selectedObject.value?.type === "table");
+const selectedTableCells = computed(() => {
     const selection = tableSelection.value;
     if (!isTableObject.value || selection?.tableId !== selectedObject.value?.id) {
         return [];
     }
     return selection.cells || [];
-}) as any;
-const selectedTableSection = computed((): any => tableSelection.value?.section === "footer" ? "footer" : "body") as any;
-function multipleBooleanValue(key: any, fallback: any): any {
-    const values = multipleSelectedObjects.value.map((object: any): any => object[key]);
-    return values.length && values.every((value: any): any => value === values[0]) ? values[0] : fallback;
+});
+const selectedTableSection = computed(() => tableSelection.value?.section === "footer" ? "footer" : "body");
+function multipleBooleanValue(key, fallback) {
+    const values = multipleSelectedObjects.value.map((object) => object[key]);
+    return values.length && values.every((value) => value === values[0]) ? values[0] : fallback;
 }
-function multipleRootValue(key: any, fallback: any): any {
-    const values = multipleSelectedObjects.value.map((object: any): any => object[key]);
-    return values.length && values.every((value: any): any => value === values[0]) && Number.isFinite(Number(values[0]))
+function multipleRootValue(key, fallback) {
+    const values = multipleSelectedObjects.value.map((object) => object[key]);
+    return values.length && values.every((value) => value === values[0]) && Number.isFinite(Number(values[0]))
         ? Number(values[0])
         : fallback;
 }
-function multipleStyleValue(key: any, fallback: any): any {
-    const values = multipleSelectedObjects.value.map((object: any): any => object.style?.[key]);
-    return values.length && values.every((value: any): any => value === values[0]) && values[0] != null ? values[0] : fallback;
+function multipleStyleValue(key, fallback) {
+    const values = multipleSelectedObjects.value.map((object) => object.style?.[key]);
+    return values.length && values.every((value) => value === values[0]) && values[0] != null ? values[0] : fallback;
 }
-function setMultipleRootValue(key: any, value: any): any {
+function setMultipleRootValue(key, value) {
     const patches = multipleSelectedObjects.value
-        .filter((object: any): any => !object.locked || key === "locked")
-        .map((object: any): any => {
+        .filter((object) => !object.locked || key === "locked")
+        .map((object) => {
         const rule = getElementSizeRule(object.type);
         const nextValue = key === "width" && rule
             ? Math.min(rule.maxWidth, Math.max(rule.minWidth, Number(value) || rule.minWidth))
@@ -1344,18 +1344,18 @@ function setMultipleRootValue(key: any, value: any): any {
         executeEditorCommand(historyStore, command);
     }
 }
-function setMultipleStyleValue(key: any, value: any): any {
+function setMultipleStyleValue(key, value) {
     const patches = multipleSelectedObjects.value
-        .filter((object: any): any => !object.locked)
-        .map((object: any): any => ({ id: object.id, patch: { style: { ...(object.style || {}), [key]: value } } }));
+        .filter((object) => !object.locked)
+        .map((object) => ({ id: object.id, patch: { style: { ...(object.style || {}), [key]: value } } }));
     const command = createPatchTransactionCommand(documentStore, `Update ${key} for selection`, patches);
     if (command) {
         executeEditorCommand(historyStore, command);
     }
 }
-function reorderMultipleSelection(action: any): any {
+function reorderMultipleSelection(action) {
     const pageId = multipleSelectedObjects.value[0]?.pageId;
-    if (!pageId || multipleSelectedObjects.value.some((object: any): any => object.pageId !== pageId)) {
+    if (!pageId || multipleSelectedObjects.value.some((object) => object.pageId !== pageId)) {
         return;
     }
     const nextIds = createOrderIds(documentStore.pageObjectMap[pageId] || [], documentStore.objectsById, selectedIds.value, action);
@@ -1364,32 +1364,32 @@ function reorderMultipleSelection(action: any): any {
         executeEditorCommand(historyStore, command);
     }
 }
-const selectedDefinition = computed((): any => {
+const selectedDefinition = computed(() => {
     if (!selectedObject.value) {
         return null;
     }
     return getElementDefinition(selectedObject.value.type);
-}) as any;
-const selectedSchema = computed((): any => selectedDefinition.value?.inspectorSchema || null) as any;
-const tabs = computed((): any => selectedSchema.value?.tabs || []) as any;
-const activeTabSchema = computed((): any => tabs.value.find((tab: any): any => tab.key === activeTab.value) || null) as any;
-const propertyCapabilities = computed((): any => getElementPropertyCapabilities(selectedObject.value?.type).fields) as any;
-const activeSections = computed((): any => enrichSections(normalizeSections(activeTabSchema.value?.sections || []), propertyCapabilities.value)) as any;
-const fieldErrors = ref({}) as any;
-const propertyEditSession = ref(null) as any;
-let propertyEditTimer = null as any;
+});
+const selectedSchema = computed(() => selectedDefinition.value?.inspectorSchema || null);
+const tabs = computed(() => selectedSchema.value?.tabs || []);
+const activeTabSchema = computed(() => tabs.value.find((tab) => tab.key === activeTab.value) || null);
+const propertyCapabilities = computed(() => getElementPropertyCapabilities(selectedObject.value?.type).fields);
+const activeSections = computed(() => enrichSections(normalizeSections(activeTabSchema.value?.sections || []), propertyCapabilities.value));
+const fieldErrors = ref({});
+const propertyEditSession = ref(null);
+let propertyEditTimer = null;
 const tableEditorDrafts = ref({
     columns: "",
     sampleData: "",
     footerData: "",
     transform: "",
-}) as any;
+});
 const activeTableEditor = ref({
     visible: false,
     key: "",
     title: "",
     language: "json",
-}) as any;
+});
 /*
 
     const sampleDataField = {
@@ -1414,39 +1414,39 @@ const activeTableEditor = ref({
   });
 });
 */
-const typeLabel = computed((): any => selectedDefinition.value?.label || selectedObject.value?.type || "") as any;
-const panelHint = computed((): any => {
+const typeLabel = computed(() => selectedDefinition.value?.label || selectedObject.value?.type || "");
+const panelHint = computed(() => {
     if (!selectedObject.value) {
         return "选中元素后，这里会显示位置、样式、绑定和运行时属性。";
     }
     const label = typeLabel.value || "元素";
     const status = selectedObject.value.locked ? "已锁定，部分字段只读。" : "可直接编辑。";
     return `正在编辑 ${label}。${status}`;
-}) as any;
-watch(tabs, (nextTabs: any): any => {
+});
+watch(tabs, (nextTabs) => {
     if (!nextTabs.length) {
         activeTab.value = INSPECTOR_TABS.PROPERTY;
         return;
     }
-    const hasCurrent = nextTabs.some((tab: any): any => tab.key === activeTab.value);
+    const hasCurrent = nextTabs.some((tab) => tab.key === activeTab.value);
     if (!hasCurrent) {
         activeTab.value = nextTabs[0].key;
     }
 }, { immediate: true });
-watch((): any => selectedObject.value?.id, (): any => {
+watch(() => selectedObject.value?.id, () => {
     fieldErrors.value = {};
     endPropertyEditSession();
 });
-watch(selectedIds, (): any => {
+watch(selectedIds, () => {
     endPropertyEditSession();
 });
-watch((): any => [
+watch(() => [
     selectedObject.value?.id || "",
     selectedObject.value?.props?.columns,
     selectedObject.value?.props?.sampleData,
     selectedObject.value?.props?.footerData,
     selectedObject.value?.props?.transform,
-], (): any => {
+], () => {
     if (!isTableObject.value) {
         tableEditorDrafts.value = {
             columns: "",
@@ -1463,45 +1463,45 @@ watch((): any => [
         transform: tableJsonPropValue("transform"),
     };
 }, { immediate: true, deep: true });
-function tabLabel(tab: any): any {
+function tabLabel(tab) {
     return TAB_LABELS[tab] || tab;
 }
-function fieldControl(field: any): any {
+function fieldControl(field) {
     if (!field) {
         return "";
     }
     return field.control || "";
 }
-function normalizeField(field: any): any {
+function normalizeField(field) {
     return {
         ...field,
         control: fieldControl(field),
     };
 }
-function normalizeSection(section: any): any {
+function normalizeSection(section) {
     return {
         ...section,
         fields: (section.fields || []).map(normalizeField),
     };
 }
-function normalizeSections(sections: any): any {
+function normalizeSections(sections) {
     return regroupSections(sections.map(normalizeSection));
 }
-function enrichSections(sections: any, capabilities: any): any {
-    return sections.map((section: any): any => ({
+function enrichSections(sections, capabilities) {
+    return sections.map((section) => ({
         ...section,
-        fields: section.fields.map((field: any): any => {
-            const capability = capabilities.find((item: any): any => item.source === field.source && item.key === field.key);
+        fields: section.fields.map((field) => {
+            const capability = capabilities.find((item) => item.source === field.source && item.key === field.key);
             return capability
                 ? { ...field, min: field.min ?? capability.min, max: field.max ?? capability.max, capability }
                 : field;
         }),
     }));
 }
-function isStructuredField(field: any): any {
+function isStructuredField(field) {
     return STRUCTURED_FIELD_CONTROLS.has(field?.control);
 }
-function createRuntimeSection(key: any, label: any, layout: any, fields: any): any {
+function createRuntimeSection(key, label, layout, fields) {
     return {
         key,
         label,
@@ -1509,10 +1509,10 @@ function createRuntimeSection(key: any, label: any, layout: any, fields: any): a
         fields,
     };
 }
-function fieldIdentifier(field: any): any {
+function fieldIdentifier(field) {
     return `${field.source}:${field.key}`;
 }
-const GLOBAL_HIDDEN_RUNTIME_FIELDS = new Set() as any;
+const GLOBAL_HIDDEN_RUNTIME_FIELDS = new Set();
 const HIDDEN_RUNTIME_FIELDS = {
     "text:property": new Set(["props:sampleValue"]),
     "text:style": new Set(["props:textPreset"]),
@@ -1520,8 +1520,8 @@ const HIDDEN_RUNTIME_FIELDS = {
     "image:property": new Set(),
     "image:style": new Set(),
     "image:advanced": new Set(),
-} as any;
-function isHiddenField(field: any): any {
+};
+function isHiddenField(field) {
     if (!field) {
         return true;
     }
@@ -1530,28 +1530,28 @@ function isHiddenField(field: any): any {
     const hiddenFields = HIDDEN_RUNTIME_FIELDS[runtimeKey];
     return GLOBAL_HIDDEN_RUNTIME_FIELDS.has(identifier) || hiddenFields?.has(identifier) || false;
 }
-function groupRuntimeSections(fields: any, definitions: any): any {
-    const visibleFields = fields.filter((field: any): any => !isHiddenField(field));
-    const fieldMap = new Map(visibleFields.map((field: any): any => [fieldIdentifier(field), field]));
+function groupRuntimeSections(fields, definitions) {
+    const visibleFields = fields.filter((field) => !isHiddenField(field));
+    const fieldMap = new Map(visibleFields.map((field) => [fieldIdentifier(field), field]));
     const used = new Set();
     const sections = [];
-    definitions.forEach((definition: any): any => {
+    definitions.forEach((definition) => {
         const sectionFields = (definition.fields || [])
-            .map((id: any): any => fieldMap.get(id))
+            .map((id) => fieldMap.get(id))
             .filter(Boolean);
         if (!sectionFields.length) {
             return;
         }
-        sectionFields.forEach((field: any): any => used.add(fieldIdentifier(field)));
+        sectionFields.forEach((field) => used.add(fieldIdentifier(field)));
         sections.push(createRuntimeSection(definition.key, definition.label, definition.layout, sectionFields));
     });
-    const remainingFields = visibleFields.filter((field: any): any => !used.has(fieldIdentifier(field)));
+    const remainingFields = visibleFields.filter((field) => !used.has(fieldIdentifier(field)));
     if (remainingFields.length) {
         sections.push(createRuntimeSection("more", "更多", SECTION_LAYOUT.STACK, remainingFields));
     }
     return sections;
 }
-function createGeometryRuntimeSection(): any {
+function createGeometryRuntimeSection() {
     return createRuntimeSection("geometry", "位置与尺寸", SECTION_LAYOUT.GRID_2, [
         "root:x",
         "root:y",
@@ -1560,13 +1560,13 @@ function createGeometryRuntimeSection(): any {
         "root:rotation",
     ]);
 }
-function createLayerRuntimeSection(): any {
+function createLayerRuntimeSection() {
     return createRuntimeSection("layer", "层级", SECTION_LAYOUT.STACK, ["root:zIndex", "root:layerActions"]);
 }
-function createMetadataRuntimeSection(): any {
+function createMetadataRuntimeSection() {
     return createRuntimeSection("metadata", "元素信息", SECTION_LAYOUT.STACK, ["root:id", "root:type"]);
 }
-function createBehaviorRuntimeSection(extraFields: any = []): any {
+function createBehaviorRuntimeSection(extraFields = []) {
     return createRuntimeSection("behavior", "行为", SECTION_LAYOUT.GRID_2, [
         "root:locked",
         "root:printable",
@@ -1574,13 +1574,13 @@ function createBehaviorRuntimeSection(extraFields: any = []): any {
         ...extraFields,
     ]);
 }
-function createActionsRuntimeSection(): any {
+function createActionsRuntimeSection() {
     return createRuntimeSection("actions", "扩展能力", SECTION_LAYOUT.STACK, ["root:saveAsTemplate"]);
 }
-function createDangerRuntimeSection(): any {
+function createDangerRuntimeSection() {
     return createRuntimeSection("danger", "危险操作", SECTION_LAYOUT.STACK, ["root:deleteElement"]);
 }
-function runtimeSectionDefinitions(type: any, tab: any): any {
+function runtimeSectionDefinitions(type, tab) {
     switch (`${type}:${tab}`) {
         case "text:property":
             return [
@@ -1916,15 +1916,15 @@ function runtimeSectionDefinitions(type: any, tab: any): any {
             return null;
     }
 }
-function regroupSections(sections: any): any {
+function regroupSections(sections) {
     const definitions = runtimeSectionDefinitions(selectedObject.value?.type, activeTab.value);
     if (!definitions?.length) {
         return sections;
     }
-    const fields = sections.flatMap((section: any): any => section.fields || []);
+    const fields = sections.flatMap((section) => section.fields || []);
     return groupRuntimeSections(fields, definitions);
 }
-function sectionLayoutClass(layout: any): any {
+function sectionLayoutClass(layout) {
     switch (layout) {
         case SECTION_LAYOUT.GRID_2:
             return "is-grid-2";
@@ -1936,10 +1936,10 @@ function sectionLayoutClass(layout: any): any {
             return "is-stack";
     }
 }
-function displayNumber(value: any): any {
+function displayNumber(value) {
     return Number.isFinite(value) ? value.toFixed(1) : "--";
 }
-function getFieldValue(field: any): any {
+function getFieldValue(field) {
     if (!selectedObject.value) {
         return undefined;
     }
@@ -1957,7 +1957,7 @@ function getFieldValue(field: any): any {
     }
     return undefined;
 }
-function stringFieldValue(field: any): any {
+function stringFieldValue(field) {
     const value = getFieldValue(field);
     if (field.valueType === "json" && value != null) {
         try {
@@ -1969,17 +1969,17 @@ function stringFieldValue(field: any): any {
     }
     return value == null ? "" : String(value);
 }
-function codeFieldValue(field: any): any {
+function codeFieldValue(field) {
     return stringFieldValue(field);
 }
-const imageFileInputs = new Map() as any;
-function imageFieldPlaceholder(field: any): any {
+const imageFileInputs = new Map();
+function imageFieldPlaceholder(field) {
     if (field?.key === "src") {
         return "请输入图片地址或 Base64...";
     }
     return "";
 }
-function setImageInputRef(key: any, element: any): any {
+function setImageInputRef(key, element) {
     if (!key) {
         return;
     }
@@ -1989,18 +1989,18 @@ function setImageInputRef(key: any, element: any): any {
     }
     imageFileInputs.delete(key);
 }
-function triggerImageUpload(field: any): any {
+function triggerImageUpload(field) {
     imageFileInputs.get(fieldIdentifier(field))?.click();
 }
-function readImageFileAsDataUrl(file: any): any {
-    return new Promise((resolve: any, reject: any): any => {
+function readImageFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = (): any => resolve(typeof reader.result === "string" ? reader.result : "");
-        reader.onerror = (): any => reject(new Error("read-image-failed"));
+        reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+        reader.onerror = () => reject(new Error("read-image-failed"));
         reader.readAsDataURL(file);
     });
 }
-async function onImageFileChange(field: any, event: any): Promise<any> {
+async function onImageFileChange(field, event) {
     const input = event?.target;
     const file = input?.files?.[0];
     if (!file) {
@@ -2027,19 +2027,19 @@ async function onImageFileChange(field: any, event: any): Promise<any> {
         input.value = "";
     }
 }
-function numberValue(value: any): any {
+function numberValue(value) {
     return Number.isFinite(value) ? value : 0;
 }
-function roundDimensionValue(value: any): any {
+function roundDimensionValue(value) {
     return Math.round(value * 1000) / 1000;
 }
-function isDimensionKey(key: any): any {
+function isDimensionKey(key) {
     return key === "width" || key === "height";
 }
-function linkedDimensionKey(key: any): any {
+function linkedDimensionKey(key) {
     return key === "width" ? "height" : "width";
 }
-function buildRootUpdatePayload(object: any, key: any, value: any): any {
+function buildRootUpdatePayload(object, key, value) {
     const nextPayload = {
         [key]: value,
     };
@@ -2061,39 +2061,39 @@ function buildRootUpdatePayload(object: any, key: any, value: any): any {
     nextPayload[linkedDimensionKey(key)] = roundDimensionValue((value / currentPrimary) * currentSecondary);
     return nextPayload;
 }
-function numberFieldValue(field: any): any {
+function numberFieldValue(field) {
     return numberValue(getFieldValue(field));
 }
-function colorFieldValue(field: any): any {
+function colorFieldValue(field) {
     const value = getFieldValue(field);
     if (typeof value === "string" && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value)) {
         return value;
     }
     return "#000000";
 }
-function selectFieldValue(field: any): any {
+function selectFieldValue(field) {
     const value = getFieldValue(field);
     if (value != null && value !== "") {
         return value;
     }
     return field.options?.[0]?.value;
 }
-function textareaRows(field: any): any {
+function textareaRows(field) {
     if (field.rows) {
         return field.rows;
     }
     return field.key === "customScript" ? 8 : 4;
 }
-function tableEditorDraft(key: any): any {
+function tableEditorDraft(key) {
     return tableEditorDrafts.value[key] ?? "";
 }
-function updateTableEditorDraft(key: any, value: any): any {
+function updateTableEditorDraft(key, value) {
     tableEditorDrafts.value = {
         ...tableEditorDrafts.value,
         [key]: value == null ? "" : String(value),
     };
 }
-function openTableEditor(key: any, title: any, language: any): any {
+function openTableEditor(key, title, language) {
     const currentValue = tableJsonPropValue(key);
     updateTableEditorDraft(key, currentValue);
     activeTableEditor.value = {
@@ -2103,7 +2103,7 @@ function openTableEditor(key: any, title: any, language: any): any {
         language,
     };
 }
-function closeTableEditor(resetDraft: any = true): any {
+function closeTableEditor(resetDraft = true) {
     const key = activeTableEditor.value.key;
     if (resetDraft && key) {
         updateTableEditorDraft(key, tableJsonPropValue(key));
@@ -2115,7 +2115,7 @@ function closeTableEditor(resetDraft: any = true): any {
         language: "json",
     };
 }
-function saveActiveTableEditor(): any {
+function saveActiveTableEditor() {
     const { key, title, language } = activeTableEditor.value;
     if (!key) {
         return;
@@ -2123,7 +2123,7 @@ function saveActiveTableEditor(): any {
     commitTableJsonEditor(key, title);
     closeTableEditor(false);
 }
-function tableEditorPreview(key: any): any {
+function tableEditorPreview(key) {
     const source = tableEditorDraft(key).trim();
     if (!source) {
         return key === "transform" ? "{}" : "[]";
@@ -2131,23 +2131,23 @@ function tableEditorPreview(key: any): any {
     const lines = source.split(/\r?\n/).slice(0, 6);
     return lines.join("\n");
 }
-function tablePropValue(key: any, fallback: any = ""): any {
+function tablePropValue(key, fallback = "") {
     const value = selectedObject.value?.props?.[key];
     return value == null ? fallback : value;
 }
-function tableEditorHintValue(key: any, fallback: any = ""): any {
+function tableEditorHintValue(key, fallback = "") {
     const value = selectedObject.value?.editorHints?.[key];
     return value == null ? fallback : value;
 }
-function tableStyleValue(key: any, fallback: any = ""): any {
+function tableStyleValue(key, fallback = "") {
     const value = selectedObject.value?.style?.[key];
     return value == null ? fallback : value;
 }
-function tableNumberPropValue(key: any, fallback: any = 0): any {
+function tableNumberPropValue(key, fallback = 0) {
     const value = Number(tablePropValue(key, fallback));
     return Number.isFinite(value) ? value : fallback;
 }
-function tableDesignRowCountValue(): any {
+function tableDesignRowCountValue() {
     const explicitValue = Number(selectedObject.value?.editorHints?.rowCount);
     if (Number.isFinite(explicitValue) && explicitValue > 0) {
         return explicitValue;
@@ -2155,27 +2155,27 @@ function tableDesignRowCountValue(): any {
     const sampleRows = selectedObject.value?.props?.sampleData;
     return Array.isArray(sampleRows) && sampleRows.length ? sampleRows.length : 5;
 }
-function tableStringPropValue(key: any, fallback: any = ""): any {
+function tableStringPropValue(key, fallback = "") {
     const value = tablePropValue(key, fallback);
     return value == null ? fallback : String(value);
 }
-function tableStringStyleValue(key: any, fallback: any = ""): any {
+function tableStringStyleValue(key, fallback = "") {
     const value = tableStyleValue(key, fallback);
     return value == null ? fallback : String(value);
 }
-function setTablePropValue(key: any, value: any): any {
+function setTablePropValue(key, value) {
     setFieldValue({ source: "props", key }, value);
 }
-function setTableEditorHintValue(key: any, value: any): any {
+function setTableEditorHintValue(key, value) {
     setFieldValue({ source: "editorHints", key }, value);
 }
-function setTableStyleValue(key: any, value: any): any {
+function setTableStyleValue(key, value) {
     setFieldValue({ source: "style", key }, value);
 }
-function tableJsonPropValue(key: any): any {
+function tableJsonPropValue(key) {
     if (key === "columns") {
-        return JSON.stringify(tableColumnsValue(tableColumnsField).map((column: any): any => {
-            const result: any = {
+        return JSON.stringify(tableColumnsValue(tableColumnsField).map((column) => {
+            const result = {
                 field: column.key,
                 valuePath: column.valuePath || column.key,
                 header: column.title,
@@ -2192,7 +2192,7 @@ function tableJsonPropValue(key: any): any {
     }
     return stringFieldValue({ source: "props", key, valueType: "json" });
 }
-function setTableJsonPropValue(key: any, value: any, label: any): any {
+function setTableJsonPropValue(key, value, label) {
     if (key === "columns") {
         const source = typeof value === "string" ? value.trim() : "";
         if (!source) {
@@ -2209,7 +2209,7 @@ function setTableJsonPropValue(key: any, value: any, label: any): any {
                 PdMessage.error("列定义必须是数组 JSON");
                 return false;
             }
-            const nextColumns = parsed.map((column: any, index: any): any => normalizeTableColumn(column, index));
+            const nextColumns = parsed.map((column, index) => normalizeTableColumn(column, index));
             setTableObjectProps({
                 columns: nextColumns,
                 sampleData: normalizeTableSampleData(selectedObject.value?.props?.sampleData, nextColumns),
@@ -2235,47 +2235,47 @@ function setTableJsonPropValue(key: any, value: any, label: any): any {
     setFieldValue({ source: "props", key, valueType: "json", label }, value);
     return true;
 }
-function tableCodePropValue(key: any): any {
+function tableCodePropValue(key) {
     return codeFieldValue({ source: "props", key });
 }
-function setTableCodePropValue(key: any, value: any): any {
+function setTableCodePropValue(key, value) {
     setFieldValue({ source: "props", key, label: key }, value);
     return true;
 }
-function commitTableJsonEditor(key: any, label: any): any {
+function commitTableJsonEditor(key, label) {
     if (setTableJsonPropValue(key, tableEditorDraft(key), label)) {
         updateTableEditorDraft(key, tableJsonPropValue(key));
     }
 }
-function commitTableCodeEditor(key: any): any {
+function commitTableCodeEditor(key) {
     if (setTableCodePropValue(key, tableEditorDraft(key))) {
         updateTableEditorDraft(key, tableCodePropValue(key));
     }
 }
-function pxToMmValue(value: any): any {
+function pxToMmValue(value) {
     const numeric = Number(value);
     return Number.isFinite(numeric) ? Math.round((numeric / MM_TO_CSS_PX) * 100) / 100 : 0;
 }
-function mmToPxValue(value: any): any {
+function mmToPxValue(value) {
     const numeric = Number(value);
     return Number.isFinite(numeric) ? Math.round(numeric * MM_TO_CSS_PX * 100) / 100 : 0;
 }
-function tableFontSizeMmValue(key: any, fallbackKey: any = ""): any {
+function tableFontSizeMmValue(key, fallbackKey = "") {
     const fallback = fallbackKey ? tableStyleValue(fallbackKey, 14) : 14;
     return pxToMmValue(tableStyleValue(key, fallback));
 }
-function setTableFontSizeMmValue(key: any, value: any, fallbackKey: any = ""): any {
+function setTableFontSizeMmValue(key, value, fallbackKey = "") {
     const fallback = fallbackKey ? tableStyleValue(fallbackKey, 14) : 14;
     const mmValue = Number.isFinite(Number(value)) ? Number(value) : pxToMmValue(fallback);
     setTableStyleValue(key, mmToPxValue(mmValue));
 }
-function tableBorderWidthMmValue(): any {
+function tableBorderWidthMmValue() {
     return pxToMmValue(tableStyleValue("borderWidth", 1));
 }
-function setTableBorderWidthMmValue(value: any): any {
+function setTableBorderWidthMmValue(value) {
     setTableStyleValue("borderWidth", mmToPxValue(value));
 }
-function reorderSelectedObject(action: any): any {
+function reorderSelectedObject(action) {
     if (!selectedObject.value) {
         return;
     }
@@ -2283,7 +2283,7 @@ function reorderSelectedObject(action: any): any {
         PdMessage.warning("当前元素已锁定，无法调整层级。");
     }
 }
-async function copySelectedObjectId(): Promise<any> {
+async function copySelectedObjectId() {
     if (!selectedObject.value?.id) {
         return;
     }
@@ -2295,7 +2295,7 @@ async function copySelectedObjectId(): Promise<any> {
         PdMessage.error("复制失败");
     }
 }
-function setTableObjectProps(patch: any): any {
+function setTableObjectProps(patch) {
     if (!selectedObject.value) {
         return;
     }
@@ -2313,47 +2313,47 @@ function setTableObjectProps(patch: any): any {
         },
     });
 }
-function selectedTableRows(section: any = selectedTableSection.value): any {
+function selectedTableRows(section = selectedTableSection.value) {
     const key = section === "footer" ? "footerData" : "sampleData";
     const rows = selectedObject.value?.props?.[key];
     return Array.isArray(rows) ? rows : [];
 }
-function tableSelectionCell(): any {
+function tableSelectionCell() {
     const selection = selectedTableCells.value[0];
     if (!selection)
         return null;
     return selectedTableRows(selection.section)?.[selection.rowIndex]?.[selection.colField] ?? null;
 }
-function selectedTableCellStyleValue(key: any, fallback: any = ""): any {
+function selectedTableCellStyleValue(key, fallback = "") {
     const value = tableCellStyleValue(tableSelectionCell())[key];
     return value == null || value === "" ? fallback : value;
 }
-function selectedTableCellNumberStyleValue(key: any): any {
+function selectedTableCellNumberStyleValue(key) {
     const raw = selectedTableCellStyleValue(key, "");
     const numeric = Number.parseFloat(raw);
     return Number.isFinite(numeric) ? numeric : 12;
 }
-function selectedTableCellTextValue(): any {
+function selectedTableCellTextValue() {
     return String(tableCellTextValue(tableSelectionCell()) ?? "");
 }
-function selectedTableCellHasCurrentColumnSummary(): any {
+function selectedTableCellHasCurrentColumnSummary() {
     const selection = selectedTableCells.value[0];
     return Boolean(selection && toTableCellDescriptor(tableSelectionCell()).field === selection.colField);
 }
-function updateSelectedFooterText(value: any): any {
+function updateSelectedFooterText(value) {
     if (selectedTableSection.value !== "footer")
         return;
     let rows = selectedTableRows("footer");
-    selectedTableCells.value.forEach((cell: any): any => {
+    selectedTableCells.value.forEach((cell) => {
         rows = updateTableCellValue(rows, selectedObject.value?.props?.columns, cell.rowIndex, cell.colField, String(value ?? ""));
     });
     commitTableOperation({ footerData: rows }, "编辑表脚单元格");
 }
-function setSelectedFooterSummary(enabled: any): any {
+function setSelectedFooterSummary(enabled) {
     if (selectedTableSection.value !== "footer")
         return;
     let rows = selectedTableRows("footer");
-    selectedTableCells.value.forEach((selection: any): any => {
+    selectedTableCells.value.forEach((selection) => {
         rows = updateTableCellValue(rows, selectedObject.value?.props?.columns, selection.rowIndex, selection.colField, tableCellTextValue(rows?.[selection.rowIndex]?.[selection.colField]));
         const cell = toTableCellDescriptor(rows[selection.rowIndex][selection.colField]);
         if (enabled) {
@@ -2365,7 +2365,7 @@ function setSelectedFooterSummary(enabled: any): any {
     });
     commitTableOperation({ footerData: rows }, "设置表脚汇总字段");
 }
-function commitTableOperation(patch: any, label: any): any {
+function commitTableOperation(patch, label) {
     const object = selectedObject.value;
     if (!object || object.locked) {
         PdMessage.warning("当前表格已锁定，请先解除锁定后再编辑。");
@@ -2380,10 +2380,10 @@ function commitTableOperation(patch: any, label: any): any {
     executeEditorCommand(historyStore, command);
     return true;
 }
-function selectionDataKey(): any {
+function selectionDataKey() {
     return selectedTableSection.value === "footer" ? "footerData" : "sampleData";
 }
-function applySelectedTableCellStyle(style: any): any {
+function applySelectedTableCellStyle(style) {
     if (!selectedTableCells.value.length)
         return;
     const key = selectionDataKey();
@@ -2391,7 +2391,7 @@ function applySelectedTableCellStyle(style: any): any {
     if (result.changed)
         commitTableOperation({ [key]: result.rows }, "设置单元格样式");
 }
-function mergeSelectedTableCells(): any {
+function mergeSelectedTableCells() {
     const key = selectionDataKey();
     const result = mergeTableCellsPatch(selectedTableRows(), selectedObject.value?.props?.columns, selectedTableCells.value);
     if (!result.changed) {
@@ -2400,12 +2400,12 @@ function mergeSelectedTableCells(): any {
     }
     commitTableOperation({ [key]: result.rows }, "合并表格单元格");
 }
-function splitSelectedTableCells(): any {
+function splitSelectedTableCells() {
     const key = selectionDataKey();
     let rows = selectedTableRows();
     let changed = false;
     const processed = new Set();
-    selectedTableCells.value.forEach((cell: any): any => {
+    selectedTableCells.value.forEach((cell) => {
         const cellKey = `${cell.rowIndex}:${cell.colField}`;
         if (processed.has(cellKey))
             return;
@@ -2420,19 +2420,19 @@ function splitSelectedTableCells(): any {
     }
     commitTableOperation({ [key]: rows }, "拆分表格单元格");
 }
-function insertSelectedTableRow(): any {
+function insertSelectedTableRow() {
     const key = selectionDataKey();
-    const rowIndex = Math.max(...selectedTableCells.value.map((cell: any): any => cell.rowIndex), -1) + 1;
+    const rowIndex = Math.max(...selectedTableCells.value.map((cell) => cell.rowIndex), -1) + 1;
     const result = insertTableRowAt(selectedTableRows(), selectedObject.value?.props?.columns, rowIndex, selectedObject.value?.props?.rowHeights, selectedTableSection.value);
     commitTableOperation({ [key]: result.rows, rowHeights: result.rowHeights }, "插入表格行");
 }
-function removeSelectedTableRows(): any {
+function removeSelectedTableRows() {
     const key = selectionDataKey();
     let rows = selectedTableRows();
     let rowHeights = selectedObject.value?.props?.rowHeights;
-    const indexes = [...new Set(selectedTableCells.value.map((cell: any): any => cell.rowIndex))].sort((a: any, b: any): any => b - a);
+    const indexes = [...new Set(selectedTableCells.value.map((cell) => cell.rowIndex))].sort((a, b) => b - a);
     let changed = false;
-    indexes.forEach((rowIndex: any): any => {
+    indexes.forEach((rowIndex) => {
         const result = removeTableRowAt(rows, selectedObject.value?.props?.columns, rowIndex, rowHeights, selectedTableSection.value);
         rows = result.rows;
         rowHeights = result.rowHeights;
@@ -2443,26 +2443,26 @@ function removeSelectedTableRows(): any {
         commitTableOperation({ [key]: rows, rowHeights }, "删除表格行");
     }
 }
-function insertSelectedTableColumn(): any {
+function insertSelectedTableColumn() {
     const columns = selectedObject.value?.props?.columns || [];
     const indexes = selectedTableCells.value
-        .map((cell: any): any => columns.findIndex((column: any): any => column?.key === cell.colField))
-        .filter((index: any): any => index >= 0);
+        .map((cell) => columns.findIndex((column) => column?.key === cell.colField))
+        .filter((index) => index >= 0);
     const index = (indexes.length ? Math.max(...indexes) : columns.length - 1) + 1;
     const result = insertTableColumnAt(columns, selectedTableRows("body"), selectedTableRows("footer"), index);
     if (commitTableOperation({ columns: result.columns, sampleData: result.sampleData, footerData: result.footerData }, "插入表格列")) {
         selectionStore.setTableSelection(selectedObject.value?.id, [{ rowIndex: selectedTableCells.value[0]?.rowIndex || 0, colField: result.columns[result.index]?.key, section: selectedTableSection.value }], selectedTableSection.value);
     }
 }
-function removeSelectedTableColumns(): any {
+function removeSelectedTableColumns() {
     let columns = selectedObject.value?.props?.columns || [];
     let sampleData = selectedTableRows("body");
     let footerData = selectedTableRows("footer");
     const indexes = [...new Set(selectedTableCells.value
-            .map((cell: any): any => columns.findIndex((column: any): any => column?.key === cell.colField))
-            .filter((index: any): any => index >= 0))].sort((a: any, b: any): any => b - a);
+            .map((cell) => columns.findIndex((column) => column?.key === cell.colField))
+            .filter((index) => index >= 0))].sort((a, b) => b - a);
     let changed = false;
-    indexes.forEach((index: any): any => {
+    indexes.forEach((index) => {
         const result = removeTableColumnAt(columns, sampleData, footerData, index);
         columns = result.columns;
         sampleData = result.sampleData;
@@ -2476,7 +2476,7 @@ function removeSelectedTableColumns(): any {
     selectionStore.clearTableSelection(selectedObject.value?.id);
     commitTableOperation({ columns, sampleData, footerData }, "删除表格列");
 }
-function normalizeTableColumn(column: any, index: any): any {
+function normalizeTableColumn(column, index) {
     const width = Number(column?.width);
     return {
         key: typeof column?.key === "string" && column.key.trim()
@@ -2495,62 +2495,62 @@ function normalizeTableColumn(column: any, index: any): any {
         ...(column?.formatter && typeof column.formatter === "object" ? { formatter: column.formatter } : {}),
     };
 }
-function tableColumnsValue(field: any): any {
+function tableColumnsValue(field) {
     const columns = getFieldValue(field);
     if (!Array.isArray(columns)) {
         return [];
     }
-    return columns.map((column: any, index: any): any => normalizeTableColumn(column, index));
+    return columns.map((column, index) => normalizeTableColumn(column, index));
 }
-function setTableColumns(field: any, columns: any): any {
+function setTableColumns(field, columns) {
     setTableObjectProps({
-        [field.key]: columns.map((column: any, index: any): any => normalizeTableColumn(column, index)),
+        [field.key]: columns.map((column, index) => normalizeTableColumn(column, index)),
     });
 }
-function nextTableColumnKey(columns: any): any {
-    const existingKeys = new Set(columns.map((column: any): any => column.key));
+function nextTableColumnKey(columns) {
+    const existingKeys = new Set(columns.map((column) => column.key));
     let index = columns.length + 1;
     while (existingKeys.has(`field${index}`)) {
         index += 1;
     }
     return `field${index}`;
 }
-function mapTableData(data: any, transform: any): any {
+function mapTableData(data, transform) {
     if (Array.isArray(data)) {
-        return data.map((item: any): any => (item && typeof item === "object" ? transform(item) : item));
+        return data.map((item) => (item && typeof item === "object" ? transform(item) : item));
     }
     if (data && typeof data === "object") {
         return transform(data);
     }
     return data;
 }
-function renameTableDataKey(data: any, oldKey: any, newKey: any): any {
+function renameTableDataKey(data, oldKey, newKey) {
     if (!oldKey || oldKey === newKey) {
         return data;
     }
-    return mapTableData(data, (item: any): any => {
+    return mapTableData(data, (item) => {
         const nextItem = { ...item };
         nextItem[newKey] = item[oldKey] ?? "";
         delete nextItem[oldKey];
         return nextItem;
     });
 }
-function removeTableDataKey(data: any, key: any): any {
+function removeTableDataKey(data, key) {
     if (!key) {
         return data;
     }
-    return mapTableData(data, (item: any): any => {
+    return mapTableData(data, (item) => {
         const nextItem = { ...item };
         delete nextItem[key];
         return nextItem;
     });
 }
-function appendTableDataKey(data: any, key: any): any {
+function appendTableDataKey(data, key) {
     if (!key) {
         return data;
     }
     if (Array.isArray(data)) {
-        return data.map((item: any): any => ({
+        return data.map((item) => ({
             ...(item && typeof item === "object" ? item : {}),
             [key]: item?.[key] ?? "",
         }));
@@ -2563,7 +2563,7 @@ function appendTableDataKey(data: any, key: any): any {
     }
     return data;
 }
-function addTableColumn(field: any): any {
+function addTableColumn(field) {
     const columns = tableColumnsValue(field);
     const result = insertTableColumnAt(columns, selectedObject.value?.props?.sampleData, selectedObject.value?.props?.footerData, columns.length);
     setTableObjectProps({
@@ -2572,7 +2572,7 @@ function addTableColumn(field: any): any {
         footerData: result.footerData,
     });
 }
-function updateTableColumn(field: any, index: any, prop: any, value: any): any {
+function updateTableColumn(field, index, prop, value) {
     const columns = tableColumnsValue(field);
     const currentColumn = columns[index];
     if (!currentColumn) {
@@ -2590,14 +2590,14 @@ function updateTableColumn(field: any, index: any, prop: any, value: any): any {
     }
     if (prop === "key") {
         const candidateKey = nextValue.trim() || `field${index + 1}`;
-        const duplicated = columns.some((column: any, columnIndex: any): any => columnIndex !== index && column.key === candidateKey);
+        const duplicated = columns.some((column, columnIndex) => columnIndex !== index && column.key === candidateKey);
         if (duplicated) {
             PdMessage.error("字段 key 不能重复");
             return;
         }
         nextValue = candidateKey;
     }
-    const nextColumns = columns.map((column: any, columnIndex: any): any => columnIndex === index ? normalizeTableColumn({ ...column, [prop]: nextValue }, columnIndex) : column);
+    const nextColumns = columns.map((column, columnIndex) => columnIndex === index ? normalizeTableColumn({ ...column, [prop]: nextValue }, columnIndex) : column);
     if (prop === "key") {
         const renamed = renameTableColumnPatch(columns, selectedObject.value?.props?.sampleData, selectedObject.value?.props?.footerData, index, nextValue, nextColumns[index].title);
         if (renamed?.error) {
@@ -2610,7 +2610,7 @@ function updateTableColumn(field: any, index: any, prop: any, value: any): any {
     }
     setTableColumns(field, nextColumns);
 }
-function updateTableColumnFormatter(field: any, index: any, key: any, value: any): any {
+function updateTableColumnFormatter(field, index, key, value) {
     const columns = tableColumnsValue(field);
     const currentColumn = columns[index];
     if (!currentColumn) {
@@ -2625,10 +2625,10 @@ function updateTableColumnFormatter(field: any, index: any, key: any, value: any
     else {
         nextColumn.formatter = nextFormatter;
     }
-    const nextColumns = columns.map((column: any, columnIndex: any): any => columnIndex === index ? normalizeTableColumn(nextColumn, columnIndex) : column);
+    const nextColumns = columns.map((column, columnIndex) => columnIndex === index ? normalizeTableColumn(nextColumn, columnIndex) : column);
     setTableColumns(field, nextColumns);
 }
-function moveTableColumn(field: any, index: any, offset: any): any {
+function moveTableColumn(field, index, offset) {
     const columns = tableColumnsValue(field);
     const targetIndex = index + offset;
     if (targetIndex < 0 || targetIndex >= columns.length) {
@@ -2638,7 +2638,7 @@ function moveTableColumn(field: any, index: any, offset: any): any {
     [nextColumns[index], nextColumns[targetIndex]] = [nextColumns[targetIndex], nextColumns[index]];
     setTableColumns(field, nextColumns);
 }
-function removeTableColumn(field: any, index: any): any {
+function removeTableColumn(field, index) {
     const columns = tableColumnsValue(field);
     if (columns.length <= 1) {
         PdMessage.warning("表格至少需要保留一列。");
@@ -2651,48 +2651,48 @@ function removeTableColumn(field: any, index: any): any {
         footerData: result.footerData,
     });
 }
-function normalizeTableSampleRow(row: any, columns: any): any {
+function normalizeTableSampleRow(row, columns) {
     const source = row && typeof row === "object" ? row : {};
-    return columns.reduce((result: any, column: any): any => {
+    return columns.reduce((result, column) => {
         result[column.key] = source[column.key] == null ? "" : source[column.key];
         return result;
     }, {});
 }
-function normalizeTableSampleData(data: any, columns: any): any {
+function normalizeTableSampleData(data, columns) {
     const rows = Array.isArray(data) ? data : [];
-    return rows.map((row: any): any => normalizeTableSampleRow(row, columns));
+    return rows.map((row) => normalizeTableSampleRow(row, columns));
 }
-function tableSampleRowsValue(field: any): any {
+function tableSampleRowsValue(field) {
     const rows = getFieldValue(field);
     const columns = tableColumnsValue(tableColumnsField);
     if (!Array.isArray(rows)) {
         return [];
     }
-    return rows.map((row: any): any => normalizeTableSampleRow(row, columns));
+    return rows.map((row) => normalizeTableSampleRow(row, columns));
 }
-function tableSampleCellValue(row: any, key: any): any {
+function tableSampleCellValue(row, key) {
     return String(tableCellTextValue(row?.[key]) ?? "");
 }
-function createEmptyTableSampleRow(columns: any): any {
-    return columns.reduce((result: any, column: any): any => {
+function createEmptyTableSampleRow(columns) {
+    return columns.reduce((result, column) => {
         result[column.key] = "";
         return result;
     }, {});
 }
-function addTableSampleRow(field: any): any {
+function addTableSampleRow(field) {
     const columns = tableColumnsValue(tableColumnsField);
     if (!columns.length) {
         return;
     }
     setFieldValue(field, [...tableSampleRowsValue(field), createEmptyTableSampleRow(columns)]);
 }
-function updateTableSampleCell(field: any, rowIndex: any, key: any, value: any): any {
+function updateTableSampleCell(field, rowIndex, key, value) {
     setFieldValue(field, updateTableCellValue(tableSampleRowsValue(field), tableColumnsValue(tableColumnsField), rowIndex, key, value == null ? "" : String(value)));
 }
-function removeTableSampleRow(field: any, rowIndex: any): any {
-    setFieldValue(field, tableSampleRowsValue(field).filter((_: any, index: any): any => index !== rowIndex));
+function removeTableSampleRow(field, rowIndex) {
+    setFieldValue(field, tableSampleRowsValue(field).filter((_, index) => index !== rowIndex));
 }
-function normalizeTableFooterCell(cell: any): any {
+function normalizeTableFooterCell(cell) {
     if (cell && typeof cell === "object" && !Array.isArray(cell)) {
         return {
             ...cell,
@@ -2700,37 +2700,37 @@ function normalizeTableFooterCell(cell: any): any {
     }
     return cell == null ? "" : String(cell);
 }
-function normalizeTableFooterRow(data: any, columns: any): any {
+function normalizeTableFooterRow(data, columns) {
     const source = data && typeof data === "object" ? data : {};
-    return columns.reduce((result: any, column: any): any => {
+    return columns.reduce((result, column) => {
         result[column.key] = normalizeTableFooterCell(source[column.key]);
         return result;
     }, {});
 }
-function normalizeTableFooterData(data: any, columns: any): any {
+function normalizeTableFooterData(data, columns) {
     if (Array.isArray(data)) {
-        return data.map((row: any): any => normalizeTableFooterRow(row, columns));
+        return data.map((row) => normalizeTableFooterRow(row, columns));
     }
     if (data && typeof data === "object" && Object.keys(data).length) {
         return [normalizeTableFooterRow(data, columns)];
     }
     return [];
 }
-function tableFooterRowsValue(field: any): any {
+function tableFooterRowsValue(field) {
     const source = getFieldValue(field);
     const columns = tableColumnsValue(tableColumnsField);
     if (!columns.length) {
         return [];
     }
     if (Array.isArray(source)) {
-        return source.map((row: any): any => normalizeTableFooterRow(row, columns));
+        return source.map((row) => normalizeTableFooterRow(row, columns));
     }
     if (source && typeof source === "object" && Object.keys(source).length) {
         return [normalizeTableFooterRow(source, columns)];
     }
     return [];
 }
-function tableFooterCellDisplayValue(cell: any): any {
+function tableFooterCellDisplayValue(cell) {
     if (cell && typeof cell === "object" && !Array.isArray(cell)) {
         if (cell.result != null && cell.result !== "") {
             return String(cell.result);
@@ -2744,28 +2744,28 @@ function tableFooterCellDisplayValue(cell: any): any {
     }
     return cell == null ? "" : String(cell);
 }
-function tableFooterCellValue(field: any, rowIndex: any, key: any): any {
+function tableFooterCellValue(field, rowIndex, key) {
     const row = tableFooterRowsValue(field)[rowIndex];
     return tableFooterCellDisplayValue(row?.[key]);
 }
-function tableFooterCellToken(field: any, rowIndex: any, key: any): any {
+function tableFooterCellToken(field, rowIndex, key) {
     const cell = tableFooterRowsValue(field)[rowIndex]?.[key];
     return cell && typeof cell === "object" && !Array.isArray(cell) && cell.field ? String(cell.field) : "";
 }
-function createEmptyTableFooterRow(columns: any): any {
-    return columns.reduce((result: any, column: any): any => {
+function createEmptyTableFooterRow(columns) {
+    return columns.reduce((result, column) => {
         result[column.key] = "";
         return result;
     }, {});
 }
-function addTableFooterRow(field: any): any {
+function addTableFooterRow(field) {
     const columns = tableColumnsValue(tableColumnsField);
     if (!columns.length) {
         return;
     }
     setFieldValue(field, [...tableFooterRowsValue(field), createEmptyTableFooterRow(columns)]);
 }
-function updateTableFooterCell(field: any, rowIndex: any, key: any, value: any): any {
+function updateTableFooterCell(field, rowIndex, key, value) {
     const rows = tableFooterRowsValue(field);
     const currentCell = rows[rowIndex]?.[key];
     const nextText = value == null ? "" : String(value);
@@ -2776,16 +2776,16 @@ function updateTableFooterCell(field: any, rowIndex: any, key: any, value: any):
             value: currentCell.field ? currentCell.value ?? "" : nextText,
         }
         : nextText;
-    const nextRows = rows.map((row: any, index: any): any => (index === rowIndex ? { ...row, [key]: nextCell } : row));
+    const nextRows = rows.map((row, index) => (index === rowIndex ? { ...row, [key]: nextCell } : row));
     setFieldValue(field, nextRows);
 }
-function removeTableFooterRow(field: any, rowIndex: any): any {
-    setFieldValue(field, tableFooterRowsValue(field).filter((_: any, index: any): any => index !== rowIndex));
+function removeTableFooterRow(field, rowIndex) {
+    setFieldValue(field, tableFooterRowsValue(field).filter((_, index) => index !== rowIndex));
 }
-function resetTableFooter(field: any): any {
+function resetTableFooter(field) {
     setFieldValue(field, []);
 }
-function multiLabelCellCount(): any {
+function multiLabelCellCount() {
     if (selectedObject.value?.type !== "multiLabel") {
         return 0;
     }
@@ -2793,7 +2793,7 @@ function multiLabelCellCount(): any {
     const cols = Math.max(1, Number(selectedObject.value?.props?.cols) || 1);
     return rows * cols;
 }
-function normalizeMultiLabelSampleItem(item: any, index: any): any {
+function normalizeMultiLabelSampleItem(item, index) {
     const source = item && typeof item === "object" ? item : {};
     return {
         title: source.title == null ? "" : String(source.title),
@@ -2801,15 +2801,15 @@ function normalizeMultiLabelSampleItem(item: any, index: any): any {
         detail: source.detail == null ? "" : String(source.detail),
     };
 }
-function normalizeMultiLabelSampleData(data: any, total: any = multiLabelCellCount()): any {
+function normalizeMultiLabelSampleData(data, total = multiLabelCellCount()) {
     const source = Array.isArray(data) ? data : [];
     const count = Math.max(1, total || 1);
-    return source.slice(0, count).map((item: any, index: any): any => normalizeMultiLabelSampleItem(item, index));
+    return source.slice(0, count).map((item, index) => normalizeMultiLabelSampleItem(item, index));
 }
-function multiLabelSampleDataValue(field: any): any {
+function multiLabelSampleDataValue(field) {
     return normalizeMultiLabelSampleData(getFieldValue(field));
 }
-function multiLabelCellCoordinate(index: any): any {
+function multiLabelCellCoordinate(index) {
     const rows = Math.max(1, Number(selectedObject.value?.props?.rows) || 1);
     const cols = Math.max(1, Number(selectedObject.value?.props?.cols) || 1);
     const direction = selectedObject.value?.props?.direction === "column" ? "column" : "row";
@@ -2822,7 +2822,7 @@ function multiLabelCellCoordinate(index: any): any {
     const col = (index % cols) + 1;
     return `R${row} C${col}`;
 }
-function setMultiLabelSampleData(data: any): any {
+function setMultiLabelSampleData(data) {
     if (selectedObject.value?.type !== "multiLabel") {
         return;
     }
@@ -2833,11 +2833,11 @@ function setMultiLabelSampleData(data: any): any {
         },
     });
 }
-function updateMultiLabelSampleCell(field: any, index: any, key: any, value: any): any {
-    const nextData = multiLabelSampleDataValue(field).map((item: any, itemIndex: any): any => itemIndex === index ? { ...item, [key]: value == null ? "" : String(value) } : item);
+function updateMultiLabelSampleCell(field, index, key, value) {
+    const nextData = multiLabelSampleDataValue(field).map((item, itemIndex) => itemIndex === index ? { ...item, [key]: value == null ? "" : String(value) } : item);
     setMultiLabelSampleData(nextData);
 }
-function normalizeFieldValue(field: any, value: any): any {
+function normalizeFieldValue(field, value) {
     if (field.valueType !== "json") {
         return value;
     }
@@ -2851,15 +2851,15 @@ function normalizeFieldValue(field: any, value: any): any {
     try {
         return JSON.parse(source);
     }
-    catch (error: any) {
+    catch (error) {
         PdMessage.error(`${field.label} 不是有效 JSON`);
         return Symbol.for("invalid-json");
     }
 }
-function fieldError(field: any): any {
+function fieldError(field) {
     return getFieldError(fieldErrors.value, field);
 }
-function setFieldError(field: any, message: any = ""): any {
+function setFieldError(field, message = "") {
     const key = fieldErrorKey(field);
     if (!key) {
         return;
@@ -2873,7 +2873,7 @@ function setFieldError(field: any, message: any = ""): any {
     }
     fieldErrors.value = next;
 }
-function validateFieldChange(field: any, value: any): any {
+function validateFieldChange(field, value) {
     if (!field) {
         return false;
     }
@@ -2881,27 +2881,27 @@ function validateFieldChange(field: any, value: any): any {
     setFieldError(field, message || "");
     return !message;
 }
-function endPropertyEditSession(): any {
+function endPropertyEditSession() {
     if (propertyEditTimer) {
         clearTimeout(propertyEditTimer);
         propertyEditTimer = null;
     }
     propertyEditSession.value = null;
 }
-function schedulePropertyEditSessionEnd(): any {
+function schedulePropertyEditSessionEnd() {
     if (propertyEditTimer) {
         clearTimeout(propertyEditTimer);
     }
     propertyEditTimer = setTimeout(endPropertyEditSession, 600);
 }
-function propertyEditKey(objectId: any, field: any): any {
+function propertyEditKey(objectId, field) {
     return `${objectId}:${field?.source || "root"}:${field?.key || "property"}`;
 }
-function isLockSafePatch(patch: any): any {
+function isLockSafePatch(patch) {
     const patchKeys = Object.keys(patch || {});
-    return patchKeys.length > 0 && patchKeys.every((key: any): any => ["locked", "visible", "printable"].includes(key));
+    return patchKeys.length > 0 && patchKeys.every((key) => ["locked", "visible", "printable"].includes(key));
 }
-function updateSelectedObject(field: any, patch: any): any {
+function updateSelectedObject(field, patch) {
     const object = selectedObject.value;
     if (!object) {
         return false;
@@ -2934,7 +2934,7 @@ function updateSelectedObject(field: any, patch: any): any {
     schedulePropertyEditSessionEnd();
     return true;
 }
-function setRootValue(key: any, value: any): any {
+function setRootValue(key, value) {
     if (!selectedObject.value) {
         return;
     }
@@ -2944,7 +2944,7 @@ function setRootValue(key: any, value: any): any {
     }
     updateSelectedObject(field, buildRootUpdatePayload(selectedObject.value, key, value));
 }
-function setFieldValue(field: any, value: any): any {
+function setFieldValue(field, value) {
     if (!selectedObject.value) {
         return;
     }
@@ -3004,7 +3004,7 @@ function setFieldValue(field: any, value: any): any {
         });
     }
 }
-async function runFieldAction(action: any): Promise<any> {
+async function runFieldAction(action) {
     if (!selectedObject.value) {
         return;
     }
@@ -3034,7 +3034,7 @@ async function runFieldAction(action: any): Promise<any> {
                 await presetRepository.create({ name: value, element: selectedObject.value });
                 PdMessage.success("元素预设已保存，可从顶部“预设”打开并插入。");
             }
-            catch (error: any) {
+            catch (error) {
                 if (error !== "cancel" && error !== "close") {
                     PdMessage.error(error?.message || "保存元素预设失败");
                 }
@@ -3044,7 +3044,7 @@ async function runFieldAction(action: any): Promise<any> {
             break;
     }
 }
-function executeDeleteSelectedObjects(objectIds: any): any {
+function executeDeleteSelectedObjects(objectIds) {
     const command = createRemoveObjectsCommand(documentStore, objectIds);
     if (!command) {
         return false;
@@ -3052,7 +3052,7 @@ function executeDeleteSelectedObjects(objectIds: any): any {
     executeEditorCommand(historyStore, command);
     return true;
 }
-onBeforeUnmount((): any => {
+onBeforeUnmount(() => {
     endPropertyEditSession();
 });
 </script>

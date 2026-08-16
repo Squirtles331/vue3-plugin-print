@@ -42,20 +42,20 @@ const props = defineProps({
         type: Number,
         default: 0,
     },
-}) as any;
+});
 defineEmits(["guide-start"]);
-const canvasRef = ref(null) as any;
-let resizeObserver = null as any;
-function clamp(value: any, min: any, max: any): any {
+const canvasRef = ref(null);
+let resizeObserver = null;
+function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
 }
-function pickMajorStep(pixelsPerUnit: any): any {
+function pickMajorStep(pixelsPerUnit) {
     const targetVisualGap = 56;
     const unitGap = targetVisualGap / Math.max(pixelsPerUnit, 0.0001);
     const steps = [0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500];
-    return steps.find((step: any): any => step >= unitGap) || steps[steps.length - 1];
+    return steps.find((step) => step >= unitGap) || steps[steps.length - 1];
 }
-function draw(): any {
+function draw() {
     const canvas = canvasRef.value;
     if (!canvas) {
         return;
@@ -143,23 +143,23 @@ function draw(): any {
     }
     ctx.stroke();
 }
-function observeCanvas(): any {
+function observeCanvas() {
     if (resizeObserver || !canvasRef.value?.parentElement) {
         return;
     }
-    resizeObserver = new ResizeObserver((): any => {
+    resizeObserver = new ResizeObserver(() => {
         draw();
     });
     resizeObserver.observe(canvasRef.value.parentElement);
 }
-onMounted((): any => {
+onMounted(() => {
     observeCanvas();
     draw();
 });
-onBeforeUnmount((): any => {
+onBeforeUnmount(() => {
     resizeObserver?.disconnect();
 });
-watch((): any => [
+watch(() => [
     props.orientation,
     props.axisLengthPx,
     props.thicknessPx,

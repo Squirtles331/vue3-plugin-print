@@ -37,7 +37,7 @@
       class="pd-text-element__quick-toolbar"
       :class="`is-${toolbarPosition.placement}`"
       :style="quickToolbarStyle"
-      v-bind="{ 'data-print-exclude': 'true' } as any"
+      v-bind="{ 'data-print-exclude': 'true' }"
       aria-label="文本快速格式"
       @pointerdown.stop
       @dblclick.stop
@@ -122,56 +122,56 @@ const props = defineProps({
         type: Object,
         required: true,
     },
-}) as any;
-const emit = defineEmits(["start-object-drag"]) as any;
-const documentStore = useEditorDocumentStore() as any;
-const historyStore = useEditorHistoryStore() as any;
-const previewStore = useEditorPreviewStore() as any;
-const selectionStore = useEditorSelectionStore() as any;
-const viewportStore = useEditorViewportStore() as any;
-const { runtimeData } = storeToRefs(previewStore) as any;
-const { selectedIds } = storeToRefs(selectionStore) as any;
-const { zoom } = storeToRefs(viewportStore) as any;
-const rootRef = ref(null) as any;
-const editorRef = ref(null) as any;
-const toolbarRef = ref(null) as any;
-const isInlineEditing = ref(false) as any;
-const editingValue = ref("") as any;
-const toolbarPosition = ref({ visible: false, left: 0, top: 0, placement: "above" }) as any;
-let resizeObserver = null as any;
-const canEditText = computed((): any => selectedIds.value.length === 1 && selectedIds.value[0] === props.object.id && !props.object.locked) as any;
-const showQuickToolbar = computed((): any => canEditText.value && !isInlineEditing.value) as any;
-const binding = computed((): any => bindingLabel(props.object)) as any;
-const hasValue = computed((): any => Boolean(props.object?.variable || String(props.object?.content || "").trim())) as any;
-const previewValue = computed((): any => resolvePreviewValue(props.object, runtimeData.value)) as any;
-const contentStyle = computed((): any => textStyle(props.object)) as any;
-const fontFamilyValue = computed((): any => props.object?.style?.fontFamily || "") as any;
-const fontSizeValue = computed((): any => clampFontSize(props.object?.style?.fontSize)) as any;
-const textAlignValue = computed((): any => props.object?.style?.textAlign || "left") as any;
-const verticalAlignValue = computed((): any => props.object?.style?.verticalAlign || "top") as any;
-const isBold = computed((): any => ["bold", "700"].includes(String(props.object?.style?.fontWeight || ""))) as any;
-const isItalic = computed((): any => props.object?.style?.fontStyle === "italic") as any;
-const isUnderline = computed((): any => props.object?.style?.textDecoration === "underline") as any;
-const isVertical = computed((): any => props.object?.props?.writingMode === "vertical-rl") as any;
-const quickToolbarStyle = computed((): any => ({
+});
+const emit = defineEmits(["start-object-drag"]);
+const documentStore = useEditorDocumentStore();
+const historyStore = useEditorHistoryStore();
+const previewStore = useEditorPreviewStore();
+const selectionStore = useEditorSelectionStore();
+const viewportStore = useEditorViewportStore();
+const { runtimeData } = storeToRefs(previewStore);
+const { selectedIds } = storeToRefs(selectionStore);
+const { zoom } = storeToRefs(viewportStore);
+const rootRef = ref(null);
+const editorRef = ref(null);
+const toolbarRef = ref(null);
+const isInlineEditing = ref(false);
+const editingValue = ref("");
+const toolbarPosition = ref({ visible: false, left: 0, top: 0, placement: "above" });
+let resizeObserver = null;
+const canEditText = computed(() => selectedIds.value.length === 1 && selectedIds.value[0] === props.object.id && !props.object.locked);
+const showQuickToolbar = computed(() => canEditText.value && !isInlineEditing.value);
+const binding = computed(() => bindingLabel(props.object));
+const hasValue = computed(() => Boolean(props.object?.variable || String(props.object?.content || "").trim()));
+const previewValue = computed(() => resolvePreviewValue(props.object, runtimeData.value));
+const contentStyle = computed(() => textStyle(props.object));
+const fontFamilyValue = computed(() => props.object?.style?.fontFamily || "");
+const fontSizeValue = computed(() => clampFontSize(props.object?.style?.fontSize));
+const textAlignValue = computed(() => props.object?.style?.textAlign || "left");
+const verticalAlignValue = computed(() => props.object?.style?.verticalAlign || "top");
+const isBold = computed(() => ["bold", "700"].includes(String(props.object?.style?.fontWeight || "")));
+const isItalic = computed(() => props.object?.style?.fontStyle === "italic");
+const isUnderline = computed(() => props.object?.style?.textDecoration === "underline");
+const isVertical = computed(() => props.object?.props?.writingMode === "vertical-rl");
+const quickToolbarStyle = computed(() => ({
     display: toolbarPosition.value.visible ? "flex" : "none",
     left: `${toolbarPosition.value.left}px`,
     top: `${toolbarPosition.value.top}px`,
-})) as any;
+}));
 const horizontalAlignButtons = [
     { label: "左", value: "left", ariaLabel: "左对齐" },
     { label: "中", value: "center", ariaLabel: "水平居中" },
     { label: "右", value: "right", ariaLabel: "右对齐" },
-] as any;
+];
 const verticalAlignButtons = [
     { label: "上", value: "top", ariaLabel: "顶端对齐" },
     { label: "中", value: "middle", ariaLabel: "垂直居中" },
     { label: "下", value: "bottom", ariaLabel: "底端对齐" },
-] as any;
-function normalizeBinding(variable: any): any {
+];
+function normalizeBinding(variable) {
     return String(variable || "").trim().replace(/^@/, "");
 }
-function resolvePreviewValue(object: any, data: any): any {
+function resolvePreviewValue(object, data) {
     const variable = normalizeBinding(object?.variable);
     if (variable) {
         const result = resolveDataPath(data, variable);
@@ -187,16 +187,16 @@ function resolvePreviewValue(object: any, data: any): any {
     const content = object?.content;
     return content != null && String(content).trim() !== "" ? String(content) : "输入文本";
 }
-function clampFontSize(value: any): any {
+function clampFontSize(value) {
     const parsed = Number(value);
     return Math.min(240, Math.max(1, Number.isFinite(parsed) ? Math.round(parsed) : 14));
 }
-function emitDrag(event: any): any {
+function emitDrag(event) {
     if (canEditText.value) {
         emit("start-object-drag", event);
     }
 }
-async function startInlineEdit(): Promise<any> {
+async function startInlineEdit() {
     if (!canEditText.value)
         return;
     editingValue.value = String(props.object?.content || "");
@@ -205,7 +205,7 @@ async function startInlineEdit(): Promise<any> {
     editorRef.value?.focus?.();
     editorRef.value?.select?.();
 }
-function commitInlineEdit(): any {
+function commitInlineEdit() {
     if (!isInlineEditing.value)
         return;
     const nextValue = editingValue.value;
@@ -220,13 +220,13 @@ function commitInlineEdit(): any {
     command.label = "编辑文本内容";
     executeEditorCommand(historyStore, command);
 }
-function cancelInlineEdit(): any {
+function cancelInlineEdit() {
     if (!isInlineEditing.value)
         return;
     isInlineEditing.value = false;
     editingValue.value = "";
 }
-function handleEditorKeydown(event: any): any {
+function handleEditorKeydown(event) {
     event.stopPropagation();
     if (event.key === "Escape") {
         event.preventDefault();
@@ -237,7 +237,7 @@ function handleEditorKeydown(event: any): any {
         commitInlineEdit();
     }
 }
-function updateTextFormat(stylePatch: any = {}, propsPatch: any = {}): any {
+function updateTextFormat(stylePatch = {}, propsPatch = {}) {
     if (!canEditText.value)
         return;
     const command = createUpdateTextFormattingCommand(documentStore, props.object.id, stylePatch, propsPatch);
@@ -245,34 +245,34 @@ function updateTextFormat(stylePatch: any = {}, propsPatch: any = {}): any {
         executeEditorCommand(historyStore, command);
     }
 }
-function setFontFamily(value: any): any {
+function setFontFamily(value) {
     updateTextFormat({ fontFamily: value });
 }
-function commitFontSize(value: any): any {
+function commitFontSize(value) {
     updateTextFormat({ fontSize: clampFontSize(value) });
 }
-function changeFontSize(delta: any): any {
+function changeFontSize(delta) {
     commitFontSize(fontSizeValue.value + delta);
 }
-function setTextAlign(value: any): any {
+function setTextAlign(value) {
     updateTextFormat({ textAlign: value });
 }
-function setVerticalAlign(value: any): any {
+function setVerticalAlign(value) {
     updateTextFormat({ verticalAlign: value });
 }
-function toggleBold(): any {
+function toggleBold() {
     updateTextFormat({ fontWeight: isBold.value ? "normal" : "bold" });
 }
-function toggleItalic(): any {
+function toggleItalic() {
     updateTextFormat({ fontStyle: isItalic.value ? "normal" : "italic" });
 }
-function toggleUnderline(): any {
+function toggleUnderline() {
     updateTextFormat({ textDecoration: isUnderline.value ? "none" : "underline" });
 }
-function toggleWritingMode(): any {
+function toggleWritingMode() {
     updateTextFormat({}, { writingMode: isVertical.value ? "horizontal-tb" : "vertical-rl" });
 }
-async function updateToolbarPosition(): Promise<any> {
+async function updateToolbarPosition() {
     if (!showQuickToolbar.value || !rootRef.value) {
         toolbarPosition.value = { ...toolbarPosition.value, visible: false };
         return;
@@ -296,18 +296,18 @@ async function updateToolbarPosition(): Promise<any> {
         placement: placeBelow ? "below" : "above",
     };
 }
-watch((): any => selectedIds.value.join(","), (): any => {
+watch(() => selectedIds.value.join(","), () => {
     if (isInlineEditing.value && !canEditText.value) {
         commitInlineEdit();
     }
 });
-watch(showQuickToolbar, (): any => {
+watch(showQuickToolbar, () => {
     updateToolbarPosition();
 });
-watch((): any => [props.object?.x, props.object?.y, props.object?.width, props.object?.height, props.object?.rotation, zoom.value], (): any => {
+watch(() => [props.object?.x, props.object?.y, props.object?.width, props.object?.height, props.object?.rotation, zoom.value], () => {
     updateToolbarPosition();
 });
-onMounted((): any => {
+onMounted(() => {
     window.addEventListener("resize", updateToolbarPosition);
     window.addEventListener("scroll", updateToolbarPosition, true);
     if (typeof ResizeObserver !== "undefined" && rootRef.value) {
@@ -316,7 +316,7 @@ onMounted((): any => {
     }
     updateToolbarPosition();
 });
-onBeforeUnmount((): any => {
+onBeforeUnmount(() => {
     window.removeEventListener("resize", updateToolbarPosition);
     window.removeEventListener("scroll", updateToolbarPosition, true);
     resizeObserver?.disconnect();

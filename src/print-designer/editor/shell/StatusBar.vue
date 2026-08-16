@@ -33,26 +33,26 @@ import { storeToRefs } from "pinia";
 import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorSelectionStore } from "../stores/selectionStore";
 import { useEditorViewportStore } from "../stores/viewportStore";
-const documentStore = useEditorDocumentStore() as any;
-const selectionStore = useEditorSelectionStore() as any;
-const viewportStore = useEditorViewportStore() as any;
-const { currentPageNumber, dirty, saveStatus, totalPages, unit, currentPaperLabel } = storeToRefs(documentStore) as any;
-const { selectedCount } = storeToRefs(selectionStore) as any;
-const { zoom, snapEnabled, coordinateReadout } = storeToRefs(viewportStore) as any;
-function formatCoordinate(value: any): any {
+const documentStore = useEditorDocumentStore();
+const selectionStore = useEditorSelectionStore();
+const viewportStore = useEditorViewportStore();
+const { currentPageNumber, dirty, saveStatus, totalPages, unit, currentPaperLabel } = storeToRefs(documentStore);
+const { selectedCount } = storeToRefs(selectionStore);
+const { zoom, snapEnabled, coordinateReadout } = storeToRefs(viewportStore);
+function formatCoordinate(value) {
     return Number.isFinite(value) ? `${value.toFixed(2)} mm` : "--";
 }
-const zoomLabel = computed((): any => `${Math.round(zoom.value * 100)}%`) as any;
-const coordinateXLabel = computed((): any => formatCoordinate(coordinateReadout.value.x)) as any;
-const coordinateYLabel = computed((): any => formatCoordinate(coordinateReadout.value.y)) as any;
-const selectedHint = computed((): any => (selectedCount.value ? `已选中 ${selectedCount.value} 个元素` : "未选中元素")) as any;
-const guideLabel = computed((): any => {
+const zoomLabel = computed(() => `${Math.round(zoom.value * 100)}%`);
+const coordinateXLabel = computed(() => formatCoordinate(coordinateReadout.value.x));
+const coordinateYLabel = computed(() => formatCoordinate(coordinateReadout.value.y));
+const selectedHint = computed(() => (selectedCount.value ? `已选中 ${selectedCount.value} 个元素` : "未选中元素"));
+const guideLabel = computed(() => {
     if (coordinateReadout.value.source !== "guide" || !coordinateReadout.value.guideOrientation) {
         return "";
     }
     const axis = coordinateReadout.value.guideOrientation === "vertical" ? "纵向参考线" : "横向参考线";
     return `${axis} ${formatCoordinate(coordinateReadout.value.guidePosition)}`;
-}) as any;
+});
 </script>
 
 <style scoped lang="scss">

@@ -106,40 +106,40 @@ import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorHistoryStore } from "../stores/historyStore";
 import { useEditorSelectionStore } from "../stores/selectionStore";
 import { useEditorShellStore } from "../stores/shellStore";
-const emit = defineEmits(["new-template", "open-template", "import-template", "export-template", "open-presets", "save-template", "preview", "print", "export-pdf"]) as any;
-const historyStore = useEditorHistoryStore() as any;
-const shellStore = useEditorShellStore() as any;
-const documentStore = useEditorDocumentStore() as any;
-const selectionStore = useEditorSelectionStore() as any;
-const { currentPageNumber, currentPaperLabel, dirty, documentName, saveStatus, totalPages } = storeToRefs(documentStore) as any;
-const { canUndo, canRedo } = storeToRefs(historyStore) as any;
-const { selectedCount } = storeToRefs(selectionStore) as any;
-const { activeLeftPanel, activeRightPanel, leftDockCollapsed, rightDockCollapsed } = storeToRefs(shellStore) as any;
-const templatePanelActive = computed((): any => !leftDockCollapsed.value && activeLeftPanel.value === "insert") as any;
-const pagePanelActive = computed((): any => !rightDockCollapsed.value && activeRightPanel.value === "page") as any;
-const viewPanelActive = computed((): any => !rightDockCollapsed.value && activeRightPanel.value === "view") as any;
-const propertiesPanelActive = computed((): any => !rightDockCollapsed.value && activeRightPanel.value === "properties") as any;
-const documentMeta = computed((): any => `${currentPaperLabel.value} · 第 ${currentPageNumber.value}/${totalPages.value} 页`) as any;
-const saveStatusClass = computed((): any => ({
+const emit = defineEmits(["new-template", "open-template", "import-template", "export-template", "open-presets", "save-template", "preview", "print", "export-pdf"]);
+const historyStore = useEditorHistoryStore();
+const shellStore = useEditorShellStore();
+const documentStore = useEditorDocumentStore();
+const selectionStore = useEditorSelectionStore();
+const { currentPageNumber, currentPaperLabel, dirty, documentName, saveStatus, totalPages } = storeToRefs(documentStore);
+const { canUndo, canRedo } = storeToRefs(historyStore);
+const { selectedCount } = storeToRefs(selectionStore);
+const { activeLeftPanel, activeRightPanel, leftDockCollapsed, rightDockCollapsed } = storeToRefs(shellStore);
+const templatePanelActive = computed(() => !leftDockCollapsed.value && activeLeftPanel.value === "insert");
+const pagePanelActive = computed(() => !rightDockCollapsed.value && activeRightPanel.value === "page");
+const viewPanelActive = computed(() => !rightDockCollapsed.value && activeRightPanel.value === "view");
+const propertiesPanelActive = computed(() => !rightDockCollapsed.value && activeRightPanel.value === "properties");
+const documentMeta = computed(() => `${currentPaperLabel.value} · 第 ${currentPageNumber.value}/${totalPages.value} 页`);
+const saveStatusClass = computed(() => ({
     "is-dirty": dirty.value,
     "is-saved": !dirty.value,
-})) as any;
-const workflowHint = computed((): any => {
+}));
+const workflowHint = computed(() => {
     if (selectedCount.value > 0) {
         return `已选中 ${selectedCount.value} 个元素，可继续在右侧调整属性。`;
     }
     return "从左侧插入元素，完成后先预览，再决定是否打印。";
-}) as any;
-function openTemplatePanel(): any {
+});
+function openTemplatePanel() {
     shellStore.toggleLeftDockPanel("insert");
 }
-function openPagesPanel(): any {
+function openPagesPanel() {
     shellStore.toggleLeftDockPanel("pages");
 }
-function openViewPanel(): any {
+function openViewPanel() {
     shellStore.toggleRightDockPanel("view");
 }
-function openPropertiesPanel(): any {
+function openPropertiesPanel() {
     shellStore.toggleRightDockPanel("properties");
 }
 </script>

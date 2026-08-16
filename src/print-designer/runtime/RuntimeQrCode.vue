@@ -1,5 +1,5 @@
 <template>
-  <div class="runtime-qrcode" :class="{ 'is-empty': !hasValue, 'has-error': error }" v-bind="{ 'data-runtime-status': runtimeStatus } as any">
+  <div class="runtime-qrcode" :class="{ 'is-empty': !hasValue, 'has-error': error }" v-bind="{ 'data-runtime-status': runtimeStatus }">
     <img v-if="dataUrl" :src="dataUrl" alt="" />
     <span v-else-if="mode !== 'print'">{{ error || placeholder }}</span>
   </div>
@@ -15,14 +15,14 @@ const props = defineProps({
     background: { type: String, default: "#ffffff" },
     margin: { type: Number, default: 0 },
     mode: { type: String, default: "preview" },
-}) as any;
-const dataUrl = ref("") as any;
-const error = ref("") as any;
-const runtimeStatus = ref("empty") as any;
-const hasValue = computed((): any => !!props.value && !["empty", "missing"].includes(props.status)) as any;
-const placeholder = computed((): any => (props.status === "missing" ? props.value : "Unbound QR code")) as any;
-function machineColor(value: any, fallback: any): any { return typeof value === "string" && /^#[\da-f]{3,8}$/i.test(value) ? value : fallback; }
-async function render(): Promise<any> {
+});
+const dataUrl = ref("");
+const error = ref("");
+const runtimeStatus = ref("empty");
+const hasValue = computed(() => !!props.value && !["empty", "missing"].includes(props.status));
+const placeholder = computed(() => (props.status === "missing" ? props.value : "Unbound QR code"));
+function machineColor(value, fallback) { return typeof value === "string" && /^#[\da-f]{3,8}$/i.test(value) ? value : fallback; }
+async function render() {
     dataUrl.value = "";
     error.value = "";
     if (!hasValue.value) {
@@ -39,7 +39,7 @@ async function render(): Promise<any> {
         runtimeStatus.value = "error";
     }
 }
-watch((): any => [props.value, props.status, props.eccLevel, props.foreground, props.background, props.margin], render, { immediate: true });
+watch(() => [props.value, props.status, props.eccLevel, props.foreground, props.background, props.margin], render, { immediate: true });
 </script>
 
 <style scoped>

@@ -182,62 +182,62 @@ const props = defineProps({
         type: Object,
         required: true,
     },
-}) as any;
-const emit = defineEmits(["start-object-drag"]) as any;
-const documentStore = useEditorDocumentStore() as any;
-const historyStore = useEditorHistoryStore() as any;
-const selectionStore = useEditorSelectionStore() as any;
-const { selectedIds, tableSelection } = storeToRefs(selectionStore) as any;
-const tableHostRef = ref(null) as any;
-const inlineEditorRef = ref(null) as any;
-const inlineEditingCell = ref(null) as any;
-const inlineEditingValue = ref("") as any;
-const selectionStart = ref(null) as any;
-const isSelecting = ref(false) as any;
-const tempColumnWidths = ref({}) as any;
-const tempRowHeights = ref({}) as any;
-const columnResize = ref(null) as any;
-const rowResize = ref(null) as any;
-const editFormRef = ref(null) as any;
-const editForm = ref({ kind: "", index: -1, rowIndex: -1, colField: "", title: "", key: "", value: "", field: "", position: { top: 0, left: 0 } }) as any;
-const hideHeaderLabels = computed((): any => hasBlankTableHeaders(props.object)) as any;
-const columns = computed((): any => normalizeTableColumns(props.object.props?.columns)) as any;
-const canEditTable = computed((): any => selectedIds.value.length === 1 && selectedIds.value[0] === props.object.id && !props.object.locked) as any;
-const sourceRows = computed((): any => {
+});
+const emit = defineEmits(["start-object-drag"]);
+const documentStore = useEditorDocumentStore();
+const historyStore = useEditorHistoryStore();
+const selectionStore = useEditorSelectionStore();
+const { selectedIds, tableSelection } = storeToRefs(selectionStore);
+const tableHostRef = ref(null);
+const inlineEditorRef = ref(null);
+const inlineEditingCell = ref(null);
+const inlineEditingValue = ref("");
+const selectionStart = ref(null);
+const isSelecting = ref(false);
+const tempColumnWidths = ref({});
+const tempRowHeights = ref({});
+const columnResize = ref(null);
+const rowResize = ref(null);
+const editFormRef = ref(null);
+const editForm = ref({ kind: "", index: -1, rowIndex: -1, colField: "", title: "", key: "", value: "", field: "", position: { top: 0, left: 0 } });
+const hideHeaderLabels = computed(() => hasBlankTableHeaders(props.object));
+const columns = computed(() => normalizeTableColumns(props.object.props?.columns));
+const canEditTable = computed(() => selectedIds.value.length === 1 && selectedIds.value[0] === props.object.id && !props.object.locked);
+const sourceRows = computed(() => {
     if (Array.isArray(props.object.props?.sampleData))
         return props.object.props.sampleData;
     return [];
-}) as any;
-const omitRows = computed((): any => props.object.editorHints?.omitRows ?? true) as any;
-const requestedRowCount = computed((): any => {
+});
+const omitRows = computed(() => props.object.editorHints?.omitRows ?? true);
+const requestedRowCount = computed(() => {
     const value = Number(props.object.editorHints?.rowCount);
     return Number.isFinite(value) && value > 0 ? Math.round(value) : sourceRows.value.length || 5;
-}) as any;
-const visibleRowCount = computed((): any => omitRows.value ? Math.min(requestedRowCount.value, 5) : requestedRowCount.value) as any;
-const rows = computed((): any => Array.from({ length: visibleRowCount.value }, (_: any, index: any): any => ({
+});
+const visibleRowCount = computed(() => omitRows.value ? Math.min(requestedRowCount.value, 5) : requestedRowCount.value);
+const rows = computed(() => Array.from({ length: visibleRowCount.value }, (_, index) => ({
     ...(sourceRows.value[index] && typeof sourceRows.value[index] === "object" ? sourceRows.value[index] : {}),
     __pdKey: `${props.object.id}-body-${index}`,
-}))) as any;
-const showsOmission = computed((): any => omitRows.value && Math.max(sourceRows.value.length, requestedRowCount.value) > rows.value.length) as any;
-const footerRows = computed((): any => {
+})));
+const showsOmission = computed(() => omitRows.value && Math.max(sourceRows.value.length, requestedRowCount.value) > rows.value.length);
+const footerRows = computed(() => {
     if (props.object.props?.showFooter === false)
         return [];
     const source = props.object.props?.footerData;
     if (Array.isArray(source))
-        return source.map((row: any, index: any): any => ({ ...(row || {}), __pdKey: `${props.object.id}-footer-${index}` }));
+        return source.map((row, index) => ({ ...(row || {}), __pdKey: `${props.object.id}-footer-${index}` }));
     if (source && typeof source === "object")
         return [{ ...source, __pdKey: `${props.object.id}-footer-0` }];
     if (!props.object.props?.footerDataVariable)
         return [];
-    return [columns.value.reduce((row: any, column: any): any => {
+    return [columns.value.reduce((row, column) => {
             row[column.key] = `{{${props.object.props.footerDataVariable}.${column.key}}}`;
             row.__pdKey = `${props.object.id}-footer-0`;
             return row;
         }, {})];
-}) as any;
-const totalColumnWidth = computed((): any => columns.value.reduce((sum: any, column: any): any => sum + displayColumnWidth(column), 0) || 1) as any;
-const tableLayoutStyle = computed((): any => ({ width: "100%", height: "100%", tableLayout: "fixed" })) as any;
-const tableStyle = computed((): any => {
+});
+const totalColumnWidth = computed(() => columns.value.reduce((sum, column) => sum + displayColumnWidth(column), 0) || 1);
+const tableLayoutStyle = computed(() => ({ width: "100%", height: "100%", tableLayout: "fixed" }));
+const tableStyle = computed(() => {
     const style = props.object.style || {};
     const borderWidth = Math.max(0, Number(style.borderWidth) || 0);
     const borderStyle = style.borderStyle || "solid";
@@ -262,45 +262,45 @@ const tableStyle = computed((): any => {
         "--pd-table-cell-x": `${Math.round(mmToCssPx(padding))}px`,
         "--pd-table-border": borderWidth && borderStyle !== "none" ? `${borderWidth}px ${borderStyle} ${style.borderColor || style.color || "#172033"}` : "0 solid transparent",
     };
-}) as any;
-const bindingTokens = computed((): any => {
+});
+const bindingTokens = computed(() => {
     const tokens = [];
     if (props.object.props?.dataVariable)
         tokens.push({ key: "data", label: `数据：{{${props.object.props.dataVariable}}}` });
     if (props.object.props?.footerDataVariable)
         tokens.push({ key: "footer", label: `页脚：{{${props.object.props.footerDataVariable}}}` });
     return tokens;
-}) as any;
-function emitDrag(event: any): any {
+});
+function emitDrag(event) {
     if (!canEditTable.value)
         return;
     emit("start-object-drag", event);
 }
-function displayColumnWidth(column: any): any {
+function displayColumnWidth(column) {
     const temporary = Number(tempColumnWidths.value[column.key]);
     return Number.isFinite(temporary) && temporary > 0 ? temporary : column.width;
 }
-function columnWidthStyle(column: any): any {
+function columnWidthStyle(column) {
     return { width: `${(displayColumnWidth(column) / totalColumnWidth.value) * 100}%` };
 }
-function rawCell(row: any, column: any): any {
+function rawCell(row, column) {
     return row?.[column.key];
 }
-function shouldRenderCell(row: any, column: any): any {
+function shouldRenderCell(row, column) {
     return shouldRenderTableCell(rawCell(row, column));
 }
-function cellRowSpan(row: any, column: any): any {
+function cellRowSpan(row, column) {
     const value = tableCellRowSpan(rawCell(row, column));
     return value > 1 ? value : undefined;
 }
-function cellColSpan(row: any, column: any): any {
+function cellColSpan(row, column) {
     const value = tableCellColSpan(rawCell(row, column));
     return value > 1 ? value : undefined;
 }
-function isLastVisibleColumn(row: any, column: any, columnIndex: any): any {
+function isLastVisibleColumn(row, column, columnIndex) {
     return columnIndex + tableCellColSpan(rawCell(row, column)) >= columns.value.length;
 }
-function cellStyle(column: any, row: any, section: any = "body"): any {
+function cellStyle(column, row, section = "body") {
     const style = props.object.style || {};
     const textAlign = column.align || (section === "header" ? style.headerTextAlign : section === "footer" ? style.footerTextAlign : style.textAlign) || "left";
     const fontSize = Number(section === "header" ? style.headerFontSize : section === "footer" ? style.footerFontSize : style.fontSize) || 10;
@@ -326,38 +326,38 @@ function cellStyle(column: any, row: any, section: any = "body"): any {
         ...tableCellStyle(rawCell(row, column)),
     };
 }
-function rowStyle(section: any, rowIndex: any): any {
+function rowStyle(section, rowIndex) {
     const key = `${section}:${rowIndex}`;
     const temporary = Number(tempRowHeights.value[key]);
     const height = Number.isFinite(temporary) && temporary > 0 ? temporary : tableRowHeight(props.object.props, section, rowIndex);
     return height > 0 ? { height: `${mmToCssPx(height)}px` } : {};
 }
-function displayValue(row: any, column: any): any {
+function displayValue(row, column) {
     const resolved = resolveRelativeRecordPath(row, column.valuePath);
     const value = resolved.found ? resolved.value : rawCell(row, column);
     const text = tableCellDisplayValue(value, sourceRows.value);
     return formatTableValue(formatTableSummaryCell(text, { pageRows: sourceRows.value, totalRows: sourceRows.value }), column.formatter);
 }
-function isCellSelected(rowIndex: any, colField: any, section: any): any {
+function isCellSelected(rowIndex, colField, section) {
     return tableSelection.value?.tableId === props.object.id
-        && tableSelection.value.cells.some((cell: any): any => cell.rowIndex === rowIndex && cell.colField === colField && cell.section === section);
+        && tableSelection.value.cells.some((cell) => cell.rowIndex === rowIndex && cell.colField === colField && cell.section === section);
 }
-function setSelection(cells: any, section: any): any {
+function setSelection(cells, section) {
     selectionStore.setTableSelection(props.object.id, cells, section);
 }
-function startCellSelection(event: any, rowIndex: any, colField: any, section: any): any {
+function startCellSelection(event, rowIndex, colField, section) {
     if (!canEditTable.value || event.button !== 0)
         return;
     isSelecting.value = true;
     selectionStart.value = { rowIndex, colField, section };
     setSelection([{ rowIndex, colField, section }], section);
 }
-function expandCellSelection(rowIndex: any, colField: any, section: any): any {
+function expandCellSelection(rowIndex, colField, section) {
     const start = selectionStart.value;
     if (!isSelecting.value || !start || start.section !== section)
         return;
-    const startColumn = columns.value.findIndex((column: any): any => column.key === start.colField);
-    const endColumn = columns.value.findIndex((column: any): any => column.key === colField);
+    const startColumn = columns.value.findIndex((column) => column.key === start.colField);
+    const endColumn = columns.value.findIndex((column) => column.key === colField);
     if (startColumn < 0 || endColumn < 0)
         return;
     const cells = [];
@@ -368,15 +368,15 @@ function expandCellSelection(rowIndex: any, colField: any, section: any): any {
     }
     setSelection(cells, section);
 }
-function stopCellSelection(): any {
+function stopCellSelection() {
     isSelecting.value = false;
     selectionStart.value = null;
 }
-function isInlineEditingCurrentCell(rowIndex: any, colField: any, section: any): any {
+function isInlineEditingCurrentCell(rowIndex, colField, section) {
     const editing = inlineEditingCell.value;
     return Boolean(editing && editing.rowIndex === rowIndex && editing.colField === colField && editing.section === section);
 }
-async function startCellInlineEdit(event: any, rowIndex: any, colField: any, section: any): Promise<any> {
+async function startCellInlineEdit(event, rowIndex, colField, section) {
     if (!canEditTable.value)
         return;
     const row = section === "footer" ? footerRows.value[rowIndex] : rows.value[rowIndex];
@@ -388,7 +388,7 @@ async function startCellInlineEdit(event: any, rowIndex: any, colField: any, sec
     editor?.focus?.();
     editor?.select?.();
 }
-function commitObjectPatch(patch: any, label: any): any {
+function commitObjectPatch(patch, label) {
     if (!canEditTable.value)
         return false;
     const command = createUpdateObjectPropsCommand(documentStore, props.object.id, patch);
@@ -398,10 +398,10 @@ function commitObjectPatch(patch: any, label: any): any {
     executeEditorCommand(historyStore, command);
     return true;
 }
-function commitTableProps(patch: any, label: any): any {
+function commitTableProps(patch, label) {
     return commitObjectPatch({ props: { ...(props.object.props || {}), ...patch } }, label);
 }
-function commitCellInlineEdit(): any {
+function commitCellInlineEdit() {
     const editing = inlineEditingCell.value;
     if (!editing)
         return;
@@ -411,11 +411,11 @@ function commitCellInlineEdit(): any {
     inlineEditingCell.value = null;
     inlineEditingValue.value = "";
 }
-function cancelCellInlineEdit(): any {
+function cancelCellInlineEdit() {
     inlineEditingCell.value = null;
     inlineEditingValue.value = "";
 }
-function handleInlineCellEditorKeydown(event: any): any {
+function handleInlineCellEditorKeydown(event) {
     event.stopPropagation();
     if (event.key === "Escape") {
         event.preventDefault();
@@ -426,13 +426,13 @@ function handleInlineCellEditorKeydown(event: any): any {
         commitCellInlineEdit();
     }
 }
-function startHeaderEdit(event: any, index: any): any {
+function startHeaderEdit(event, index) {
     if (!canEditTable.value || !columns.value[index])
         return;
     const column = columns.value[index];
     editForm.value = { kind: "header", index, rowIndex: -1, colField: "", title: column.title, key: column.key, value: "", field: "", position: popoverPosition(event) };
 }
-function startFooterEdit(event: any, rowIndex: any, colField: any): any {
+function startFooterEdit(event, rowIndex, colField) {
     if (!canEditTable.value)
         return;
     const cell = normalizeTableCell(footerRows.value[rowIndex]?.[colField]);
@@ -449,13 +449,13 @@ function startFooterEdit(event: any, rowIndex: any, colField: any): any {
     };
     setSelection([{ rowIndex, colField, section: "footer" }], "footer");
 }
-function popoverPosition(event: any): any {
+function popoverPosition(event) {
     return { top: Math.max(8, event.clientY + 8), left: Math.max(8, event.clientX + 8) };
 }
-function closeEditForm(): any {
+function closeEditForm() {
     editForm.value = { kind: "", index: -1, rowIndex: -1, colField: "", title: "", key: "", value: "", field: "", position: { top: 0, left: 0 } };
 }
-function saveEditForm(): any {
+function saveEditForm() {
     const form = editForm.value;
     if (form.kind === "header") {
         const next = renameTableColumn(columns.value, props.object.props?.sampleData, props.object.props?.footerData, form.index, form.key, form.title);
@@ -468,7 +468,7 @@ function saveEditForm(): any {
         const rows = updateTableCell(props.object.props?.footerData, columns.value, form.rowIndex, form.colField, form.value);
         const cell = normalizeTableCell(rows[form.rowIndex][form.colField]);
         const summaryField = form.field === form.colField ? form.colField : "";
-        rows[form.rowIndex][form.colField] = summaryField ? { ...cell, field: summaryField } : ((): any => {
+        rows[form.rowIndex][form.colField] = summaryField ? { ...cell, field: summaryField } : (() => {
             const nextCell = { ...cell };
             delete nextCell.field;
             return Object.keys(nextCell).length === 1 && Object.hasOwn(nextCell, "value") ? nextCell.value : nextCell;
@@ -477,7 +477,7 @@ function saveEditForm(): any {
     }
     closeEditForm();
 }
-function startColumnResize(event: any, index: any): any {
+function startColumnResize(event, index) {
     if (!canEditTable.value)
         return;
     const column = columns.value[index];
@@ -486,7 +486,7 @@ function startColumnResize(event: any, index: any): any {
     window.addEventListener("pointermove", moveColumnResize);
     window.addEventListener("pointerup", endColumnResize, { once: true });
 }
-function moveColumnResize(event: any): any {
+function moveColumnResize(event) {
     if (!columnResize.value)
         return;
     const resize = columnResize.value;
@@ -496,7 +496,7 @@ function moveColumnResize(event: any): any {
     const deltaWeight = ((event.clientX - resize.startX) / Math.max(1, resize.hostWidth)) * resize.total;
     tempColumnWidths.value = { ...tempColumnWidths.value, [column.key]: Math.max(10, resize.startWidth + deltaWeight) };
 }
-function endColumnResize(): any {
+function endColumnResize() {
     const resize = columnResize.value;
     window.removeEventListener("pointermove", moveColumnResize);
     columnResize.value = null;
@@ -507,10 +507,10 @@ function endColumnResize(): any {
     tempColumnWidths.value = {};
     if (!column || !Number.isFinite(width) || width <= 0)
         return;
-    const nextColumns = columns.value.map((item: any, index: any): any => index === resize.index ? { ...item, width } : item);
+    const nextColumns = columns.value.map((item, index) => index === resize.index ? { ...item, width } : item);
     commitTableProps({ columns: nextColumns }, "调整表格列宽");
 }
-function startRowResize(event: any, section: any, rowIndex: any): any {
+function startRowResize(event, section, rowIndex) {
     if (!canEditTable.value)
         return;
     const row = event.currentTarget?.closest("tr");
@@ -519,14 +519,14 @@ function startRowResize(event: any, section: any, rowIndex: any): any {
     window.addEventListener("pointermove", moveRowResize);
     window.addEventListener("pointerup", endRowResize, { once: true });
 }
-function moveRowResize(event: any): any {
+function moveRowResize(event) {
     if (!rowResize.value)
         return;
     const resize = rowResize.value;
     const height = Math.max(4, resize.startHeight + (event.clientY - resize.startY) / MM_TO_CSS_PX);
     tempRowHeights.value = { ...tempRowHeights.value, [`${resize.section}:${resize.rowIndex}`]: height };
 }
-function endRowResize(): any {
+function endRowResize() {
     const resize = rowResize.value;
     window.removeEventListener("pointermove", moveRowResize);
     rowResize.value = null;
@@ -544,11 +544,11 @@ function endRowResize(): any {
         commitTableProps({ rowHeights: updateTableRowHeight(normalizeTableRowHeights(props.object.props?.rowHeights), resize.section, resize.rowIndex, height) }, "调整表格行高");
     }
 }
-function onDocumentPointerDown(event: any): any {
+function onDocumentPointerDown(event) {
     if (editFormRef.value && !editFormRef.value.contains(event.target))
         closeEditForm();
 }
-watch((): any => selectedIds.value.join(","), (): any => {
+watch(() => selectedIds.value.join(","), () => {
     if (!canEditTable.value) {
         cancelCellInlineEdit();
         closeEditForm();
@@ -557,7 +557,7 @@ watch((): any => selectedIds.value.join(","), (): any => {
 });
 window.addEventListener("pointerup", stopCellSelection);
 window.addEventListener("pointerdown", onDocumentPointerDown);
-onBeforeUnmount((): any => {
+onBeforeUnmount(() => {
     window.removeEventListener("pointerup", stopCellSelection);
     window.removeEventListener("pointerdown", onDocumentPointerDown);
     window.removeEventListener("pointermove", moveColumnResize);

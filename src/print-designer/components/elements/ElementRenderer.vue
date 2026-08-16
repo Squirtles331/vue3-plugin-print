@@ -18,8 +18,8 @@ const props = defineProps({
         type: Object,
         required: true,
     },
-}) as any;
-const emit = defineEmits(["start-object-drag"]) as any;
+});
+const emit = defineEmits(["start-object-drag"]);
 const components = {
     text: TextElement,
     image: ImageElement,
@@ -31,6 +31,6 @@ const components = {
     rect: RectElement,
     circle: CircleElement,
     multiLabel: MultiLabelElement,
-} as any;
-const component = computed((): any => components[props.object?.type] || TextElement) as any;
+};
+const component = computed(() => components[props.object?.type] || TextElement);
 </script>

@@ -1,47 +1,47 @@
 import { cloneDeep, createId } from "../../core/clone.js";
-function pageGroups(documentStore: any, pageId: any): any {
-    return cloneDeep(documentStore.pages.find((page: any): any => page.id === pageId)?.groups || []);
+function pageGroups(documentStore, pageId) {
+    return cloneDeep(documentStore.pages.find((page) => page.id === pageId)?.groups || []);
 }
-export function createSetPageGroupsCommand(documentStore: any, pageId: any, nextGroups: any, label: any = "Update groups"): any {
-    const previousGroups = pageGroups(documentStore, pageId) as any;
-    const next = cloneDeep(nextGroups || []) as any;
+export function createSetPageGroupsCommand(documentStore, pageId, nextGroups, label = "Update groups") {
+    const previousGroups = pageGroups(documentStore, pageId);
+    const next = cloneDeep(nextGroups || []);
     if (JSON.stringify(previousGroups) === JSON.stringify(next)) {
         return null;
     }
     return {
         id: `groups-${Date.now()}`,
         label,
-        execute(): any {
+        execute() {
             documentStore.setPageGroups(pageId, cloneDeep(next));
         },
-        undo(): any {
+        undo() {
             documentStore.setPageGroups(pageId, cloneDeep(previousGroups));
         },
     };
 }
-export function createGroupCommand(documentStore: any, pageId: any, elementIds: any, name: any = ""): any {
-    const ids = [...new Set(elementIds || [])].filter((id: any): any => documentStore.objectsById[id]?.pageId === pageId) as any;
+export function createGroupCommand(documentStore, pageId, elementIds, name = "") {
+    const ids = [...new Set(elementIds || [])].filter((id) => documentStore.objectsById[id]?.pageId === pageId);
     if (ids.length < 2) {
         return null;
     }
-    const existing = pageGroups(documentStore, pageId) as any;
-    const selected = new Set(ids) as any;
+    const existing = pageGroups(documentStore, pageId);
+    const selected = new Set(ids);
     const remaining = existing
-        .map((group: any): any => ({ ...group, elementIds: (group.elementIds || []).filter((id: any): any => !selected.has(id)) }))
-        .filter((group: any): any => group.elementIds.length >= 2) as any;
+        .map((group) => ({ ...group, elementIds: (group.elementIds || []).filter((id) => !selected.has(id)) }))
+        .filter((group) => group.elementIds.length >= 2);
     const group = {
         id: createId("group"),
         name: String(name || `Group ${remaining.length + 1}`).trim() || `Group ${remaining.length + 1}`,
         elementIds: ids,
-    } as any;
-    const command = createSetPageGroupsCommand(documentStore, pageId, [...remaining, group], "Group elements") as any;
+    };
+    const command = createSetPageGroupsCommand(documentStore, pageId, [...remaining, group], "Group elements");
     return command ? { command, group } : null;
 }
-export function createUngroupCommand(documentStore: any, pageId: any, groupIds: any = []): any {
-    const targets = new Set(groupIds) as any;
+export function createUngroupCommand(documentStore, pageId, groupIds = []) {
+    const targets = new Set(groupIds);
     if (!targets.size) {
         return null;
     }
-    const next = pageGroups(documentStore, pageId).filter((group: any): any => !targets.has(group.id)) as any;
+    const next = pageGroups(documentStore, pageId).filter((group) => !targets.has(group.id));
     return createSetPageGroupsCommand(documentStore, pageId, next, "Ungroup elements");
 }

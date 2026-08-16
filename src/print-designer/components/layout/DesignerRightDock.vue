@@ -32,12 +32,12 @@
 import StructurePanel from "../inspector/StructurePanel.vue";
 defineProps({
     layers: {
-        type: Array as any,
-        default: (): any => [],
+        type: Array,
+        default: () => [],
     },
     variables: {
-        type: Array as any,
-        default: (): any => [],
+        type: Array,
+        default: () => [],
     },
 });
 </script>

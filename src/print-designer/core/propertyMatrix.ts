@@ -6,7 +6,7 @@ export const PAGE_PROPERTY_MATRIX = Object.freeze({
     cornerMarks: { storage: "pageSettings.cornerMarks", effect: "editor-only" },
     headerLine: { storage: "pageSettings.headerLine", effect: "editor-only" },
     footerLine: { storage: "pageSettings.footerLine", effect: "editor-only" },
-}) as any;
+});
 export const ELEMENT_PROPERTY_MATRIX = Object.freeze({
     common: Object.freeze(["geometry", "visibility", "printable", "lock", "stacking", "boxStyle", "typography"]),
     text: Object.freeze(["content", "autoHeight", "whiteSpace", "writingMode"]),
@@ -19,7 +19,7 @@ export const ELEMENT_PROPERTY_MATRIX = Object.freeze({
     circle: Object.freeze(["geometry", "border", "fill", "aspectLock"]),
     table: Object.freeze(["columns", "formatters", "header", "footer", "metrics", "pagination", "editorHints", "transform"]),
     multiLabel: Object.freeze(["grid", "dataPath", "fieldMapping", "cellPadding"]),
-}) as any;
-export function isEditorOnlyProperty(path: any): any {
-    return ["cornerMarks", "headerLine", "footerLine", "editorHints"].some((part: any): any => String(path).includes(part));
+});
+export function isEditorOnlyProperty(path) {
+    return ["cornerMarks", "headerLine", "footerLine", "editorHints"].some((part) => String(path).includes(part));
 }

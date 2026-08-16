@@ -2,10 +2,10 @@
 const props = defineProps({
     label: { type: String, default: "" },
     name: { type: String, required: true },
-}) as any;
-const tabs = inject("pdTabs", null) as any;
-const isActive = computed((): any => tabs?.activeName?.value === props.name) as any;
-onMounted((): any => {
+});
+const tabs = inject("pdTabs", null);
+const isActive = computed(() => tabs?.activeName?.value === props.name);
+onMounted(() => {
     tabs?.registerTab({ label: props.label, name: props.name });
 });
 </script>

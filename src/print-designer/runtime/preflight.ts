@@ -8,22 +8,22 @@ const INCOMPLETE_RUNTIME_ISSUE_CODES = new Set([
     "empty-machine-code",
     "empty-image",
     "outside-printable-area",
-]) as any;
-function object(value: any): any {
+]);
+function object(value) {
     return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
-export function normalizePrintPolicy(policy: any = {}): any {
+export function normalizePrintPolicy(policy = {}) {
     return {
         allowIncomplete: policy?.allowIncomplete === true,
     };
 }
-function printable(element: any): any {
+function printable(element) {
     return element?.visible !== false && element?.printable !== false;
 }
-function completenessSeverity(policy: any): any {
+function completenessSeverity(policy) {
     return policy.allowIncomplete ? "warning" : "error";
 }
-function createRuntimeIssue({ code, path, elementId, binding, message, policy }: any): any {
+function createRuntimeIssue({ code, path, elementId, binding, message, policy }) {
     return {
         code,
         path,
@@ -33,29 +33,29 @@ function createRuntimeIssue({ code, path, elementId, binding, message, policy }:
         severity: completenessSeverity(policy),
     };
 }
-function collectCompletenessIssues(document: any, runtimeDocument: any, policy: any): any {
-    const issues = [] as any;
-    const pageSettings = document?.pageSettings || {} as any;
-    const paper = pageSettings.paper || {} as any;
-    const margin = pageSettings.margin || {} as any;
-    const width = Number(paper.widthMm) || 210 as any;
-    const height = Number(paper.heightMm) || 297 as any;
+function collectCompletenessIssues(document, runtimeDocument, policy) {
+    const issues = [];
+    const pageSettings = document?.pageSettings || {};
+    const paper = pageSettings.paper || {};
+    const margin = pageSettings.margin || {};
+    const width = Number(paper.widthMm) || 210;
+    const height = Number(paper.heightMm) || 297;
     const safeArea = {
         left: Number(margin.left) || 0,
         top: Number(margin.top) || 0,
         right: width - (Number(margin.right) || 0),
         bottom: height - (Number(margin.bottom) || 0),
-    } as any;
-    (runtimeDocument?.pages || []).forEach((page: any, pageIndex: any): any => {
-        (page.elements || []).forEach((element: any, elementIndex: any): any => {
+    };
+    (runtimeDocument?.pages || []).forEach((page, pageIndex) => {
+        (page.elements || []).forEach((element, elementIndex) => {
             if (!printable(element)) {
                 return;
             }
-            const path = `pages[${pageIndex}].elements[${elementIndex}]` as any;
-            const left = Number(element.x) || 0 as any;
-            const top = Number(element.y) || 0 as any;
-            const right = left + (Number(element.width) || 0) as any;
-            const bottom = top + (Number(element.height) || 0) as any;
+            const path = `pages[${pageIndex}].elements[${elementIndex}]`;
+            const left = Number(element.x) || 0;
+            const top = Number(element.y) || 0;
+            const right = left + (Number(element.width) || 0);
+            const bottom = top + (Number(element.height) || 0);
             if (left < safeArea.left || top < safeArea.top || right > safeArea.right || bottom > safeArea.bottom) {
                 issues.push(createRuntimeIssue({
                     code: "outside-printable-area",
@@ -65,7 +65,7 @@ function collectCompletenessIssues(document: any, runtimeDocument: any, policy: 
                     policy,
                 }));
             }
-            const value = element.runtime?.value as any;
+            const value = element.runtime?.value;
             if (["barcode", "qrcode"].includes(element.type) && value?.status !== "missing" && !String(value?.value || "").trim()) {
                 issues.push(createRuntimeIssue({
                     code: "empty-machine-code",
@@ -90,10 +90,10 @@ function collectCompletenessIssues(document: any, runtimeDocument: any, policy: 
     });
     return issues;
 }
-function collectPaginationWarnings(runtimeDocument: any): any {
-    const issues = [] as any;
-    (runtimeDocument?.pages || []).forEach((page: any, pageIndex: any): any => {
-        const paginatedTables = (page.elements || []).filter((element: any): any => element.type === "table" && element.props?.autoPaginate !== false) as any;
+function collectPaginationWarnings(runtimeDocument) {
+    const issues = [];
+    (runtimeDocument?.pages || []).forEach((page, pageIndex) => {
+        const paginatedTables = (page.elements || []).filter((element) => element.type === "table" && element.props?.autoPaginate !== false);
         if (paginatedTables.length > 1) {
             issues.push({
                 code: "multiple-paginated-tables",
@@ -105,30 +105,30 @@ function collectPaginationWarnings(runtimeDocument: any): any {
     });
     return issues;
 }
-export function validatePrintRuntime(document: any, runtimeData: any = {}, printPolicy: any = {}): any {
-    const templateValidation = validateTemplateDocument(document) as any;
-    const data = object(runtimeData) as any;
-    const policy = normalizePrintPolicy(printPolicy) as any;
+export function validatePrintRuntime(document, runtimeData = {}, printPolicy = {}) {
+    const templateValidation = validateTemplateDocument(document);
+    const data = object(runtimeData);
+    const policy = normalizePrintPolicy(printPolicy);
     const runtimeValidation = templateValidation.valid
         ? resolveRuntimeTemplate(templateValidation.document, data)
-        : { document: null, issues: [] } as any;
-    const runtimeIssues = (runtimeValidation.issues || []).map((issue: any): any => (INCOMPLETE_RUNTIME_ISSUE_CODES.has(issue.code)
+        : { document: null, issues: [] };
+    const runtimeIssues = (runtimeValidation.issues || []).map((issue) => (INCOMPLETE_RUNTIME_ISSUE_CODES.has(issue.code)
         ? { ...issue, severity: completenessSeverity(policy) }
-        : issue)) as any;
+        : issue));
     const completenessIssues = templateValidation.valid
         ? collectCompletenessIssues(templateValidation.document, runtimeValidation.document, policy)
-        : [] as any;
+        : [];
     const paginationWarnings = templateValidation.valid
         ? collectPaginationWarnings(runtimeValidation.document)
-        : [] as any;
+        : [];
     const issues = [
         ...(templateValidation.issues || []),
         ...runtimeIssues,
         ...completenessIssues,
         ...paginationWarnings,
-    ] as any;
+    ];
     return {
-        valid: templateValidation.valid && !issues.some((issue: any): any => issue.severity === "error"),
+        valid: templateValidation.valid && !issues.some((issue) => issue.severity === "error"),
         document: templateValidation.document,
         runtimeDocument: runtimeValidation.document,
         issues,

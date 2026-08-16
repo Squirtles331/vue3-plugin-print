@@ -29,9 +29,9 @@ const PRINT_DESIGNER_COMPONENTS = [
     ["PdSwitch", PdSwitch],
     ["PdTabPane", PdTabPane],
     ["PdTabs", PdTabs],
-] as any;
-export function registerPrintDesignerUi(app: any): any {
-    for (const [name, component] of PRINT_DESIGNER_COMPONENTS as any) {
+];
+export function registerPrintDesignerUi(app) {
+    for (const [name, component] of PRINT_DESIGNER_COMPONENTS) {
         if (app._context.components[name]) {
             continue;
         }

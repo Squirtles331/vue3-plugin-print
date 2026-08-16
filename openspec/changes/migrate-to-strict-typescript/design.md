@@ -19,7 +19,7 @@ The Vue 3 print-template designer currently contains JavaScript source, JavaScri
 
 ## Decisions
 
-- Use TypeScript with `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`, and strict Vue templates. This finds nullability and indexed-access mistakes that `strict` alone misses. JavaScript sources and suppression directives are disallowed; dynamic boundaries use `unknown` plus validators instead.
+- Use TypeScript with `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`, and strict Vue templates. This finds nullability and indexed-access mistakes that `strict` alone misses. JavaScript sources, explicit `any`, and suppression directives are disallowed; dynamic boundaries use `unknown` plus validators instead.
 - Use a root no-emit configuration for repository checks and a declaration-only source configuration for the library package. `vue-tsc` emits declaration files after Vite builds JavaScript into `dist`; this replaces the hand-maintained declaration copy. A root `src/index.ts` library entry keeps emitted declaration import paths valid without post-processing.
 - Retain `.js` import specifiers between TypeScript source modules. Vite and TypeScript resolve them to source files during development and emit standards-compliant ESM references for any preserved imports.
 - Centralize template, element, repository, runtime, and editor public contracts in TypeScript modules. Model external JSON and mutable browser inputs as `unknown`; preserve the current normalizers and validators as the runtime source of truth.
@@ -32,6 +32,7 @@ The Vue 3 print-template designer currently contains JavaScript source, JavaScri
 - [Generated Vue declarations can include transitive SFC types] → Emit the complete declaration tree into `dist` and compile a packed TypeScript consumer, rather than checking only `dist/index.d.ts` text.
 - [Node 20 cannot execute TypeScript directly] → Route all repository-owned automation scripts through `tsx` and update nested npm invocations accordingly.
 - [A mechanical rename can alter import resolution] → Retain ESM `.js` specifiers and validate demo builds, library builds, ESM import, and CommonJS require from an installed tarball.
+- [A broad conversion can conceal unsound contracts behind explicit `any`] → Rebuild shared domain unions and type guards first, remove inferred and annotation-level `any` in dependency order, and enforce the result through ESLint in every checked executable file.
 
 ## Migration Plan
 

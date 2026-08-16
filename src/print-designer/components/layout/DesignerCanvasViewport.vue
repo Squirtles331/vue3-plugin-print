@@ -36,19 +36,19 @@ const props = defineProps({
         type: Number,
         default: 1,
     },
-}) as any;
-const paperShellRef = ref(null) as any;
-const paperShellStyle = computed((): any => ({
+});
+const paperShellRef = ref(null);
+const paperShellStyle = computed(() => ({
     width: `${props.scaledPaperWidth}px`,
     minHeight: `${props.scaledPaperHeight}px`,
-})) as any;
-const pageStackStyle = computed((): any => ({
+}));
+const pageStackStyle = computed(() => ({
     width: `${props.pageWidthPx}px`,
     minHeight: `${props.pageHeightPx}px`,
     transform: `scale(${props.zoom})`,
     transformOrigin: "top left",
-})) as any;
-function getPageStackShellElement(): any {
+}));
+function getPageStackShellElement() {
     return paperShellRef.value;
 }
 defineExpose({

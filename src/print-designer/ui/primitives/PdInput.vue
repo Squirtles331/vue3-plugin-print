@@ -13,11 +13,11 @@ const props = defineProps({
     maxlength: { type: [Number, String], default: undefined },
     spellcheck: { type: [Boolean, String], default: undefined },
     "aria-label": { type: String, default: undefined },
-}) as any;
-const emit = defineEmits(["update:modelValue", "input", "change", "clear", "click", "blur"]) as any;
-const attrs = useAttrs() as any;
-const isTextarea = computed((): any => props.type === "textarea") as any;
-const inputClass = computed((): any => [
+});
+const emit = defineEmits(["update:modelValue", "input", "change", "clear", "click", "blur"]);
+const attrs = useAttrs();
+const isTextarea = computed(() => props.type === "textarea");
+const inputClass = computed(() => [
     "pd-input",
     `pd-input--${props.size}`,
     {
@@ -25,13 +25,13 @@ const inputClass = computed((): any => [
         "pd-input--with-prefix": props.prefixIcon,
         "pd-input--clearable": props.clearable,
     },
-]) as any;
-function emitValue(event: any, eventName: any): any {
+]);
+function emitValue(event, eventName) {
     const value = event.target.value;
     emit("update:modelValue", value);
     emit(eventName, value);
 }
-function clearValue(): any {
+function clearValue() {
     emit("update:modelValue", "");
     emit("input", "");
     emit("change", "");

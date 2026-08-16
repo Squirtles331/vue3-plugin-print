@@ -1,20 +1,20 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { createPreviewStateModel } from "../documentModel.js";
-export const useEditorPreviewStore = defineStore("printDesignerPreview", (): any => {
-    const variables = ref({}) as any;
-    const sampleData = ref({}) as any;
-    const computedState = ref({}) as any;
-    const pagination = ref({}) as any;
-    const renderCache = ref({}) as any;
-    const runtimeData = ref({}) as any;
-    const previewStateModel = computed((): any => createPreviewStateModel({
+export const useEditorPreviewStore = defineStore("printDesignerPreview", () => {
+    const variables = ref({});
+    const sampleData = ref({});
+    const computedState = ref({});
+    const pagination = ref({});
+    const renderCache = ref({});
+    const runtimeData = ref({});
+    const previewStateModel = computed(() => createPreviewStateModel({
         variables: variables.value,
         sampleData: sampleData.value,
         computedState: computedState.value,
         pagination: pagination.value,
         renderCache: renderCache.value,
-    })) as any;
+    }));
     return {
         variables,
         sampleData,
@@ -22,9 +22,9 @@ export const useEditorPreviewStore = defineStore("printDesignerPreview", (): any
         pagination,
         renderCache,
         runtimeData,
-        setRuntimeData(value: any): any {
+        setRuntimeData(value) {
             runtimeData.value = value && typeof value === "object" && !Array.isArray(value) ? { ...value } : {};
         },
         previewStateModel,
     };
-}) as any;
+});

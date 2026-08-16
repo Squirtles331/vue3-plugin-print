@@ -1,7 +1,7 @@
 import { Collection, CopyDocument, Document, Grid, Picture, Postcard, Tickets, } from "../ui/icons.js";
 import { markRaw } from "vue";
 import { ELEMENT_PALETTE } from "../core/elementFactory";
-const asRawIcon = (component: any): any => markRaw(component) as any;
+const asRawIcon = (component) => markRaw(component);
 const iconMap = {
     text: asRawIcon(Tickets),
     image: asRawIcon(Picture),
@@ -13,8 +13,8 @@ const iconMap = {
     circle: asRawIcon(Collection),
     pageNumber: asRawIcon(Document),
     multiLabel: asRawIcon(CopyDocument),
-} as any;
-export const paletteItems = ELEMENT_PALETTE.map((item: any): any => ({
+};
+export const paletteItems = ELEMENT_PALETTE.map((item) => ({
     ...item,
     icon: iconMap[item.type] || asRawIcon(Collection),
-})) as any;
+}));

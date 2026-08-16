@@ -1,10 +1,10 @@
-function roundMm(value: any): any {
+function roundMm(value) {
     return +value.toFixed(2);
 }
-function dedupeReferences(references: any): any {
-    const seen = new Set() as any;
-    return references.filter((reference: any): any => {
-        const key = `${reference.source}:${roundMm(reference.position)}` as any;
+function dedupeReferences(references) {
+    const seen = new Set();
+    return references.filter((reference) => {
+        const key = `${reference.source}:${roundMm(reference.position)}`;
         if (seen.has(key)) {
             return false;
         }
@@ -12,12 +12,12 @@ function dedupeReferences(references: any): any {
         return true;
     });
 }
-function buildGridReferences(pageSizeMm: any, gridSpacingMm: any): any {
+function buildGridReferences(pageSizeMm, gridSpacingMm) {
     if (!Number.isFinite(gridSpacingMm) || gridSpacingMm <= 0) {
         return [];
     }
-    const references = [] as any;
-    for (let position = 0 as any; position <= pageSizeMm + 0.001; position += gridSpacingMm) {
+    const references = [];
+    for (let position = 0; position <= pageSizeMm + 0.001; position += gridSpacingMm) {
         references.push({
             source: "grid",
             position: Math.min(pageSizeMm, roundMm(position)),
@@ -25,26 +25,26 @@ function buildGridReferences(pageSizeMm: any, gridSpacingMm: any): any {
     }
     return references;
 }
-export function buildAxisSnapReferences(pageSizeMm: any, guides: any, gridSpacingMm: any): any {
+export function buildAxisSnapReferences(pageSizeMm, guides, gridSpacingMm) {
     return dedupeReferences([
         { source: "page", position: 0 },
         { source: "page", position: roundMm(pageSizeMm) },
-        ...guides.map((position: any): any => ({
+        ...guides.map((position) => ({
             source: "guide",
             position: roundMm(position),
         })),
         ...buildGridReferences(pageSizeMm, gridSpacingMm),
-    ]).sort((left: any, right: any): any => left.position - right.position);
+    ]).sort((left, right) => left.position - right.position);
 }
-function resolveAxisSnap({ value, size, references, pixelsPerUnit, tolerancePx }: any): any {
+function resolveAxisSnap({ value, size, references, pixelsPerUnit, tolerancePx }) {
     const candidates = [
         { edge: "start", position: value, offset: 0 },
         { edge: "end", position: value + size, offset: size },
-    ] as any;
-    let best = null as any;
-    candidates.forEach((candidate: any): any => {
-        references.forEach((reference: any): any => {
-            const distancePx = Math.abs(reference.position - candidate.position) * pixelsPerUnit as any;
+    ];
+    let best = null;
+    candidates.forEach((candidate) => {
+        references.forEach((reference) => {
+            const distancePx = Math.abs(reference.position - candidate.position) * pixelsPerUnit;
             if (distancePx > tolerancePx) {
                 return;
             }
@@ -61,23 +61,23 @@ function resolveAxisSnap({ value, size, references, pixelsPerUnit, tolerancePx }
     });
     return best;
 }
-export function resolveObjectSnap({ x, y, width, height, pageWidthMm, pageHeightMm, verticalGuides, horizontalGuides, gridSpacingMm, pixelsPerUnit, tolerancePx = 6, }: any): any {
-    const xReferences = buildAxisSnapReferences(pageWidthMm, verticalGuides, gridSpacingMm) as any;
-    const yReferences = buildAxisSnapReferences(pageHeightMm, horizontalGuides, gridSpacingMm) as any;
+export function resolveObjectSnap({ x, y, width, height, pageWidthMm, pageHeightMm, verticalGuides, horizontalGuides, gridSpacingMm, pixelsPerUnit, tolerancePx = 6, }) {
+    const xReferences = buildAxisSnapReferences(pageWidthMm, verticalGuides, gridSpacingMm);
+    const yReferences = buildAxisSnapReferences(pageHeightMm, horizontalGuides, gridSpacingMm);
     const xSnap = resolveAxisSnap({
         value: x,
         size: width,
         references: xReferences,
         pixelsPerUnit,
         tolerancePx,
-    }) as any;
+    });
     const ySnap = resolveAxisSnap({
         value: y,
         size: height,
         references: yReferences,
         pixelsPerUnit,
         tolerancePx,
-    }) as any;
+    });
     return {
         x: xSnap?.snappedValue ?? roundMm(x),
         y: ySnap?.snappedValue ?? roundMm(y),

@@ -159,54 +159,54 @@ import { createApplyTextPresetCommand, createUpdateTextFormattingCommand } from 
 import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorHistoryStore } from "../stores/historyStore";
 import { useEditorSelectionStore } from "../stores/selectionStore";
-const TYPOGRAPHY_TYPES = new Set(["text", "pageNumber", "barcode", "table", "multiLabel"]) as any;
-const documentStore = useEditorDocumentStore() as any;
-const historyStore = useEditorHistoryStore() as any;
-const selectionStore = useEditorSelectionStore() as any;
-const { objectsById } = storeToRefs(documentStore) as any;
-const { selectedIds, selectedCount } = storeToRefs(selectionStore) as any;
-const selectedTypographyObject = computed((): any => {
+const TYPOGRAPHY_TYPES = new Set(["text", "pageNumber", "barcode", "table", "multiLabel"]);
+const documentStore = useEditorDocumentStore();
+const historyStore = useEditorHistoryStore();
+const selectionStore = useEditorSelectionStore();
+const { objectsById } = storeToRefs(documentStore);
+const { selectedIds, selectedCount } = storeToRefs(selectionStore);
+const selectedTypographyObject = computed(() => {
     if (selectedCount.value !== 1) {
         return null;
     }
     const object = objectsById.value[selectedIds.value[0]];
     return TYPOGRAPHY_TYPES.has(object?.type) ? object : null;
-}) as any;
-const toolbarDisabled = computed((): any => !selectedTypographyObject.value) as any;
-const presetEnabled = computed((): any => selectedTypographyObject.value?.type === "text") as any;
-const activePreset = computed((): any => selectedTypographyObject.value?.props?.textPreset || "") as any;
-const fontFamilyValue = computed((): any => selectedTypographyObject.value?.style?.fontFamily || "") as any;
-const fontSizeValue = computed((): any => selectedTypographyObject.value?.style?.fontSize || 14) as any;
-const textColorValue = computed((): any => selectedTypographyObject.value?.style?.color || "#000000") as any;
-const textAlignValue = computed((): any => selectedTypographyObject.value?.style?.textAlign || "left") as any;
-const verticalAlignValue = computed((): any => selectedTypographyObject.value?.style?.verticalAlign || "top") as any;
-const lineHeightValue = computed((): any => selectedTypographyObject.value?.style?.lineHeight || 1.4) as any;
-const isBold = computed((): any => selectedTypographyObject.value?.style?.fontWeight === "bold") as any;
-const isItalic = computed((): any => selectedTypographyObject.value?.style?.fontStyle === "italic") as any;
-const isUnderline = computed((): any => selectedTypographyObject.value?.style?.textDecoration === "underline") as any;
+});
+const toolbarDisabled = computed(() => !selectedTypographyObject.value);
+const presetEnabled = computed(() => selectedTypographyObject.value?.type === "text");
+const activePreset = computed(() => selectedTypographyObject.value?.props?.textPreset || "");
+const fontFamilyValue = computed(() => selectedTypographyObject.value?.style?.fontFamily || "");
+const fontSizeValue = computed(() => selectedTypographyObject.value?.style?.fontSize || 14);
+const textColorValue = computed(() => selectedTypographyObject.value?.style?.color || "#000000");
+const textAlignValue = computed(() => selectedTypographyObject.value?.style?.textAlign || "left");
+const verticalAlignValue = computed(() => selectedTypographyObject.value?.style?.verticalAlign || "top");
+const lineHeightValue = computed(() => selectedTypographyObject.value?.style?.lineHeight || 1.4);
+const isBold = computed(() => selectedTypographyObject.value?.style?.fontWeight === "bold");
+const isItalic = computed(() => selectedTypographyObject.value?.style?.fontStyle === "italic");
+const isUnderline = computed(() => selectedTypographyObject.value?.style?.textDecoration === "underline");
 const horizontalAlignButtons = [
     { label: "左", value: "left" },
     { label: "中", value: "center" },
     { label: "右", value: "right" },
-] as any;
+];
 const verticalAlignButtons = [
     { label: "上", value: "top" },
     { label: "中", value: "middle" },
     { label: "下", value: "bottom" },
-] as any;
-function runTextCommand(command: any): any {
+];
+function runTextCommand(command) {
     if (!command) {
         return;
     }
     executeEditorCommand(historyStore, command);
 }
-function applyPreset(preset: any): any {
+function applyPreset(preset) {
     if (!presetEnabled.value || !preset) {
         return;
     }
     runTextCommand(createApplyTextPresetCommand(documentStore, selectedTypographyObject.value.id, preset));
 }
-function setStyleValue(key: any, value: any): any {
+function setStyleValue(key, value) {
     if (!selectedTypographyObject.value) {
         return;
     }
@@ -214,13 +214,13 @@ function setStyleValue(key: any, value: any): any {
         [key]: value,
     }));
 }
-function toggleFontWeight(): any {
+function toggleFontWeight() {
     setStyleValue("fontWeight", isBold.value ? "normal" : "bold");
 }
-function toggleFontStyle(): any {
+function toggleFontStyle() {
     setStyleValue("fontStyle", isItalic.value ? "normal" : "italic");
 }
-function toggleUnderline(): any {
+function toggleUnderline() {
     setStyleValue("textDecoration", isUnderline.value ? "none" : "underline");
 }
 </script>

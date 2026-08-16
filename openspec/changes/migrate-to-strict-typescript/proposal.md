@@ -11,6 +11,7 @@ Migrating the repository to strict TypeScript makes domain contracts explicit an
 - Define reusable template-designer domain types and validate untrusted JSON, storage, network, and DOM inputs at typed boundaries.
 - Generate the published declaration files from the library source instead of copying a hand-maintained declaration file.
 - Add type checking and a packed TypeScript-consumer check to the verification workflow.
+- Remove every explicit `any` and every TypeScript suppression directive from repository-owned executable code; use domain types and validated `unknown` boundaries instead.
 
 ## Capabilities
 

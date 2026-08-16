@@ -1,12 +1,12 @@
 import { createBlankTemplateDocument, serializeTemplateDocument, validateTemplateDocument } from "./templateDocument.js";
-const DEFAULT_STORAGE_KEY = "print-template-studio:templates:v2" as any;
-function clone(value: any): any {
+const DEFAULT_STORAGE_KEY = "print-template-studio:templates:v2";
+function clone(value) {
     if (typeof structuredClone === "function") {
         return structuredClone(value);
     }
     return JSON.parse(JSON.stringify(value));
 }
-function getBrowserStorage(): any {
+function getBrowserStorage() {
     try {
         return globalThis.localStorage;
     }
@@ -14,77 +14,77 @@ function getBrowserStorage(): any {
         return null;
     }
 }
-function readCollection(storage: any, key: any): any {
+function readCollection(storage, key) {
     if (!storage) {
         throw new Error("Browser template storage is not available.");
     }
     try {
-        const value = storage.getItem(key) as any;
+        const value = storage.getItem(key);
         if (!value) {
             return {};
         }
-        const collection = JSON.parse(value) as any;
+        const collection = JSON.parse(value);
         if (!collection || typeof collection !== "object" || Array.isArray(collection)) {
             throw new Error("Template collection must be a JSON object.");
         }
         return collection;
     }
-    catch (error: any) {
+    catch (error) {
         throw new Error(`Unable to read local template storage: ${error?.message || "stored templates are corrupted."}`, { cause: error });
     }
 }
-function writeCollection(storage: any, key: any, collection: any): any {
+function writeCollection(storage, key, collection) {
     if (!storage) {
         throw new Error("Browser storage is not available.");
     }
     try {
         storage.setItem(key, JSON.stringify(collection));
     }
-    catch (error: any) {
+    catch (error) {
         throw new Error(`Unable to save local template storage: ${error?.message || "storage write failed."}`, { cause: error });
     }
 }
-function normalizeRepositoryDocument(document: any): any {
-    const result = validateTemplateDocument(document) as any;
+function normalizeRepositoryDocument(document) {
+    const result = validateTemplateDocument(document);
     if (!result.valid) {
-        const error = new Error("Stored template validation failed.") as any;
+        const error = new Error("Stored template validation failed.");
         error.issues = result.issues;
         throw error;
     }
     return result.document;
 }
-export function createLocalTemplateRepository({ storage = getBrowserStorage(), key = DEFAULT_STORAGE_KEY }: any = {}): any {
+export function createLocalTemplateRepository({ storage = getBrowserStorage(), key = DEFAULT_STORAGE_KEY } = {}) {
     return {
-        async create(overrides: any = {}): Promise<any> {
+        async create(overrides = {}) {
             return createBlankTemplateDocument(overrides);
         },
-        async list(): Promise<any> {
+        async list() {
             return Object.values(readCollection(storage, key))
-                .map((document: any): any => ({
+                .map((document) => ({
                 id: document.id,
                 name: document.meta?.name || "Untitled print template",
                 updatedAt: document.meta?.updatedAt || "",
             }))
-                .sort((left: any, right: any): any => String(right.updatedAt).localeCompare(String(left.updatedAt)));
+                .sort((left, right) => String(right.updatedAt).localeCompare(String(left.updatedAt)));
         },
-        async get(id: any): Promise<any> {
-            const document = readCollection(storage, key)[id] as any;
+        async get(id) {
+            const document = readCollection(storage, key)[id];
             return document ? clone(normalizeRepositoryDocument(document)) : null;
         },
-        async save(document: any): Promise<any> {
-            const result = serializeTemplateDocument(document) as any;
+        async save(document) {
+            const result = serializeTemplateDocument(document);
             if (!result.valid) {
-                const error = new Error("Template validation failed.") as any;
+                const error = new Error("Template validation failed.");
                 error.issues = result.issues;
                 throw error;
             }
-            const collection = readCollection(storage, key) as any;
+            const collection = readCollection(storage, key);
             collection[result.document.id] = result.document;
             writeCollection(storage, key, collection);
             return clone(result.document);
         },
-        async delete(id: any): Promise<any> {
-            const collection = readCollection(storage, key) as any;
+        async delete(id) {
+            const collection = readCollection(storage, key);
             if (!Object.prototype.hasOwnProperty.call(collection, id)) {
                 return false;
             }
@@ -92,17 +92,17 @@ export function createLocalTemplateRepository({ storage = getBrowserStorage(), k
             writeCollection(storage, key, collection);
             return true;
         },
-        async clear(): Promise<any> {
+        async clear() {
             writeCollection(storage, key, {});
         },
     };
 }
-export function createRestTemplateRepository({ baseUrl, fetchImpl = globalThis.fetch, getHeaders = (): any => ({}) }: any = {}): any {
+export function createRestTemplateRepository({ baseUrl, fetchImpl = globalThis.fetch, getHeaders = () => ({}) } = {}) {
     if (!baseUrl || typeof fetchImpl !== "function") {
         throw new Error("A baseUrl and fetch implementation are required for the REST template repository.");
     }
-    const request = async (path: any, options: any = {}): Promise<any> => {
-        let response: any;
+    const request = async (path, options = {}) => {
+        let response;
         try {
             response = await fetchImpl(`${baseUrl.replace(/\/$/, "")}${path}`, {
                 ...options,
@@ -114,7 +114,7 @@ export function createRestTemplateRepository({ baseUrl, fetchImpl = globalThis.f
                 },
             });
         }
-        catch (error: any) {
+        catch (error) {
             throw new Error(`Template request could not reach the server: ${error?.message || "network error."}`, { cause: error });
         }
         if (!response.ok) {
@@ -134,20 +134,20 @@ export function createRestTemplateRepository({ baseUrl, fetchImpl = globalThis.f
         }
     };
     return {
-        async create(overrides: any = {}): Promise<any> {
+        async create(overrides = {}) {
             return createBlankTemplateDocument(overrides);
         },
-        async list(): Promise<any> {
+        async list() {
             return request("/templates");
         },
-        async get(id: any): Promise<any> {
-            const document = await request(`/templates/${encodeURIComponent(id)}`) as any;
+        async get(id) {
+            const document = await request(`/templates/${encodeURIComponent(id)}`);
             return document ? normalizeRepositoryDocument(document) : null;
         },
-        async save(document: any): Promise<any> {
-            const result = serializeTemplateDocument(document) as any;
+        async save(document) {
+            const result = serializeTemplateDocument(document);
             if (!result.valid) {
-                const error = new Error("Template validation failed.") as any;
+                const error = new Error("Template validation failed.");
                 error.issues = result.issues;
                 throw error;
             }
@@ -156,7 +156,7 @@ export function createRestTemplateRepository({ baseUrl, fetchImpl = globalThis.f
                 body: JSON.stringify(result.document),
             });
         },
-        async delete(id: any): Promise<any> {
+        async delete(id) {
             await request(`/templates/${encodeURIComponent(id)}`, { method: "DELETE" });
             return true;
         },

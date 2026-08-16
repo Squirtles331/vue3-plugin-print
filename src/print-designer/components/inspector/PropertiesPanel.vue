@@ -32,8 +32,8 @@
 <script setup lang="ts">import InspectorEmpty from "./InspectorEmpty.vue";
 defineProps({
     variables: {
-        type: Array as any,
-        default: (): any => [],
+        type: Array,
+        default: () => [],
     },
 });
 </script>

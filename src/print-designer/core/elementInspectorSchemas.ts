@@ -4,17 +4,17 @@ export const INSPECTOR_TABS = {
     PROPERTY: "property",
     STYLE: "style",
     ADVANCED: "advanced",
-} as any;
+} as const;
 export const TAB_LABELS = {
     [INSPECTOR_TABS.PROPERTY]: "属性",
     [INSPECTOR_TABS.STYLE]: "样式",
     [INSPECTOR_TABS.ADVANCED]: "高级",
-} as any;
+};
 export const FIELD_SOURCE = {
     ROOT: "root",
     STYLE: "style",
     PROPS: "props",
-} as any;
+} as const;
 export const FIELD_CONTROL = {
     INPUT: "input",
     TEXTAREA: "textarea",
@@ -31,59 +31,84 @@ export const FIELD_CONTROL = {
     ACTIONS: "actions",
     READONLY: "readonly",
     BUTTONS: "buttons",
-} as any;
+} as const;
 export const SECTION_LAYOUT = {
     STACK: "stack",
     GRID_2: "grid-2",
     ACTIONS_2X2: "actions-2x2",
     INLINE_BUTTONS: "inline-buttons",
-} as any;
+} as const;
+export type InspectorFieldSource = typeof FIELD_SOURCE[keyof typeof FIELD_SOURCE];
+export type InspectorFieldControl = typeof FIELD_CONTROL[keyof typeof FIELD_CONTROL];
+export interface InspectorOption { label: string; value: string | number; }
+export interface InspectorField {
+    [key: string]: unknown;
+    key: string;
+    label: string;
+    source: InspectorFieldSource;
+    control: InspectorFieldControl;
+    actions?: InspectorOption[];
+    buttons?: Array<InspectorOption & { tone?: string }>;
+    max?: number;
+    min?: number;
+    options?: readonly InspectorOption[];
+    step?: number;
+}
+export interface InspectorSection {
+    [key: string]: unknown;
+    key: string;
+    label: string;
+    layout: string;
+    fields: InspectorField[];
+}
+export interface InspectorTab { key: string; sections: InspectorSection[]; }
+export interface InspectorSchema { tabs: InspectorTab[]; }
 const BORDER_STYLE_OPTIONS = [
     { label: "实线", value: "solid" },
     { label: "虚线", value: "dashed" },
     { label: "点线", value: "dotted" },
-] as any;
+];
 const TEXT_ALIGN_OPTIONS = [
     { label: "左对齐", value: "left" },
     { label: "居中", value: "center" },
     { label: "右对齐", value: "right" },
-] as any;
+];
 const VERTICAL_ALIGN_OPTIONS = [
     { label: "顶部", value: "top" },
     { label: "居中", value: "middle" },
     { label: "底部", value: "bottom" },
-] as any;
+];
 const FONT_WEIGHT_OPTIONS = [
     { label: "常规", value: "normal" },
     { label: "加粗", value: "bold" },
-] as any;
+];
 const FONT_STYLE_OPTIONS = [
     { label: "常规", value: "normal" },
     { label: "斜体", value: "italic" },
-] as any;
+];
 const TEXT_DECORATION_OPTIONS = [
     { label: "无", value: "none" },
     { label: "下划线", value: "underline" },
-] as any;
+];
 const WHITE_SPACE_OPTIONS = [
     { label: "自动换行", value: "pre-wrap" },
     { label: "单行", value: "nowrap" },
     { label: "保留空格", value: "pre" },
-] as any;
+];
 const WRITING_MODE_OPTIONS = [
     { label: "横排", value: "horizontal-tb" },
     { label: "竖排", value: "vertical-rl" },
-] as any;
+];
 const OBJECT_FIT_OPTIONS = [
     { label: "适应", value: "contain" },
     { label: "裁切填满", value: "cover" },
     { label: "拉伸", value: "fill" },
     { label: "原始尺寸", value: "none" },
-] as any;
+];
 const MULTI_LABEL_DIRECTION_OPTIONS = [
     { label: "按行填充", value: "row" },
     { label: "按列填充", value: "column" },
-] as any;
+];
 const LINE_HEIGHT_OPTIONS = [
     { label: "1.0", value: 1 },
     { label: "1.2", value: 1.2 },
@@ -91,8 +116,8 @@ const LINE_HEIGHT_OPTIONS = [
     { label: "1.6", value: 1.6 },
     { label: "1.8", value: 1.8 },
     { label: "2.0", value: 2 },
-] as any;
-function createField(key: any, label: any, source: any, control: any, options: any = {}): any {
+];
+function createField(key: string, label: string, source: InspectorFieldSource, control: InspectorFieldControl, options: Omit<Partial<InspectorField>, "key" | "label" | "source" | "control"> = {}): InspectorField {
     return {
         key,
         label,
@@ -101,7 +126,7 @@ function createField(key: any, label: any, source: any, control: any, options: a
         ...options,
     };
 }
-function createSection(key: any, label: any, layout: any, fields: any = [], options: any = {}): any {
+function createSection(key: string, label: string, layout: string, fields: InspectorField[] = [], options: Record<string, unknown> = {}): InspectorSection {
     return {
         key,
         label,
@@ -110,44 +135,44 @@ function createSection(key: any, label: any, layout: any, fields: any = [], opti
         ...options,
     };
 }
-function createTab(key: any, sections: any = []): any {
+function createTab(key: string, sections: InspectorSection[] = []): InspectorTab {
     return {
         key,
         sections,
     };
 }
-function findSchemaSection(schema: any, tabKey: any, sectionKey: any): any {
-    return schema?.tabs?.find((tab: any): any => tab.key === tabKey)?.sections?.find((section: any): any => section.key === sectionKey) || null;
+function findSchemaSection(schema: InspectorSchema | undefined, tabKey: string, sectionKey: string): InspectorSection | null {
+    return schema?.tabs?.find((tab) => tab.key === tabKey)?.sections?.find((section) => section.key === sectionKey) || null;
 }
-function patchSchemaFieldControl(schema: any, tabKey: any, sectionKey: any, source: any, key: any, control: any): any {
-    const section = findSchemaSection(schema, tabKey, sectionKey) as any;
-    const field = section?.fields?.find((item: any): any => item.source === source && item.key === key) as any;
+function patchSchemaFieldControl(schema: InspectorSchema | undefined, tabKey: string, sectionKey: string, source: InspectorFieldSource, key: string, control: InspectorFieldControl): void {
+    const section = findSchemaSection(schema, tabKey, sectionKey);
+    const field = section?.fields?.find((item) => item.source === source && item.key === key);
     if (field) {
         field.control = control;
     }
 }
-function insertSchemaFieldAfter(schema: any, tabKey: any, sectionKey: any, afterKey: any, field: any): any {
-    const section = findSchemaSection(schema, tabKey, sectionKey) as any;
+function insertSchemaFieldAfter(schema: InspectorSchema | undefined, tabKey: string, sectionKey: string, afterKey: string, field: InspectorField): void {
+    const section = findSchemaSection(schema, tabKey, sectionKey);
     if (!section?.fields) {
         return;
     }
-    const exists = section.fields.some((item: any): any => item.source === field.source && item.key === field.key) as any;
+    const exists = section.fields.some((item) => item.source === field.source && item.key === field.key);
     if (exists) {
         return;
     }
-    const insertAt = section.fields.findIndex((item: any): any => item.source === field.source && item.key === afterKey) as any;
+    const insertAt = section.fields.findIndex((item) => item.source === field.source && item.key === afterKey);
     if (insertAt === -1) {
         section.fields.push(field);
         return;
     }
     section.fields.splice(insertAt + 1, 0, field);
 }
-function removeSchemaField(schema: any, tabKey: any, sectionKey: any, source: any, key: any): any {
-    const section = findSchemaSection(schema, tabKey, sectionKey) as any;
+function removeSchemaField(schema: InspectorSchema | undefined, tabKey: string, sectionKey: string, source: InspectorFieldSource, key: string): void {
+    const section = findSchemaSection(schema, tabKey, sectionKey);
     if (!section?.fields) {
         return;
     }
-    section.fields = section.fields.filter((item: any): any => !(item.source === source && item.key === key));
+    section.fields = section.fields.filter((item) => !(item.source === source && item.key === key));
 }
 const GEOMETRY_FIELDS = [
     createField("x", "X(mm)", FIELD_SOURCE.ROOT, FIELD_CONTROL.NUMBER, { step: 0.1 }),
@@ -155,18 +180,18 @@ const GEOMETRY_FIELDS = [
     createField("width", "宽度(mm)", FIELD_SOURCE.ROOT, FIELD_CONTROL.NUMBER, { step: 0.1 }),
     createField("height", "高度(mm)", FIELD_SOURCE.ROOT, FIELD_CONTROL.NUMBER, { step: 0.1 }),
     createField("rotation", "旋转(°)", FIELD_SOURCE.ROOT, FIELD_CONTROL.NUMBER, { step: 1 }),
-] as any;
+];
 const BEHAVIOR_FIELDS = [
     createField("printable", "是否打印", FIELD_SOURCE.ROOT, FIELD_CONTROL.SWITCH),
     createField("locked", "锁定元素", FIELD_SOURCE.ROOT, FIELD_CONTROL.SWITCH),
     createField("repeatPerPage", "每页重复", FIELD_SOURCE.ROOT, FIELD_CONTROL.SWITCH),
-] as any;
+];
 const COMMON_METADATA_FIELDS = [
     createField("id", "ID", FIELD_SOURCE.ROOT, FIELD_CONTROL.READONLY),
     createField("type", "类型", FIELD_SOURCE.ROOT, FIELD_CONTROL.READONLY),
     createField("visible", "显示", FIELD_SOURCE.ROOT, FIELD_CONTROL.SWITCH),
     createField("zIndex", "层级值", FIELD_SOURCE.ROOT, FIELD_CONTROL.NUMBER, { step: 1 }),
-] as any;
+];
 const COMMON_MANAGEMENT_FIELDS = [
     createField("saveAsTemplate", "保存为模板元素", FIELD_SOURCE.ROOT, FIELD_CONTROL.BUTTONS, {
         buttons: [{ label: "保存为模板元素", value: "saveAsTemplate", tone: "default" }],
@@ -174,16 +199,16 @@ const COMMON_MANAGEMENT_FIELDS = [
     createField("deleteElement", "删除当前元素", FIELD_SOURCE.ROOT, FIELD_CONTROL.BUTTONS, {
         buttons: [{ label: "删除当前元素", value: "deleteElement", tone: "danger" }],
     }),
-] as any;
+];
 const LAYER_ACTION_OPTIONS = [
     { label: "上移一层", value: "bringForward" },
     { label: "下移一层", value: "sendBackward" },
     { label: "置于顶层", value: "bringToFront" },
     { label: "置于底层", value: "sendToBack" },
-] as any;
+];
 const TEXT_PRESET_FIELD = createField("textPreset", "样式预设", FIELD_SOURCE.PROPS, FIELD_CONTROL.SELECT, {
     options: TEXT_PRESET_OPTIONS,
-}) as any;
+});
 const TEXT_FORMATTING_SUMMARY_FIELDS = [
     createField("fontFamily", "字体", FIELD_SOURCE.STYLE, FIELD_CONTROL.SELECT, {
         options: FONT_FAMILY_OPTIONS,
@@ -197,13 +222,13 @@ const TEXT_FORMATTING_SUMMARY_FIELDS = [
     createField("lineHeight", "行高", FIELD_SOURCE.STYLE, FIELD_CONTROL.SELECT, {
         options: LINE_HEIGHT_OPTIONS,
     }),
-] as any;
+];
 const COMMON_PROPERTY_FIELDS = [
     createField("layerActions", "层级操作", FIELD_SOURCE.ROOT, FIELD_CONTROL.ACTIONS, {
         actions: LAYER_ACTION_OPTIONS,
     }),
-] as any;
-function createCommonInspectorSchema(propertyFields: any = [], styleFields: any = [], advancedFields: any = []): any {
+];
+function createCommonInspectorSchema(propertyFields: InspectorField[] = [], styleFields: InspectorField[] = [], advancedFields: InspectorField[] = []): InspectorSchema {
     return {
         tabs: [
             createTab(INSPECTOR_TABS.PROPERTY, [
@@ -294,8 +319,8 @@ export const TEXT_INSPECTOR_SCHEMA = {
             ]),
         ]),
     ],
-} as any;
-const BASE_ADVANCED_FIELDS = [] as any;
+};
+const BASE_ADVANCED_FIELDS = [];
 BASE_ADVANCED_FIELDS.push(...COMMON_METADATA_FIELDS, ...BEHAVIOR_FIELDS, ...COMMON_MANAGEMENT_FIELDS);
 const BASE_STYLE_FIELDS = [
     createField("opacity", "透明度", FIELD_SOURCE.STYLE, FIELD_CONTROL.NUMBER, {
@@ -320,7 +345,7 @@ const BASE_STYLE_FIELDS = [
         min: 0,
         step: 1,
     }),
-] as any;
+];
 const BASE_TEXT_STYLE_FIELDS = [
     createField("fontFamily", "字体", FIELD_SOURCE.STYLE, FIELD_CONTROL.SELECT, {
         options: FONT_FAMILY_OPTIONS,
@@ -349,7 +374,7 @@ const BASE_TEXT_STYLE_FIELDS = [
     createField("letterSpacing", "字间距", FIELD_SOURCE.STYLE, FIELD_CONTROL.NUMBER, {
         step: 0.1,
     }),
-] as any;
+];
 export const IMAGE_INSPECTOR_SCHEMA = createCommonInspectorSchema([
     ...GEOMETRY_FIELDS,
     createField("variable", "变量绑定", FIELD_SOURCE.ROOT, FIELD_CONTROL.INPUT),
@@ -361,7 +386,7 @@ export const IMAGE_INSPECTOR_SCHEMA = createCommonInspectorSchema([
     createField("objectFit", "填充方式", FIELD_SOURCE.STYLE, FIELD_CONTROL.SELECT, {
         options: OBJECT_FIT_OPTIONS,
     }),
-], [...BASE_ADVANCED_FIELDS, createField("src", "图片预览", FIELD_SOURCE.PROPS, FIELD_CONTROL.IMAGE)]) as any;
+], [...BASE_ADVANCED_FIELDS, createField("src", "图片预览", FIELD_SOURCE.PROPS, FIELD_CONTROL.IMAGE)]);
 export const TABLE_INSPECTOR_SCHEMA = createCommonInspectorSchema([
     ...GEOMETRY_FIELDS,
     createField("dataVariable", "数据变量", FIELD_SOURCE.PROPS, FIELD_CONTROL.INPUT),
@@ -388,35 +413,35 @@ export const TABLE_INSPECTOR_SCHEMA = createCommonInspectorSchema([
         valueType: "json",
         rows: 8,
     }),
-]) as any;
+]);
 export const BARCODE_INSPECTOR_SCHEMA = createCommonInspectorSchema([
     ...GEOMETRY_FIELDS,
     createField("content", "条码内容", FIELD_SOURCE.ROOT, FIELD_CONTROL.INPUT),
     createField("format", "编码格式", FIELD_SOURCE.PROPS, FIELD_CONTROL.SELECT, {
-        options: BARCODE_FORMATS.map((value: any): any => ({ label: value, value })),
+        options: BARCODE_FORMATS.map((value) => ({ label: value, value })),
     }),
 ], [
     ...BASE_STYLE_FIELDS,
     createField("color", "条码颜色", FIELD_SOURCE.STYLE, FIELD_CONTROL.COLOR),
     createField("backgroundColor", "底色", FIELD_SOURCE.STYLE, FIELD_CONTROL.COLOR),
-], [...BASE_ADVANCED_FIELDS, createField("displayValue", "显示文字", FIELD_SOURCE.PROPS, FIELD_CONTROL.SWITCH)]) as any;
+], [...BASE_ADVANCED_FIELDS, createField("displayValue", "显示文字", FIELD_SOURCE.PROPS, FIELD_CONTROL.SWITCH)]);
 export const QRCODE_INSPECTOR_SCHEMA = createCommonInspectorSchema([
     ...GEOMETRY_FIELDS,
     createField("content", "二维码内容", FIELD_SOURCE.ROOT, FIELD_CONTROL.TEXTAREA),
     createField("eccLevel", "纠错等级", FIELD_SOURCE.PROPS, FIELD_CONTROL.SELECT, {
-        options: QRCODE_ECC_LEVELS.map((value: any): any => ({ label: value, value })),
+        options: QRCODE_ECC_LEVELS.map((value) => ({ label: value, value })),
     }),
 ], [
     ...BASE_STYLE_FIELDS,
     createField("color", "前景色", FIELD_SOURCE.STYLE, FIELD_CONTROL.COLOR),
     createField("backgroundColor", "背景色", FIELD_SOURCE.STYLE, FIELD_CONTROL.COLOR),
-], [...BASE_ADVANCED_FIELDS]) as any;
+], [...BASE_ADVANCED_FIELDS]);
 export const PAGE_NUMBER_INSPECTOR_SCHEMA = createCommonInspectorSchema([
     ...GEOMETRY_FIELDS,
     createField("format", "页码格式", FIELD_SOURCE.PROPS, FIELD_CONTROL.SELECT, {
-        options: PAGE_NUMBER_FORMATS.map((value: any): any => ({ label: value, value })),
+        options: PAGE_NUMBER_FORMATS.map((value) => ({ label: value, value })),
     }),
-], [...BASE_STYLE_FIELDS, ...BASE_TEXT_STYLE_FIELDS], [...BASE_ADVANCED_FIELDS]) as any;
+], [...BASE_STYLE_FIELDS, ...BASE_TEXT_STYLE_FIELDS], [...BASE_ADVANCED_FIELDS]);
 export const LINE_INSPECTOR_SCHEMA = createCommonInspectorSchema([
     createField("x", "X(mm)", FIELD_SOURCE.ROOT, FIELD_CONTROL.NUMBER, { step: 0.1 }),
     createField("y", "Y(mm)", FIELD_SOURCE.ROOT, FIELD_CONTROL.NUMBER, { step: 0.1 }),
@@ -437,8 +462,8 @@ export const LINE_INSPECTOR_SCHEMA = createCommonInspectorSchema([
         max: 1,
         step: 0.1,
     }),
-], [...BASE_ADVANCED_FIELDS]) as any;
-export const RECT_INSPECTOR_SCHEMA = createCommonInspectorSchema([...GEOMETRY_FIELDS], [...BASE_STYLE_FIELDS], [...BASE_ADVANCED_FIELDS]) as any;
+], [...BASE_ADVANCED_FIELDS]);
+export const RECT_INSPECTOR_SCHEMA = createCommonInspectorSchema([...GEOMETRY_FIELDS], [...BASE_STYLE_FIELDS], [...BASE_ADVANCED_FIELDS]);
 export const CIRCLE_INSPECTOR_SCHEMA = createCommonInspectorSchema([...GEOMETRY_FIELDS], [
     createField("opacity", "透明度", FIELD_SOURCE.STYLE, FIELD_CONTROL.NUMBER, {
         min: 0,
@@ -454,7 +479,7 @@ export const CIRCLE_INSPECTOR_SCHEMA = createCommonInspectorSchema([...GEOMETRY_
     createField("borderStyle", "边框样式", FIELD_SOURCE.STYLE, FIELD_CONTROL.SELECT, {
         options: BORDER_STYLE_OPTIONS,
     }),
-], [...BASE_ADVANCED_FIELDS]) as any;
+], [...BASE_ADVANCED_FIELDS]);
 export const MULTI_LABEL_INSPECTOR_SCHEMA = createCommonInspectorSchema([
     ...GEOMETRY_FIELDS,
     createField("dataVariable", "数据变量", FIELD_SOURCE.PROPS, FIELD_CONTROL.INPUT),
@@ -477,7 +502,7 @@ export const MULTI_LABEL_INSPECTOR_SCHEMA = createCommonInspectorSchema([
     createField("direction", "填充方式", FIELD_SOURCE.PROPS, FIELD_CONTROL.SELECT, {
         options: MULTI_LABEL_DIRECTION_OPTIONS,
     }),
-], [...BASE_TEXT_STYLE_FIELDS, ...BASE_STYLE_FIELDS], [...BASE_ADVANCED_FIELDS]) as any;
+], [...BASE_TEXT_STYLE_FIELDS, ...BASE_STYLE_FIELDS], [...BASE_ADVANCED_FIELDS]);
 patchSchemaFieldControl(IMAGE_INSPECTOR_SCHEMA, INSPECTOR_TABS.PROPERTY, "property", FIELD_SOURCE.PROPS, "src", FIELD_CONTROL.IMAGE);
 removeSchemaField(IMAGE_INSPECTOR_SCHEMA, INSPECTOR_TABS.ADVANCED, "advanced", FIELD_SOURCE.PROPS, "src");
 insertSchemaFieldAfter(PAGE_NUMBER_INSPECTOR_SCHEMA, INSPECTOR_TABS.PROPERTY, "property", "rotation", createField("content", "页码示例", FIELD_SOURCE.ROOT, FIELD_CONTROL.INPUT));

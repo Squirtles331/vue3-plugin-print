@@ -87,46 +87,46 @@ import StarterTemplateDialog from "../template/StarterTemplateDialog.vue";
 import ElementPresetDialog from "../template/ElementPresetDialog.vue";
 import { useEditorHistoryStore } from "./stores/historyStore";
 import { useEditorSelectionStore } from "./stores/selectionStore";
-const RuntimePreviewDialog = defineAsyncComponent((): any => import("../runtime/RuntimePreviewDialog.vue")) as any;
+const RuntimePreviewDialog = defineAsyncComponent(() => import("../runtime/RuntimePreviewDialog.vue"));
 const props = defineProps({
     repository: { type: Object, default: null },
     presetRepository: { type: Object, default: null },
     runtimeDataRepository: { type: Object, default: null },
     runtimeData: { type: Object, default: undefined },
-    printPolicy: { type: Object, default: (): any => ({}) },
-}) as any;
-const emit = defineEmits(["template-change", "update:runtimeData", "error"]) as any;
-const editorRootRef = ref(null) as any;
-const shellStore = useEditorShellStore() as any;
-const viewportStore = useEditorViewportStore() as any;
-const documentStore = useEditorDocumentStore() as any;
-const previewStore = useEditorPreviewStore() as any;
-const historyStore = useEditorHistoryStore() as any;
-const selectionStore = useEditorSelectionStore() as any;
-const repository = props.repository || createLocalTemplateRepository() as any;
-const presetRepository = props.presetRepository || createLocalElementPresetRepository() as any;
-const runtimeDataRepository = props.runtimeDataRepository || createLocalRuntimeDataDraftRepository() as any;
-const activePrintPolicy = ref(props.printPolicy) as any;
-const templateLibraryVisible = ref(false) as any;
-const templateLibraryLoading = ref(false) as any;
-const savedTemplates = ref([]) as any;
-const starterCatalogVisible = ref(false) as any;
-const starterTemplates = listStarterTemplates() as any;
-const presetLibraryVisible = ref(false) as any;
-const savedPresets = ref([]) as any;
-const previewVisible = ref(false) as any;
-const previewDocument = shallowRef(null) as any;
-const hostRuntimeData = ref(props.runtimeData) as any;
-const hasHostRuntimeData = ref(props.runtimeData !== undefined && props.runtimeData !== null) as any;
-let runtimeDataRevision = 0 as any;
-let runtimeDraftTimer = null as any;
-const { statusbarVisible } = storeToRefs(shellStore) as any;
-const { templateModel, templateId, objectsById, currentPage, currentPageGroups, pageWidthMm, pageHeightMm } = storeToRefs(documentStore) as any;
-const { runtimeData: previewRuntimeData } = storeToRefs(previewStore) as any;
-const { selectedIds } = storeToRefs(selectionStore) as any;
-const { allowOverflowDrag } = storeToRefs(viewportStore) as any;
-let elementClipboard = null as any;
-function reportError(scope: any, error: any, fallback: any): any {
+    printPolicy: { type: Object, default: () => ({}) },
+});
+const emit = defineEmits(["template-change", "update:runtimeData", "error"]);
+const editorRootRef = ref(null);
+const shellStore = useEditorShellStore();
+const viewportStore = useEditorViewportStore();
+const documentStore = useEditorDocumentStore();
+const previewStore = useEditorPreviewStore();
+const historyStore = useEditorHistoryStore();
+const selectionStore = useEditorSelectionStore();
+const repository = props.repository || createLocalTemplateRepository();
+const presetRepository = props.presetRepository || createLocalElementPresetRepository();
+const runtimeDataRepository = props.runtimeDataRepository || createLocalRuntimeDataDraftRepository();
+const activePrintPolicy = ref(props.printPolicy);
+const templateLibraryVisible = ref(false);
+const templateLibraryLoading = ref(false);
+const savedTemplates = ref([]);
+const starterCatalogVisible = ref(false);
+const starterTemplates = listStarterTemplates();
+const presetLibraryVisible = ref(false);
+const savedPresets = ref([]);
+const previewVisible = ref(false);
+const previewDocument = shallowRef(null);
+const hostRuntimeData = ref(props.runtimeData);
+const hasHostRuntimeData = ref(props.runtimeData !== undefined && props.runtimeData !== null);
+let runtimeDataRevision = 0;
+let runtimeDraftTimer = null;
+const { statusbarVisible } = storeToRefs(shellStore);
+const { templateModel, templateId, objectsById, currentPage, currentPageGroups, pageWidthMm, pageHeightMm } = storeToRefs(documentStore);
+const { runtimeData: previewRuntimeData } = storeToRefs(previewStore);
+const { selectedIds } = storeToRefs(selectionStore);
+const { allowOverflowDrag } = storeToRefs(viewportStore);
+let elementClipboard = null;
+function reportError(scope, error, fallback) {
     const message = error?.message || fallback;
     PdMessage.error(message);
     emit("error", {
@@ -136,22 +136,22 @@ function reportError(scope: any, error: any, fallback: any): any {
         ...(Array.isArray(error?.issues) ? { issues: error.issues } : {}),
     });
 }
-function currentTemplateResult(): any {
+function currentTemplateResult() {
     return serializeTemplateDocument(templateModel.value, { id: templateId.value });
 }
-function scheduleRuntimeDataDraftSave(data: any): any {
+function scheduleRuntimeDataDraftSave(data) {
     window.clearTimeout(runtimeDraftTimer);
     const templateIdForDraft = templateId.value;
-    runtimeDraftTimer = window.setTimeout(async (): Promise<any> => {
+    runtimeDraftTimer = window.setTimeout(async () => {
         try {
             await runtimeDataRepository.save(templateIdForDraft, data);
         }
-        catch (error: any) {
+        catch (error) {
             reportError("runtime-data-draft.save", error, "无法保存测试数据草稿");
         }
     }, 180);
 }
-async function restoreRuntimeDataForTemplate(): Promise<any> {
+async function restoreRuntimeDataForTemplate() {
     const revision = runtimeDataRevision;
     if (hasHostRuntimeData.value) {
         setRuntimeData(hostRuntimeData.value, { persist: false, emitChange: false });
@@ -163,22 +163,22 @@ async function restoreRuntimeDataForTemplate(): Promise<any> {
             setRuntimeData(draft || {}, { persist: false, emitChange: false });
         }
     }
-    catch (error: any) {
+    catch (error) {
         reportError("runtime-data-draft.get", error, "无法恢复测试数据草稿");
     }
 }
-watch(templateModel, (): any => {
+watch(templateModel, () => {
     const result = currentTemplateResult();
     if (result.valid) {
         emit("template-change", result.document);
     }
 }, { flush: "post" });
-watch(selectedIds, (nextIds: any): any => {
+watch(selectedIds, (nextIds) => {
     if (nextIds.length > 0) {
         shellStore.openRightDock("properties");
     }
 });
-function isEditableTarget(target: any): any {
+function isEditableTarget(target) {
     if (!(target instanceof HTMLElement)) {
         return false;
     }
@@ -187,7 +187,7 @@ function isEditableTarget(target: any): any {
     }
     return target.isContentEditable;
 }
-function deleteSelectedObjects(): any {
+function deleteSelectedObjects() {
     const command = createRemoveObjectsCommand(documentStore, expandedSelectedIds());
     if (!command) {
         return false;
@@ -196,34 +196,34 @@ function deleteSelectedObjects(): any {
     selectionStore.clearSelection();
     return true;
 }
-function expandedSelectedIds(ids: any = selectedIds.value): any {
+function expandedSelectedIds(ids = selectedIds.value) {
     const expanded = new Set(ids);
-    currentPageGroups.value.forEach((group: any): any => {
-        if (group.elementIds?.some((id: any): any => expanded.has(id))) {
-            group.elementIds.forEach((id: any): any => expanded.add(id));
+    currentPageGroups.value.forEach((group) => {
+        if (group.elementIds?.some((id) => expanded.has(id))) {
+            group.elementIds.forEach((id) => expanded.add(id));
         }
     });
     return [...expanded];
 }
-function selectedCurrentPageObjects({ editable = false }: any = {}): any {
+function selectedCurrentPageObjects({ editable = false } = {}) {
     const pageId = currentPage.value?.id;
     return expandedSelectedIds()
-        .map((id: any): any => objectsById.value[id])
-        .filter((object: any): any => object && object.pageId === pageId && (!editable || !object.locked));
+        .map((id) => objectsById.value[id])
+        .filter((object) => object && object.pageId === pageId && (!editable || !object.locked));
 }
-function copySelectedObjects(): any {
+function copySelectedObjects() {
     const objects = selectedCurrentPageObjects();
     if (!objects.length) {
         return false;
     }
-    const selected = new Set(objects.map((object: any): any => object.id));
+    const selected = new Set(objects.map((object) => object.id));
     elementClipboard = {
         objects: cloneDeep(objects),
-        groups: cloneDeep(currentPageGroups.value.filter((group: any): any => group.elementIds?.every((id: any): any => selected.has(id)))),
+        groups: cloneDeep(currentPageGroups.value.filter((group) => group.elementIds?.every((id) => selected.has(id)))),
     };
     return true;
 }
-function pasteCopiedObjects(): any {
+function pasteCopiedObjects() {
     if (!elementClipboard?.objects?.length || !currentPage.value) {
         return false;
     }
@@ -233,39 +233,39 @@ function pasteCopiedObjects(): any {
         heightMm: pageHeightMm.value,
     }, { allowOverflow: allowOverflowDrag.value });
     const originalGroups = cloneDeep(currentPageGroups.value);
-    const copiedIds = new Map(elementClipboard.objects.map((object: any, index: any): any => [object.id, copies[index]?.id]));
+    const copiedIds = new Map(elementClipboard.objects.map((object, index) => [object.id, copies[index]?.id]));
     const copiedGroups = elementClipboard.groups
-        .map((group: any, index: any): any => ({
+        .map((group, index) => ({
         id: `${group.id}-copy-${Date.now()}-${index}`,
         name: `${group.name || "Group"} 副本`,
-        elementIds: group.elementIds.map((id: any): any => copiedIds.get(id)).filter(Boolean),
+        elementIds: group.elementIds.map((id) => copiedIds.get(id)).filter(Boolean),
     }))
-        .filter((group: any): any => group.elementIds.length >= 2);
+        .filter((group) => group.elementIds.length >= 2);
     const command = {
         id: `paste-elements-${Date.now()}`,
         label: "Paste elements",
-        execute(): any {
+        execute() {
             documentStore.addObjects(copies);
             if (copiedGroups.length) {
                 documentStore.setPageGroups(pageId, [...originalGroups, ...copiedGroups]);
             }
         },
-        undo(): any {
-            documentStore.removeObjects(copies.map((object: any): any => object.id));
+        undo() {
+            documentStore.removeObjects(copies.map((object) => object.id));
             documentStore.setPageGroups(pageId, originalGroups);
         },
     };
     executeEditorCommand(historyStore, command);
-    selectionStore.select(copies.map((object: any): any => object.id));
+    selectionStore.select(copies.map((object) => object.id));
     return true;
 }
-function nudgeSelection(event: any): any {
+function nudgeSelection(event) {
     const objects = selectedCurrentPageObjects({ editable: true });
     if (!objects.length) {
         return false;
     }
     const step = event.altKey ? 0.1 : event.shiftKey ? 10 : 1;
-    const deltas: any = {
+    const deltas = {
         ArrowLeft: { x: -step, y: 0 },
         ArrowRight: { x: step, y: 0 },
         ArrowUp: { x: 0, y: -step },
@@ -275,10 +275,10 @@ function nudgeSelection(event: any): any {
     if (!delta) {
         return false;
     }
-    const clamp = (value: any, size: any, pageSize: any): any => allowOverflowDrag.value
+    const clamp = (value, size, pageSize) => allowOverflowDrag.value
         ? +value.toFixed(2)
         : +Math.min(Math.max(0, value), Math.max(0, pageSize - size)).toFixed(2);
-    const patches = objects.map((object: any): any => ({
+    const patches = objects.map((object) => ({
         id: object.id,
         patch: {
             x: clamp(object.x + delta.x, object.width, pageWidthMm.value),
@@ -288,9 +288,9 @@ function nudgeSelection(event: any): any {
     executeEditorCommand(historyStore, createPatchTransactionCommand(documentStore, "Nudge selection", patches));
     return true;
 }
-function groupSelectedObjects(): any {
+function groupSelectedObjects() {
     const objects = selectedCurrentPageObjects({ editable: true });
-    const result = createGroupCommand(documentStore, currentPage.value?.id, objects.map((object: any): any => object.id));
+    const result = createGroupCommand(documentStore, currentPage.value?.id, objects.map((object) => object.id));
     if (!result) {
         return false;
     }
@@ -298,9 +298,9 @@ function groupSelectedObjects(): any {
     selectionStore.selectGroup(result.group);
     return true;
 }
-function ungroupSelectedObjects(): any {
+function ungroupSelectedObjects() {
     const selected = new Set(expandedSelectedIds());
-    const groupIds = currentPageGroups.value.filter((group: any): any => group.elementIds?.some((id: any): any => selected.has(id))).map((group: any): any => group.id);
+    const groupIds = currentPageGroups.value.filter((group) => group.elementIds?.some((id) => selected.has(id))).map((group) => group.id);
     const command = createUngroupCommand(documentStore, currentPage.value?.id, groupIds);
     if (!command) {
         return false;
@@ -308,7 +308,7 @@ function ungroupSelectedObjects(): any {
     executeEditorCommand(historyStore, command);
     return true;
 }
-function onWindowKeyDown(event: any): any {
+function onWindowKeyDown(event) {
     if (event.defaultPrevented || event.isComposing) {
         return;
     }
@@ -378,10 +378,10 @@ function onWindowKeyDown(event: any): any {
         event.preventDefault();
     }
 }
-async function onNewTemplate(): Promise<any> {
+async function onNewTemplate() {
     starterCatalogVisible.value = true;
 }
-async function onCreateStarter(starterId: any): Promise<any> {
+async function onCreateStarter(starterId) {
     if (documentStore.dirty) {
         try {
             await PdMessageBox.confirm("未保存的修改将丢失，是否继续新建？", "新建模板", { type: "warning" });
@@ -393,7 +393,7 @@ async function onCreateStarter(starterId: any): Promise<any> {
     try {
         loadTemplateDocument(instantiateStarterTemplate(starterId), { markAsDirty: true });
     }
-    catch (error: any) {
+    catch (error) {
         PdMessage.error(error?.message || "无法创建起始模板");
         return;
     }
@@ -401,33 +401,33 @@ async function onCreateStarter(starterId: any): Promise<any> {
     starterCatalogVisible.value = false;
     PdMessage.success("已创建新的可编辑模板");
 }
-async function refreshTemplateLibrary(): Promise<any> {
+async function refreshTemplateLibrary() {
     templateLibraryLoading.value = true;
     try {
         savedTemplates.value = await repository.list();
     }
-    catch (error: any) {
+    catch (error) {
         reportError("repository.list", error, "无法读取模板列表");
     }
     finally {
         templateLibraryLoading.value = false;
     }
 }
-async function onOpenTemplate(): Promise<any> {
+async function onOpenTemplate() {
     await refreshTemplateLibrary();
     templateLibraryVisible.value = true;
 }
-async function onDeleteTemplate(id: any): Promise<any> {
+async function onDeleteTemplate(id) {
     try {
         const removed = await repository.delete(id);
         await refreshTemplateLibrary();
         PdMessage[removed ? "success" : "warning"](removed ? "Saved template deleted from this browser" : "Saved template no longer exists");
     }
-    catch (error: any) {
+    catch (error) {
         reportError("repository.delete", error, "Unable to delete the saved template");
     }
 }
-async function onClearTemplateLibrary(): Promise<any> {
+async function onClearTemplateLibrary() {
     if (typeof repository.clear !== "function") {
         reportError("repository.clear", null, "This template repository does not support clearing all templates.");
         return;
@@ -437,15 +437,15 @@ async function onClearTemplateLibrary(): Promise<any> {
         await refreshTemplateLibrary();
         PdMessage.success("Saved templates cleared from this browser");
     }
-    catch (error: any) {
+    catch (error) {
         reportError("repository.clear", error, "Unable to clear saved templates");
     }
 }
-function onImportTemplate(): any {
+function onImportTemplate() {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "application/json,.json";
-    input.addEventListener("change", async (): Promise<any> => {
+    input.addEventListener("change", async () => {
         const file = input.files?.[0];
         if (!file) {
             return;
@@ -469,7 +469,7 @@ function onImportTemplate(): any {
     }, { once: true });
     input.click();
 }
-function onExportTemplate(): any {
+function onExportTemplate() {
     const result = currentTemplateResult();
     if (!result.valid) {
         PdMessage.error(result.issues[0]?.message || "模板校验失败");
@@ -482,19 +482,19 @@ function onExportTemplate(): any {
     }
     PdMessage.success("模板 JSON 已导出");
 }
-async function refreshPresetLibrary(): Promise<any> {
+async function refreshPresetLibrary() {
     try {
         savedPresets.value = await presetRepository.list();
     }
-    catch (error: any) {
+    catch (error) {
         PdMessage.error(error?.message || "无法读取元素预设");
     }
 }
-async function onOpenPresets(): Promise<any> {
+async function onOpenPresets() {
     await refreshPresetLibrary();
     presetLibraryVisible.value = true;
 }
-async function onInsertPreset(id: any): Promise<any> {
+async function onInsertPreset(id) {
     try {
         const preset = await presetRepository.get(id);
         if (!preset) {
@@ -508,35 +508,35 @@ async function onInsertPreset(id: any): Promise<any> {
         presetLibraryVisible.value = false;
         PdMessage.success("已插入元素预设");
     }
-    catch (error: any) {
+    catch (error) {
         PdMessage.error(error?.message || "插入元素预设失败");
     }
 }
-async function onRenamePreset(preset: any): Promise<any> {
+async function onRenamePreset(preset) {
     try {
         const { value } = await PdMessageBox.prompt("输入新的预设名称", "重命名元素预设", { inputValue: preset.name, inputPattern: /\S/, inputErrorMessage: "请输入名称" });
         await presetRepository.rename(preset.id, value);
         await refreshPresetLibrary();
     }
-    catch (error: any) {
+    catch (error) {
         if (error !== "cancel" && error !== "close") {
             PdMessage.error(error?.message || "重命名元素预设失败");
         }
     }
 }
-async function onRemovePreset(preset: any): Promise<any> {
+async function onRemovePreset(preset) {
     try {
         await PdMessageBox.confirm(`删除预设“${preset.name}”后不可恢复，是否继续？`, "删除元素预设", { type: "warning" });
         await presetRepository.delete(preset.id);
         await refreshPresetLibrary();
     }
-    catch (error: any) {
+    catch (error) {
         if (error !== "cancel" && error !== "close") {
             PdMessage.error(error?.message || "删除元素预设失败");
         }
     }
 }
-async function openTemplate(id: any): Promise<any> {
+async function openTemplate(id) {
     try {
         const document = await repository.get(id);
         if (!document) {
@@ -560,11 +560,11 @@ async function openTemplate(id: any): Promise<any> {
         templateLibraryVisible.value = false;
         PdMessage.success("模板已打开");
     }
-    catch (error: any) {
+    catch (error) {
         PdMessage.error(error.message || "打开模板失败");
     }
 }
-async function onSaveTemplate(): Promise<any> {
+async function onSaveTemplate() {
     const result = currentTemplateResult();
     if (!result.valid) {
         PdMessage.error(result.issues[0]?.message || "模板校验失败");
@@ -576,11 +576,11 @@ async function onSaveTemplate(): Promise<any> {
         await refreshTemplateLibrary();
         PdMessage.success("模板已保存到本地仓储");
     }
-    catch (error: any) {
+    catch (error) {
         reportError("repository.save", error, "保存模板失败");
     }
 }
-function onPreview(): any {
+function onPreview() {
     const result = currentTemplateResult();
     if (!result.valid) {
         PdMessage.error(result.issues[0]?.message || "模板校验失败");
@@ -589,21 +589,21 @@ function onPreview(): any {
     previewDocument.value = result.document;
     previewVisible.value = true;
 }
-function onBeforeUnload(event: any): any {
+function onBeforeUnload(event) {
     if (!documentStore.dirty) {
         return;
     }
     event.preventDefault();
     event.returnValue = "";
 }
-function onFocusIssue(issue: any): any {
+function onFocusIssue(issue) {
     const elementId = issue?.elementId;
     const element = elementId ? documentStore.objectsById[elementId] : null;
     if (!element) {
         return;
     }
     documentStore.setCurrentPage(element.pageId);
-    const group = documentStore.pages.find((page: any): any => page.id === element.pageId)?.groups?.find((candidate: any): any => candidate.elementIds?.includes(elementId));
+    const group = documentStore.pages.find((page) => page.id === element.pageId)?.groups?.find((candidate) => candidate.elementIds?.includes(elementId));
     if (group) {
         selectionStore.selectGroup(group);
     }
@@ -613,7 +613,7 @@ function onFocusIssue(issue: any): any {
     selectionStore.focusedPageId = element.pageId;
     shellStore.openRightDock("properties");
 }
-async function onPrint(): Promise<any> {
+async function onPrint() {
     const result = currentTemplateResult();
     if (!result.valid) {
         PdMessage.error(result.issues[0]?.message || "模板校验失败");
@@ -621,9 +621,9 @@ async function onPrint(): Promise<any> {
     }
     const preflight = validatePrintRuntime(result.document, previewRuntimeData.value, activePrintPolicy.value);
     if (!preflight.valid) {
-        const issue = preflight.issues.find((item: any): any => item.severity === "error") || preflight.issues[0];
+        const issue = preflight.issues.find((item) => item.severity === "error") || preflight.issues[0];
         const error = new Error(issue?.message || "打印预检失败");
-        (error as any).issues = preflight.issues;
+        (error).issues = preflight.issues;
         onPrintError(error);
         return;
     }
@@ -631,17 +631,17 @@ async function onPrint(): Promise<any> {
         const { printRuntimeDocument } = await import("../runtime/print.js");
         await printRuntimeDocument({ document: preflight.document, runtimeData: previewRuntimeData.value });
     }
-    catch (error: any) {
+    catch (error) {
         onPrintError(error);
     }
 }
-function onPrintError(error: any): any {
+function onPrintError(error) {
     reportError("print", error, "打印输出失败");
 }
-function onExportPdf(): any {
+function onExportPdf() {
     PdMessage.info("PDF 导出不在当前首发范围内。");
 }
-function setRuntimeData(data: any, { persist = true, emitChange = true }: any = {}): any {
+function setRuntimeData(data, { persist = true, emitChange = true } = {}) {
     runtimeDataRevision += 1;
     previewStore.setRuntimeData(data);
     documentStore.setVariables(collectRuntimeBindingPaths(previewStore.runtimeData));
@@ -652,17 +652,17 @@ function setRuntimeData(data: any, { persist = true, emitChange = true }: any = 
         emit("update:runtimeData", previewStore.runtimeData);
     }
 }
-function setHostRuntimeData(data: any): any {
+function setHostRuntimeData(data) {
     hasHostRuntimeData.value = data !== undefined && data !== null;
     hostRuntimeData.value = data;
     if (hasHostRuntimeData.value) {
         setRuntimeData(data, { persist: false, emitChange: false });
     }
 }
-function setPrintPolicy(policy: any): any {
+function setPrintPolicy(policy) {
     activePrintPolicy.value = policy && typeof policy === "object" ? { ...policy } : {};
 }
-function bindingPatch(element: any, path: any): any {
+function bindingPatch(element, path) {
     if (["text", "image", "barcode", "qrcode"].includes(element?.type)) {
         return { variable: path };
     }
@@ -671,7 +671,7 @@ function bindingPatch(element: any, path: any): any {
     }
     return null;
 }
-function onBindPath(path: any): any {
+function onBindPath(path) {
     const [selectedId] = selectedIds.value;
     if (selectedIds.value.length !== 1 || !selectedId) {
         PdMessage.warning("请先选择一个可绑定的元素。");
@@ -702,7 +702,7 @@ function onBindPath(path: any): any {
     shellStore.openRightDock("properties");
     PdMessage.success(`已绑定字段：${path}`);
 }
-function loadTemplateDocument(document: any, options: any = {}): any {
+function loadTemplateDocument(document, options = {}) {
     const result = documentStore.loadTemplateDocument(document, options);
     if (result.document) {
         runtimeDataRevision += 1;
@@ -712,7 +712,7 @@ function loadTemplateDocument(document: any, options: any = {}): any {
     }
     return result;
 }
-async function replaceTemplateDocument(document: any, options: any = {}): Promise<any> {
+async function replaceTemplateDocument(document, options = {}) {
     if (documentStore.dirty && !options.force) {
         try {
             await PdMessageBox.confirm("未保存的修改将丢失，是否继续替换？", "替换模板", { type: "warning" });
@@ -724,19 +724,19 @@ async function replaceTemplateDocument(document: any, options: any = {}): Promis
     const result = loadTemplateDocument(document, options);
     if (!result.document) {
         const error = new Error(result.issues?.[0]?.message || "模板版本不受支持。");
-        (error as any).issues = result.issues;
+        (error).issues = result.issues;
         reportError("template.load", error, "模板无法加载");
     }
     return result;
 }
-function getTemplateDocument(): any {
+function getTemplateDocument() {
     return currentTemplateResult();
 }
-function getPublishReadyTemplatePayload(): any {
+function getPublishReadyTemplatePayload() {
     const result = currentTemplateResult();
     return result.valid ? createPublishReadyTemplatePayload(result.document) : { ...result, payload: null };
 }
-function onWindowWheel(event: any): any {
+function onWindowWheel(event) {
     if (!event.ctrlKey) {
         return;
     }
@@ -758,13 +758,13 @@ function onWindowWheel(event: any): any {
         clientY: event.clientY,
     });
 }
-onMounted((): any => {
+onMounted(() => {
     window.addEventListener("wheel", onWindowWheel, { passive: false });
     window.addEventListener("keydown", onWindowKeyDown);
     window.addEventListener("beforeunload", onBeforeUnload);
     void restoreRuntimeDataForTemplate();
 });
-onBeforeUnmount((): any => {
+onBeforeUnmount(() => {
     window.removeEventListener("wheel", onWindowWheel);
     window.removeEventListener("keydown", onWindowKeyDown);
     window.removeEventListener("beforeunload", onBeforeUnload);

@@ -76,9 +76,9 @@
 import { storeToRefs } from "pinia";
 import PdSwitch from "../../ui/primitives/PdSwitch.vue";
 import { useEditorViewportStore } from "../stores/viewportStore";
-const viewportStore = useEditorViewportStore() as any;
-const { guidesVisible, gridVisible, safeAreaVisible, snapEnabled, pageOutlineVisible, allowOverflowDrag, textQuickToolbarVisible, } = storeToRefs(viewportStore) as any;
-const activeOptionCount = computed((): any => {
+const viewportStore = useEditorViewportStore();
+const { guidesVisible, gridVisible, safeAreaVisible, snapEnabled, pageOutlineVisible, allowOverflowDrag, textQuickToolbarVisible, } = storeToRefs(viewportStore);
+const activeOptionCount = computed(() => {
     const options = [
         guidesVisible.value,
         gridVisible.value,
@@ -89,8 +89,8 @@ const activeOptionCount = computed((): any => {
         textQuickToolbarVisible.value,
     ];
     return options.filter(Boolean).length;
-}) as any;
-const activeMode = computed((): any => {
+});
+const activeMode = computed(() => {
     if (guidesVisible.value &&
         gridVisible.value &&
         !safeAreaVisible.value &&
@@ -119,8 +119,8 @@ const activeMode = computed((): any => {
         return "simple";
     }
     return "";
-}) as any;
-function applyMode(mode: any): any {
+});
+function applyMode(mode) {
     if (mode === "focus") {
         if (!guidesVisible.value)
             viewportStore.toggleGuides();

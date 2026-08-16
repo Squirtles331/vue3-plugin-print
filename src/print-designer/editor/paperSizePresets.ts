@@ -45,15 +45,15 @@ export const PAPER_SIZE_PRESETS = [
             { key: "LABEL_30_20", label: "30 × 20 mm", widthMm: 30, heightMm: 20 },
         ],
     },
-] as any;
-export const CUSTOM_PAPER_SIZE_KEY = "CUSTOM" as any;
-export const PAPER_SIZE_MAP = Object.fromEntries(PAPER_SIZE_PRESETS.flatMap((group: any): any => group.options.map((option: any): any => [
+];
+export const CUSTOM_PAPER_SIZE_KEY = "CUSTOM";
+export const PAPER_SIZE_MAP = Object.fromEntries(PAPER_SIZE_PRESETS.flatMap((group) => group.options.map((option) => [
     option.key,
     {
         ...option,
         group: group.group,
     },
-]))) as any;
-export function getPaperPreset(key: any): any {
+])));
+export function getPaperPreset(key) {
     return PAPER_SIZE_MAP[key] || null;
 }

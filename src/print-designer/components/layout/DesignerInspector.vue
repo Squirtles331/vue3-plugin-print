@@ -24,15 +24,15 @@ import PropertiesPanel from "../inspector/PropertiesPanel.vue";
 import StructurePanel from "../inspector/StructurePanel.vue";
 defineProps({
     layers: {
-        type: Array as any,
-        default: (): any => [],
+        type: Array,
+        default: () => [],
     },
     variables: {
-        type: Array as any,
-        default: (): any => [],
+        type: Array,
+        default: () => [],
     },
 });
-const activeTab = ref("properties") as any;
+const activeTab = ref("properties");
 </script>
 
 <style scoped lang="scss">

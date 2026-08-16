@@ -1,95 +1,97 @@
 import { createApp, nextTick } from "vue";
+import type { App } from "vue";
 import RuntimeDocument from "./RuntimeDocument.vue";
-const DEFAULT_ASSET_TIMEOUT_MS = 8000 as any;
-const DEFAULT_RENDER_TIMEOUT_MS = 5000 as any;
-function paperDimension(value: any, fallback: any): any {
-    const numeric = Number(value) as any;
+import type { TemplateDocument, UnknownRecord } from "../types.js";
+const DEFAULT_ASSET_TIMEOUT_MS = 8000;
+const DEFAULT_RENDER_TIMEOUT_MS = 5000;
+function paperDimension(value: unknown, fallback: number): number {
+    const numeric = Number(value);
     return Number.isFinite(numeric) && numeric > 0 ? +numeric.toFixed(2) : fallback;
 }
-export function createPrintDocumentCss(template: any): any {
-    const paper = template?.pageSettings?.paper || {} as any;
-    const width = paperDimension(paper.widthMm, 210) as any;
-    const height = paperDimension(paper.heightMm, 297) as any;
+export function createPrintDocumentCss(template: TemplateDocument): string {
+    const paper = template.pageSettings.paper;
+    const width = paperDimension(paper.widthMm, 210);
+    const height = paperDimension(paper.heightMm, 297);
     return `@page { size: ${width}mm ${height}mm; margin: 0; } html, body { margin: 0; background: #fff; }`;
 }
-function copyStyles(sourceDocument: any, targetDocument: any): any {
-    Array.from(sourceDocument.querySelectorAll("link[rel='stylesheet'], style")).forEach((node: any): any => {
+function copyStyles(sourceDocument: Document, targetDocument: Document): void {
+    Array.from(sourceDocument.querySelectorAll<HTMLLinkElement | HTMLStyleElement>("link[rel='stylesheet'], style")).forEach((node) => {
         targetDocument.head.appendChild(node.cloneNode(true));
     });
 }
-function withTimeout(promise: any, timeoutMs: any, message: any): any {
-    return Promise.race([
-        promise,
-        new Promise((_: any, reject: any): any => {
-            window.setTimeout((): any => reject(new Error(message)), timeoutMs);
+function withTimeout<T>(promise: PromiseLike<T>, timeoutMs: number, message: string): Promise<T> {
+    return Promise.race<T>([
+        Promise.resolve(promise),
+        new Promise<never>((_, reject) => {
+            window.setTimeout(() => reject(new Error(message)), timeoutMs);
         }),
     ]);
 }
-function waitForStyles(frameDocument: any, timeoutMs: any = DEFAULT_ASSET_TIMEOUT_MS): any {
-    const stylesheets = Array.from(frameDocument.querySelectorAll("link[rel='stylesheet']")) as any;
+function waitForStyles(frameDocument: Document, timeoutMs = DEFAULT_ASSET_TIMEOUT_MS): Promise<void> {
+    const stylesheets = Array.from(frameDocument.querySelectorAll<HTMLLinkElement>("link[rel='stylesheet']"));
     if (!stylesheets.length) {
         return Promise.resolve();
     }
-    const pending = Promise.all(stylesheets.map((stylesheet: any): any => {
+    const pending = Promise.all(stylesheets.map((stylesheet) => {
         if (stylesheet.sheet) {
             return Promise.resolve();
         }
-        return new Promise((resolve: any, reject: any): any => {
-            stylesheet.addEventListener("load", resolve, { once: true });
-            stylesheet.addEventListener("error", (): any => reject(new Error(`Print stylesheet failed to load: ${stylesheet.href || "unknown"}.`)), { once: true });
+        return new Promise<void>((resolve, reject) => {
+            stylesheet.addEventListener("load", () => resolve(), { once: true });
+            stylesheet.addEventListener("error", () => reject(new Error(`Print stylesheet failed to load: ${stylesheet.href || "unknown"}.`)), { once: true });
         });
-    })) as any;
-    return withTimeout(pending, timeoutMs, `Print stylesheets did not finish loading within ${timeoutMs}ms.`);
+    }));
+    return withTimeout(pending.then(() => undefined), timeoutMs, `Print stylesheets did not finish loading within ${timeoutMs}ms.`);
 }
-function waitForFonts(frameDocument: any, timeoutMs: any = DEFAULT_ASSET_TIMEOUT_MS): any {
-    const fonts = frameDocument.fonts as any;
+function waitForFonts(frameDocument: Document, timeoutMs = DEFAULT_ASSET_TIMEOUT_MS): Promise<void> {
+    const fonts = frameDocument.fonts;
     if (!fonts?.ready) {
         return Promise.resolve();
     }
-    return withTimeout(Promise.resolve(fonts.ready), timeoutMs, `Print fonts did not finish loading within ${timeoutMs}ms.`);
+    return withTimeout(Promise.resolve(fonts.ready).then(() => undefined), timeoutMs, `Print fonts did not finish loading within ${timeoutMs}ms.`);
 }
-function waitForAssets(frameDocument: any, timeoutMs: any = DEFAULT_ASSET_TIMEOUT_MS): any {
-    const images = Array.from(frameDocument.images) as any;
-    const pending = Promise.all(images.map((image: any): any => {
+function waitForAssets(frameDocument: Document, timeoutMs = DEFAULT_ASSET_TIMEOUT_MS): Promise<void> {
+    const images = Array.from(frameDocument.images);
+    const pending = Promise.all(images.map((image) => {
         if (image.complete) {
             return image.naturalWidth > 0
                 ? Promise.resolve()
                 : Promise.reject(new Error(`Print image asset failed to load: ${image.currentSrc || image.src || "unknown"}.`));
         }
-        return new Promise((resolve: any, reject: any): any => {
-            image.addEventListener("load", (): any => {
+        return new Promise<void>((resolve, reject) => {
+            image.addEventListener("load", () => {
                 if (image.naturalWidth > 0) {
                     resolve();
                     return;
                 }
                 reject(new Error(`Print image asset failed to load: ${image.currentSrc || image.src || "unknown"}.`));
             }, { once: true });
-            image.addEventListener("error", (): any => reject(new Error(`Print image asset failed to load: ${image.currentSrc || image.src || "unknown"}.`)), { once: true });
+            image.addEventListener("error", () => reject(new Error(`Print image asset failed to load: ${image.currentSrc || image.src || "unknown"}.`)), { once: true });
         });
-    })) as any;
-    return withTimeout(pending, timeoutMs, `Print assets did not finish loading within ${timeoutMs}ms.`);
+    }));
+    return withTimeout(pending.then(() => undefined), timeoutMs, `Print assets did not finish loading within ${timeoutMs}ms.`);
 }
-function countMachineCodeElements(document: any): any {
-    return (document?.pages || []).reduce((total: any, page: any): any => {
-        return total + (page.elements || []).filter((element: any): any => {
+function countMachineCodeElements(document: TemplateDocument): number {
+    return document.pages.reduce((total, page) => {
+        return total + (page.elements || []).filter((element) => {
             return ["barcode", "qrcode"].includes(element.type) && element.visible !== false && element.printable !== false;
         }).length;
     }, 0);
 }
-function waitForMachineCodeRender(frameDocument: any, expectedCount: any, timeoutMs: any = DEFAULT_RENDER_TIMEOUT_MS): any {
+function waitForMachineCodeRender(frameDocument: Document, expectedCount: number, timeoutMs = DEFAULT_RENDER_TIMEOUT_MS): Promise<void> {
     if (!expectedCount) {
         return Promise.resolve();
     }
-    return new Promise((resolve: any, reject: any): any => {
-        const startedAt = Date.now() as any;
-        const check = (): any => {
-            const nodes = Array.from(frameDocument.querySelectorAll(".runtime-barcode, .runtime-qrcode")) as any;
-            const statuses = nodes.map((node: any): any => node.getAttribute("data-runtime-status") || "pending") as any;
+    return new Promise<void>((resolve, reject) => {
+        const startedAt = Date.now();
+        const check = () => {
+            const nodes = Array.from(frameDocument.querySelectorAll(".runtime-barcode, .runtime-qrcode"));
+            const statuses = nodes.map((node) => node.getAttribute("data-runtime-status") || "pending");
             if (statuses.includes("error")) {
                 reject(new Error("Machine-readable code rendering failed."));
                 return;
             }
-            if (nodes.length >= expectedCount && statuses.every((status: any): any => status !== "pending")) {
+            if (nodes.length >= expectedCount && statuses.every((status) => status !== "pending")) {
                 resolve();
                 return;
             }
@@ -102,17 +104,17 @@ function waitForMachineCodeRender(frameDocument: any, expectedCount: any, timeou
         check();
     });
 }
-export async function printRuntimeDocument({ document, runtimeData = {}, assetTimeoutMs = DEFAULT_ASSET_TIMEOUT_MS, renderTimeoutMs = DEFAULT_RENDER_TIMEOUT_MS }: any): Promise<any> {
+export async function printRuntimeDocument({ document, runtimeData = {}, assetTimeoutMs = DEFAULT_ASSET_TIMEOUT_MS, renderTimeoutMs = DEFAULT_RENDER_TIMEOUT_MS }: { document: TemplateDocument | null | undefined; runtimeData?: UnknownRecord; assetTimeoutMs?: number; renderTimeoutMs?: number }): Promise<void> {
     if (typeof window === "undefined" || !document) {
         throw new Error("Browser printing requires a template document.");
     }
-    const frame = window.document.createElement("iframe") as any;
+    const frame = window.document.createElement("iframe");
     frame.setAttribute("title", "Print template output");
     frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
     window.document.body.appendChild(frame);
-    let app = null as any;
-    let cleanedUp = false as any;
-    const cleanUp = (): any => {
+    let app: App<Element> | null = null;
+    let cleanedUp = false;
+    const cleanUp = () => {
         if (cleanedUp) {
             return;
         }
@@ -121,13 +123,19 @@ export async function printRuntimeDocument({ document, runtimeData = {}, assetTi
         frame.remove();
     };
     try {
-        const frameDocument = frame.contentDocument as any;
+        const frameDocument = frame.contentDocument;
+        const frameWindow = frame.contentWindow;
+        if (!frameDocument || !frameWindow)
+            throw new Error("Print frame is unavailable.");
         frameDocument.open();
         frameDocument.write(`<!doctype html><html><head><meta charset='utf-8'><style>${createPrintDocumentCss(document)}</style></head><body><div id='print-root'></div></body></html>`);
         frameDocument.close();
         copyStyles(window.document, frameDocument);
         app = createApp(RuntimeDocument, { document, runtimeData, mode: "print" });
-        app.mount(frameDocument.getElementById("print-root"));
+        const printRoot = frameDocument.getElementById("print-root");
+        if (!printRoot)
+            throw new Error("Print root is unavailable.");
+        app.mount(printRoot);
         await nextTick();
         await waitForMachineCodeRender(frameDocument, countMachineCodeElements(document), renderTimeoutMs);
         await Promise.all([
@@ -135,12 +143,12 @@ export async function printRuntimeDocument({ document, runtimeData = {}, assetTi
             waitForFonts(frameDocument, assetTimeoutMs),
             waitForAssets(frameDocument, assetTimeoutMs),
         ]);
-        frame.contentWindow.addEventListener("afterprint", cleanUp, { once: true });
-        frame.contentWindow.focus();
-        frame.contentWindow.print();
+        frameWindow.addEventListener("afterprint", cleanUp, { once: true });
+        frameWindow.focus();
+        frameWindow.print();
         window.setTimeout(cleanUp, 30000);
     }
-    catch (error: any) {
+    catch (error) {
         cleanUp();
         throw error;
     }

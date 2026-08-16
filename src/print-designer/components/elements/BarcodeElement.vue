@@ -17,14 +17,14 @@ const props = defineProps({
         type: Object,
         required: true,
     },
-}) as any;
-const value = computed((): any => encodedPreviewValue(props.object)) as any;
-const options = computed((): any => machineCodeOptions(props.object.props)) as any;
-const frameStyle = computed((): any => ({
+});
+const value = computed(() => encodedPreviewValue(props.object));
+const options = computed(() => machineCodeOptions(props.object.props));
+const frameStyle = computed(() => ({
     ...previewPanelStyle(props.object, "#ffffff"),
     padding: `${options.value.margin}px`,
-})) as any;
-const valueStyle = computed((): any => ({
+}));
+const valueStyle = computed(() => ({
     color: previewForeground(props.object),
     fontFamily: props.object.style?.fontFamily || "ui-monospace, SFMono-Regular, Menlo, monospace",
     fontSize: `${options.value.textFontSize}px`,
@@ -32,8 +32,8 @@ const valueStyle = computed((): any => ({
     letterSpacing: `${Number.isFinite(Number(props.object.style?.letterSpacing)) ? Number(props.object.style.letterSpacing) : 1}px`,
     textAlign: props.object.style?.textAlign || "center",
     marginTop: `${options.value.textMargin}px`,
-})) as any;
-const barsStyle = computed((): any => {
+}));
+const barsStyle = computed(() => {
     const seed = hashPreviewSeed(`${props.object.props?.format || "CODE128"}:${value.value}`);
     const foreground = previewForeground(props.object);
     const segments = [];
@@ -50,7 +50,7 @@ const barsStyle = computed((): any => {
     return {
         backgroundImage: `linear-gradient(90deg, ${segments.join(", ")})`,
     };
-}) as any;
+});
 </script>
 
 <style scoped lang="scss">

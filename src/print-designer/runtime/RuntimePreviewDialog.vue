@@ -85,31 +85,31 @@ const props = defineProps({
     },
     initialData: {
         type: Object,
-        default: (): any => ({}),
+        default: () => ({}),
     },
     printPolicy: {
         type: Object,
-        default: (): any => ({}),
+        default: () => ({}),
     },
-}) as any;
-const emit = defineEmits(["update:visible", "print-error", "focus-issue"]) as any;
-const runtimeData = computed((): any => props.initialData && typeof props.initialData === "object" && !Array.isArray(props.initialData) ? props.initialData : {}) as any;
-const runtimeDataText = computed((): any => JSON.stringify(runtimeData.value, null, 2)) as any;
-const parseError = computed((): any => "") as any;
-const preflight = computed((): any => {
+});
+const emit = defineEmits(["update:visible", "print-error", "focus-issue"]);
+const runtimeData = computed(() => props.initialData && typeof props.initialData === "object" && !Array.isArray(props.initialData) ? props.initialData : {});
+const runtimeDataText = computed(() => JSON.stringify(runtimeData.value, null, 2));
+const parseError = computed(() => "");
+const preflight = computed(() => {
     return validatePrintRuntime(props.document, runtimeData.value, props.printPolicy);
-}) as any;
-const documentValid = computed((): any => preflight.value.templateIssues.every((issue: any): any => issue.severity !== "error")) as any;
-const validatedDocument = computed((): any => preflight.value.document) as any;
-const validationIssues = computed((): any => preflight.value.templateIssues || []) as any;
-const resolvedRuntime = computed((): any => ({ document: preflight.value.runtimeDocument, issues: preflight.value.runtimeIssues })) as any;
-const runtimeIssues = computed((): any => resolvedRuntime.value.issues || []) as any;
-const runtimeErrors = computed((): any => runtimeIssues.value.filter((issue: any): any => issue.severity === "error")) as any;
-const bindingStats = computed((): any => collectBindingStats(resolvedRuntime.value.document)) as any;
-const runtimeDataFieldCount = computed((): any => Object.keys(runtimeData.value || {}).length) as any;
-const previewReady = computed((): any => documentValid.value && !parseError.value) as any;
-const canPrint = computed((): any => previewReady.value && !runtimeErrors.value.length) as any;
-const preflightTone = computed((): any => {
+});
+const documentValid = computed(() => preflight.value.templateIssues.every((issue) => issue.severity !== "error"));
+const validatedDocument = computed(() => preflight.value.document);
+const validationIssues = computed(() => preflight.value.templateIssues || []);
+const resolvedRuntime = computed(() => ({ document: preflight.value.runtimeDocument, issues: preflight.value.runtimeIssues }));
+const runtimeIssues = computed(() => resolvedRuntime.value.issues || []);
+const runtimeErrors = computed(() => runtimeIssues.value.filter((issue) => issue.severity === "error"));
+const bindingStats = computed(() => collectBindingStats(resolvedRuntime.value.document));
+const runtimeDataFieldCount = computed(() => Object.keys(runtimeData.value || {}).length);
+const previewReady = computed(() => documentValid.value && !parseError.value);
+const canPrint = computed(() => previewReady.value && !runtimeErrors.value.length);
+const preflightTone = computed(() => {
     if (!documentValid.value || parseError.value || runtimeErrors.value.length) {
         return "danger";
     }
@@ -117,8 +117,8 @@ const preflightTone = computed((): any => {
         return "warning";
     }
     return "ok";
-}) as any;
-const preflightSummary = computed((): any => {
+});
+const preflightSummary = computed(() => {
     if (preflightTone.value === "danger") {
         return "需处理";
     }
@@ -126,8 +126,8 @@ const preflightSummary = computed((): any => {
         return "可预览";
     }
     return "可打印";
-}) as any;
-const preflightItems = computed((): any => [
+});
+const preflightItems = computed(() => [
     {
         key: "template",
         label: "模板结构",
@@ -160,40 +160,40 @@ const preflightItems = computed((): any => [
         tone: "info",
         description: "打印对话框建议选择 100% / 实际大小，并关闭页眉页脚。",
     },
-]) as any;
-const issueList = computed((): any => [
-    ...validationIssues.value.map((issue: any, index: any): any => ({
+]);
+const issueList = computed(() => [
+    ...validationIssues.value.map((issue, index) => ({
         key: `validation-${index}-${issue.path || ""}`,
         scope: "模板",
         tone: issue.severity === "error" ? "danger" : "warning",
         message: issue.message,
         elementId: issue.elementId,
     })),
-    ...runtimeIssues.value.map((issue: any, index: any): any => ({
+    ...runtimeIssues.value.map((issue, index) => ({
         key: `runtime-${index}-${issue.path || ""}`,
         scope: "运行",
         tone: issue.severity === "error" ? "danger" : "warning",
         message: issue.message,
         elementId: issue.elementId,
     })),
-]) as any;
-const printHint = computed((): any => (canPrint.value ? "预检已通过，可以打开浏览器打印。" : "修复阻断项后即可打印。")) as any;
-const canvasTitle = computed((): any => (previewReady.value ? "打印版面预览" : "预览暂不可用")) as any;
-const canvasDescription = computed((): any => (previewReady.value ? "此处展示运行数据填充后的浏览器打印结果。" : "左侧预检会标出需要先处理的项目。")) as any;
-const previewEmptyTitle = computed((): any => (parseError.value ? "运行数据 JSON 有误" : "模板结构未通过")) as any;
-const previewEmptyDescription = computed((): any => (parseError.value ? "修复 JSON 格式后即可恢复预览。" : "修复模板结构问题后即可恢复预览。")) as any;
-async function print(): Promise<any> {
+]);
+const printHint = computed(() => (canPrint.value ? "预检已通过，可以打开浏览器打印。" : "修复阻断项后即可打印。"));
+const canvasTitle = computed(() => (previewReady.value ? "打印版面预览" : "预览暂不可用"));
+const canvasDescription = computed(() => (previewReady.value ? "此处展示运行数据填充后的浏览器打印结果。" : "左侧预检会标出需要先处理的项目。"));
+const previewEmptyTitle = computed(() => (parseError.value ? "运行数据 JSON 有误" : "模板结构未通过"));
+const previewEmptyDescription = computed(() => (parseError.value ? "修复 JSON 格式后即可恢复预览。" : "修复模板结构问题后即可恢复预览。"));
+async function print() {
     try {
         await printRuntimeDocument({ document: validatedDocument.value, runtimeData: runtimeData.value });
     }
-    catch (error: any) {
+    catch (error) {
         emit("print-error", error);
     }
 }
-function collectBindingStats(document: any): any {
+function collectBindingStats(document) {
     const stats = { total: 0, missing: 0 };
-    (document?.pages || []).forEach((page: any): any => {
-        (page.elements || []).forEach((element: any): any => {
+    (document?.pages || []).forEach((page) => {
+        (page.elements || []).forEach((element) => {
             if (element.runtime?.value?.path) {
                 stats.total += 1;
                 if (element.runtime.value.status === "missing") {

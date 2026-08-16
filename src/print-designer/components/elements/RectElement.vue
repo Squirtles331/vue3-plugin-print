@@ -9,8 +9,8 @@ const props = defineProps({
         type: Object,
         required: true,
     },
-}) as any;
-const shapeStyle = computed((): any => previewPanelStyle(props.object, "transparent")) as any;
+});
+const shapeStyle = computed(() => previewPanelStyle(props.object, "transparent"));
 </script>
 
 <style scoped lang="scss">

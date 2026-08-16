@@ -10,9 +10,9 @@ const props = defineProps({
     ariaLabel: { type: String, default: undefined },
     "aria-label": { type: String, default: undefined },
     title: { type: String, default: "" },
-}) as any;
-const emit = defineEmits(["click"]) as any;
-const buttonClass = computed((): any => [
+});
+const emit = defineEmits(["click"]);
+const buttonClass = computed(() => [
     "pd-button",
     `pd-button--${props.type}`,
     `pd-button--${props.size}`,
@@ -21,8 +21,8 @@ const buttonClass = computed((): any => [
         "pd-button--text": props.text,
         "pd-button--loading": props.loading,
     },
-]) as any;
-const nativeButtonType = computed((): any => ["button", "reset", "submit"].includes(props.nativeType) ? props.nativeType : "button") as any;
+]);
+const nativeButtonType = computed(() => ["button", "reset", "submit"].includes(props.nativeType) ? props.nativeType : "button");
 </script>
 
 <template>

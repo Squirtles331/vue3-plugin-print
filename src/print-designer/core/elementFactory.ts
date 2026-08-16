@@ -1,6 +1,11 @@
 import { createId, deepMerge } from "./clone";
 import { ELEMENT_PALETTE, getElementDefinition, isElementType } from "./elementRegistry";
-const ELEMENT_SIZE_RULES = {
+import type { ElementOverrides } from "./elementRegistry.js";
+import type { PrintElementType, TemplateElement } from "../types.js";
+
+export interface ElementSizeRule { minWidth: number; minHeight: number; maxWidth: number; maxHeight: number; }
+
+const ELEMENT_SIZE_RULES: Record<PrintElementType, ElementSizeRule> = {
     text: { minWidth: 16, minHeight: 6, maxWidth: 120, maxHeight: 40 },
     pageNumber: { minWidth: 10, minHeight: 6, maxWidth: 30, maxHeight: 16 },
     image: { minWidth: 18, minHeight: 18, maxWidth: 100, maxHeight: 80 },
@@ -11,22 +16,22 @@ const ELEMENT_SIZE_RULES = {
     circle: { minWidth: 10, minHeight: 10, maxWidth: 50, maxHeight: 50 },
     table: { minWidth: 36, minHeight: 18, maxWidth: 240, maxHeight: 220 },
     multiLabel: { minWidth: 50, minHeight: 30, maxWidth: 180, maxHeight: 140 },
-} as any;
-function defaultElementName(type: any): any {
-    return ELEMENT_PALETTE.find((item: any): any => item.type === type)?.label || type || "element";
+};
+function defaultElementName(type: PrintElementType): string {
+    return ELEMENT_PALETTE.find((item) => item.type === type)?.label || type || "element";
 }
-function clamp(value: any, min: any, max: any): any {
+function clamp(value: number, min: number, max: number): number {
     return Math.min(max, Math.max(min, value));
 }
-function normalizeSizeValue(value: any, fallback: any, min: any, max: any): any {
-    const numeric = Number(value) as any;
+function normalizeSizeValue(value: unknown, fallback: number, min: number, max: number): number {
+    const numeric = Number(value);
     if (!Number.isFinite(numeric)) {
         return fallback;
     }
     return +clamp(numeric, min, max).toFixed(2);
 }
-function normalizeElementSize(element: any): any {
-    const rule = ELEMENT_SIZE_RULES[element.type] as any;
+function normalizeElementSize(element: TemplateElement): TemplateElement {
+    const rule = ELEMENT_SIZE_RULES[element.type];
     if (!rule) {
         return element;
     }
@@ -34,14 +39,14 @@ function normalizeElementSize(element: any): any {
         ...element,
         width: normalizeSizeValue(element.width, rule.minWidth, rule.minWidth, rule.maxWidth),
         height: normalizeSizeValue(element.height, rule.minHeight, rule.minHeight, rule.maxHeight),
-    } as any;
+    };
     if (element.type === "circle") {
-        const size = Math.min(normalized.width, normalized.height) as any;
+        const size = Math.min(normalized.width, normalized.height);
         return { ...normalized, width: size, height: size };
     }
     return normalized;
 }
-function baseElement(type: any = ""): any {
+function baseElement(type: PrintElementType): TemplateElement {
     return {
         id: "",
         type,
@@ -81,22 +86,22 @@ function baseElement(type: any = ""): any {
         props: {},
     };
 }
-export function createElement(type: any, overrides: any = {}): any {
-    const definition = getElementDefinition(type) as any;
+export function createElement(type: PrintElementType, overrides: ElementOverrides = {}): TemplateElement {
+    const definition = getElementDefinition(type);
     if (!definition) {
         throw new Error(`Unknown element type: ${type}`);
     }
-    const merged = deepMerge(deepMerge(baseElement(type), definition.createDefaults()), overrides) as any;
+    const merged = deepMerge(deepMerge(baseElement(type), definition.createDefaults()), overrides);
     const normalized = normalizeElementSize({
         ...merged,
         id: overrides.id || createId(type),
         type,
         name: overrides.name || merged.name || defaultElementName(type),
         props: merged.props || {},
-    }) as any;
+    });
     return normalized;
 }
-export function getElementSizeRule(type: any): any {
-    return ELEMENT_SIZE_RULES[type] || null;
+export function getElementSizeRule(type: unknown): ElementSizeRule | null {
+    return isElementType(type) ? ELEMENT_SIZE_RULES[type] : null;
 }
 export { ELEMENT_PALETTE, isElementType, getElementDefinition };

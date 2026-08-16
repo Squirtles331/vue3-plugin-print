@@ -96,8 +96,8 @@ import PdIcon from "../../ui/primitives/PdIcon.vue";
 import PdInput from "../../ui/primitives/PdInput.vue";
 const props = defineProps({
     pages: {
-        type: Array as any,
-        default: (): any => [],
+        type: Array,
+        default: () => [],
     },
     searchQuery: {
         type: String,
@@ -107,26 +107,26 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
-}) as any;
-const emit = defineEmits(["select", "create", "duplicate", "remove", "rename", "move"]) as any;
-const filteredPages = computed((): any => {
+});
+const emit = defineEmits(["select", "create", "duplicate", "remove", "rename", "move"]);
+const filteredPages = computed(() => {
     const query = String(props.searchQuery || "").trim().toLowerCase();
     if (!query) {
         return props.pages;
     }
-    return props.pages.filter((page: any): any => {
+    return props.pages.filter((page) => {
         const haystack = `${page.title || ""} ${page.size || ""} ${page.orientation || ""}`.toLowerCase();
         return haystack.includes(query);
     });
-}) as any;
-function pageIndex(pageId: any): any {
-    const index = props.pages.findIndex((page: any): any => page.id === pageId);
+});
+function pageIndex(pageId) {
+    const index = props.pages.findIndex((page) => page.id === pageId);
     return index >= 0 ? index + 1 : 0;
 }
-function onRename(page: any, value: any): any {
+function onRename(page, value) {
     emit("rename", { page, title: value });
 }
-function onMove(page: any, direction: any): any {
+function onMove(page, direction) {
     emit("move", { page, direction });
 }
 </script>

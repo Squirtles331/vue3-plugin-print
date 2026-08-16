@@ -11,7 +11,7 @@ export { createLocalTemplateRepository, createRestTemplateRepository } from "./p
 export { createLocalRuntimeDataDraftRepository } from "./print-designer/template/runtimeDataDraftRepository.js";
 export { TEMPLATE_SCHEMA_VERSION, createBlankTemplateDocument, createPublishReadyTemplatePayload, serializeTemplateDocument, validateTemplateDocument, } from "./print-designer/template/templateDocument.js";
 const PrintTemplateStudioPlugin: Plugin = {
-    install(app: App): any {
+    install(app: App) {
         registerPrintDesignerUi(app);
         app.component("PrintTemplateStudio", PrintTemplateStudio);
     },

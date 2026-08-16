@@ -2,23 +2,24 @@ import { toRaw } from "vue";
 import { createElement, getElementSizeRule, isElementType } from "../core/elementFactory.js";
 import { validateElementProperties } from "../core/propertyCapabilities.js";
 import { normalizeTableRowHeights, normalizeTableRows } from "../core/tableModel.js";
-export const TEMPLATE_SCHEMA_VERSION = 2 as any;
+import type { ElementProperties, ElementStyle, TemplateDocument, TemplateElement, TemplateGroup, TemplateIssue, TemplatePage, TemplatePageSettings, UnknownRecord } from "../types.js";
+export const TEMPLATE_SCHEMA_VERSION = 2;
 export const TEMPLATE_LIMITS = Object.freeze({
     maxPages: 100,
     maxElementsPerPage: 500,
     maxElements: 2000,
     maxSerializedCharacters: 5 * 1024 * 1024,
     maxStringCharacters: 2 * 1024 * 1024,
-}) as any;
+});
 const DEFAULT_PAPER = {
     preset: "A4",
     widthMm: 210,
     heightMm: 297,
     orientation: "portrait",
-} as any;
-const DEFAULT_MARGIN = { top: 8, right: 8, bottom: 8, left: 8 } as any;
-function clone(value: any): any {
-    const rawValue = toRaw(value) as any;
+};
+const DEFAULT_MARGIN = { top: 8, right: 8, bottom: 8, left: 8 };
+function clone<T>(value: T): T {
+    const rawValue = toRaw(value);
     if (typeof structuredClone === "function") {
         try {
             return structuredClone(rawValue);
@@ -27,51 +28,57 @@ function clone(value: any): any {
             // JSON template data should still serialize even if a reactive proxy leaks in.
         }
     }
-    return JSON.parse(JSON.stringify(rawValue));
+    return JSON.parse(JSON.stringify(rawValue)) as T;
 }
-function text(value: any, fallback: any = ""): any {
+function text(value: unknown, fallback = ""): string {
     return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
-function optionalText(value: any): any {
+function optionalText(value: unknown): string {
     return typeof value === "string" ? value.trim() : "";
 }
-function numeric(value: any, fallback: any): any {
-    const parsed = Number(value) as any;
+function numeric(value: unknown, fallback: number): number {
+    const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
 }
-function boundedNumber(value: any, fallback: any, min: any, max: any, precision: any = 2): any {
-    const parsed = numeric(value, fallback) as any;
+function boundedNumber(value: unknown, fallback: number, min: number, max: number, precision = 2): number {
+    const parsed = numeric(value, fallback);
     return +Math.min(max, Math.max(min, parsed)).toFixed(precision);
 }
-function boolean(value: any, fallback: any): any {
+function boolean(value: unknown, fallback: boolean): boolean {
     return typeof value === "boolean" ? value : fallback;
 }
-function object(value: any): any {
-    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+function object(value: unknown): UnknownRecord {
+    return value && typeof value === "object" && !Array.isArray(value) ? value as UnknownRecord : {};
 }
-function newId(prefix: any = "tpl"): any {
+function newId(prefix = "tpl"): string {
     return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
-function normalizePageGroups(sourceGroups: any, elements: any): any {
+function toElementStyle(value: unknown): ElementStyle {
+    return clone(object(value)) as ElementStyle;
+}
+function toElementProperties(value: unknown): ElementProperties {
+    return clone(object(value)) as ElementProperties;
+}
+function normalizePageGroups(sourceGroups: unknown, elements: readonly TemplateElement[]): TemplateGroup[] {
     if (!Array.isArray(sourceGroups)) {
         return [];
     }
-    const knownElementIds = new Set(elements.map((element: any): any => element.id)) as any;
-    const claimedElementIds = new Set() as any;
-    const groupIds = new Set() as any;
-    return sourceGroups.reduce((groups: any, value: any, index: any): any => {
-        const source = object(value) as any;
-        const id = text(source.id, `group-${index + 1}`) as any;
+    const knownElementIds = new Set(elements.map((element) => element.id));
+    const claimedElementIds = new Set<string>();
+    const groupIds = new Set<string>();
+    return sourceGroups.reduce<TemplateGroup[]>((groups, value, index) => {
+        const source = object(value);
+        const id = text(source.id, `group-${index + 1}`);
         if (groupIds.has(id)) {
             return groups;
         }
-        const elementIds = [...new Set(Array.isArray(source.elementIds) ? source.elementIds.map((item: any): any => String(item || "").trim()) : [])]
-            .filter((elementId: any): any => elementId && knownElementIds.has(elementId) && !claimedElementIds.has(elementId)) as any;
+        const elementIds = [...new Set(Array.isArray(source.elementIds) ? source.elementIds.map((item) => String(item || "").trim()) : [])]
+            .filter((elementId) => elementId && knownElementIds.has(elementId) && !claimedElementIds.has(elementId));
         if (elementIds.length < 2) {
             return groups;
         }
         groupIds.add(id);
-        elementIds.forEach((elementId: any): any => claimedElementIds.add(elementId));
+        elementIds.forEach((elementId) => claimedElementIds.add(elementId));
         groups.push({
             id,
             name: text(source.name, `Group ${groups.length + 1}`),
@@ -80,11 +87,11 @@ function normalizePageGroups(sourceGroups: any, elements: any): any {
         return groups;
     }, []);
 }
-function stripEditorState(page: any, index: any): any {
-    const source = object(page) as any;
-    const { elements = [], groups = [], isCurrent, size, orientation, thumbnail, selected, hovered, editing, interactionState, ...pageData } = source as any;
-    const id = text(pageData.id, `page-${index + 1}`) as any;
-    const normalizedElements = Array.isArray(elements) ? elements.map((element: any, elementIndex: any): any => normalizeElement(element, elementIndex, id)) : [] as any;
+function stripEditorState(page: unknown, index: number): TemplatePage {
+    const source = object(page);
+    const { elements = [], groups = [], isCurrent, size, orientation, thumbnail, selected, hovered, editing, interactionState, ...pageData } = source;
+    const id = text(pageData.id, `page-${index + 1}`);
+    const normalizedElements = Array.isArray(elements) ? elements.map((element, elementIndex) => normalizeElement(element, elementIndex, id)) : [];
     return {
         ...clone(pageData),
         id,
@@ -93,25 +100,25 @@ function stripEditorState(page: any, index: any): any {
         groups: normalizePageGroups(groups, normalizedElements),
     };
 }
-function normalizeTableProps(sourceProps: any): any {
-    const source = object(sourceProps) as any;
-    const { customScript, customScriptVariable, ...props } = source as any;
-    const normalizeColumn = (column: any): any => {
-        const value = object(column) as any;
+function normalizeTableProps(sourceProps: unknown): ElementProperties {
+    const source = object(sourceProps);
+    const { customScript, customScriptVariable, ...props } = source;
+    const normalizeColumn = (column: unknown) => {
+        const value = object(column);
         return {
             ...value,
             key: optionalText(value.key),
             valuePath: optionalText(value.valuePath || value.key),
             title: optionalText(value.title || value.key),
             width: boundedNumber(value.width, 20, 1, 240, 2),
-            align: ["left", "center", "right"].includes(value.align) ? value.align : "left",
+            align: value.align === "left" || value.align === "center" || value.align === "right" ? value.align : "left",
             ...(Object.keys(object(value.formatter)).length ? { formatter: object(value.formatter) } : {}),
         };
     };
-    const columns = Array.isArray(props.columns) ? props.columns : null as any;
-    const sampleData = Array.isArray(props.sampleData) ? props.sampleData : null as any;
-    const footerData = Array.isArray(props.footerData) ? props.footerData : null as any;
-    const normalizedColumns = columns ? columns.map(normalizeColumn) : [] as any;
+    const columns = Array.isArray(props.columns) ? props.columns : null;
+    const sampleData = Array.isArray(props.sampleData) ? props.sampleData : null;
+    const footerData = Array.isArray(props.footerData) ? props.footerData : null;
+    const normalizedColumns = columns ? columns.map(normalizeColumn) : [];
     return {
         ...props,
         ...(columns ? { columns: normalizedColumns } : {}),
@@ -121,34 +128,32 @@ function normalizeTableProps(sourceProps: any): any {
         dataVariable: optionalText(props.dataVariable),
         footerDataVariable: optionalText(props.footerDataVariable),
         transform: object(props.transform),
-    };
+    } as ElementProperties;
 }
-function normalizeTableEditorHints(source: any): any {
-    const hints = object(source.editorHints) as any;
+function normalizeTableEditorHints(source: UnknownRecord): { omitRows: boolean; rowCount: number } {
+    const hints = object(source.editorHints);
     return {
         omitRows: boolean(hints.omitRows, true),
         rowCount: boundedNumber(hints.rowCount, 10, 1, 500, 0),
     };
 }
-function normalizeElement(element: any, index: any, pageId: any): any {
-    const source = object(element) as any;
-    const { selected, hovered, editing, interactionState, ...elementData } = source as any;
-    const type = text(source.type) as any;
+function normalizeElement(element: unknown, index: number, pageId: string): TemplateElement {
+    const source = object(element);
+    const { selected, hovered, editing, interactionState, ...elementData } = source;
+    const type = text(source.type);
     if (!isElementType(type)) {
         return {
             ...clone(elementData),
             id: text(source.id, `${pageId}-element-${index + 1}`),
             pageId,
             type,
-            style: clone(object(source.style)),
-            props: clone(object(source.props)),
-        };
+            style: toElementStyle(source.style),
+            props: toElementProperties(source.props),
+        } as TemplateElement;
     }
-    const sourceProps = object(source.props) as any;
-    const normalizedProps = {
-        ...(type === "table" ? normalizeTableProps(sourceProps) : sourceProps),
-    } as any;
-    const normalizedStyle = object(source.style) as any;
+    const sourceProps = object(source.props);
+    const normalizedProps = type === "table" ? normalizeTableProps(sourceProps) : toElementProperties(sourceProps);
+    const normalizedStyle = object(source.style);
     const normalized = createElement(type, {
         ...elementData,
         id: text(source.id, `${pageId}-element-${index + 1}`),
@@ -160,10 +165,10 @@ function normalizeElement(element: any, index: any, pageId: any): any {
         visible: source.visible,
         locked: source.locked,
         printable: source.printable,
-        style: normalizedStyle,
+        style: toElementStyle(normalizedStyle),
         props: normalizedProps,
         ...(type === "table" ? { editorHints: normalizeTableEditorHints(source) } : {}),
-    }) as any;
+    } as Partial<TemplateElement>);
     return {
         ...normalized,
         id: text(source.id, `${pageId}-element-${index + 1}`),
@@ -179,21 +184,21 @@ function normalizeElement(element: any, index: any, pageId: any): any {
         zIndex: Math.max(0, Math.round(numeric(source.zIndex, index))),
         style: {
             ...normalized.style,
-            opacity: boundedNumber(normalizedStyle.opacity, normalized.style.opacity ?? 1, 0, 1, 3),
+            opacity: boundedNumber(normalizedStyle.opacity, numeric(normalized.style.opacity, 1), 0, 1, 3),
         },
         ...(type === "table" ? { editorHints: normalizeTableEditorHints(source) } : {}),
     };
 }
-function normalizePageSettings(value: any = {}): any {
-    const source = object(value) as any;
-    const paper = object(source.paper) as any;
-    const margin = object(source.margin) as any;
-    const widthMm = boundedNumber(paper.widthMm, DEFAULT_PAPER.widthMm, 20, 1000, 1) as any;
-    const heightMm = boundedNumber(paper.heightMm, DEFAULT_PAPER.heightMm, 20, 1500, 1) as any;
-    const cornerMarks = object(source.cornerMarks) as any;
-    const headerLine = object(source.headerLine) as any;
-    const footerLine = object(source.footerLine) as any;
-    const printMarks = object(source.printMarks) as any;
+function normalizePageSettings(value: unknown = {}): TemplatePageSettings {
+    const source = object(value);
+    const paper = object(source.paper);
+    const margin = object(source.margin);
+    const widthMm = boundedNumber(paper.widthMm, DEFAULT_PAPER.widthMm, 20, 1000, 1);
+    const heightMm = boundedNumber(paper.heightMm, DEFAULT_PAPER.heightMm, 20, 1500, 1);
+    const cornerMarks = object(source.cornerMarks);
+    const headerLine = object(source.headerLine);
+    const footerLine = object(source.footerLine);
+    const printMarks = object(source.printMarks);
     return {
         paper: {
             preset: text(paper.preset ?? source.paperPreset, DEFAULT_PAPER.preset),
@@ -224,14 +229,14 @@ function normalizePageSettings(value: any = {}): any {
         },
     };
 }
-function normalizeSource(source: any): any {
+function normalizeSource(source: unknown): TemplateDocument {
     if (!source || typeof source !== "object") {
         return createBlankTemplateDocument();
     }
-    const rawTemplate = source as any;
-    const meta = object(rawTemplate.meta) as any;
-    const pages = Array.isArray(rawTemplate.pages) ? rawTemplate.pages : [] as any;
-    const now = new Date().toISOString() as any;
+    const rawTemplate = object(source);
+    const meta = object(rawTemplate.meta);
+    const pages = Array.isArray(rawTemplate.pages) ? rawTemplate.pages : [];
+    const now = new Date().toISOString();
     return {
         schemaVersion: TEMPLATE_SCHEMA_VERSION,
         id: text(rawTemplate.id, newId()),
@@ -245,35 +250,41 @@ function normalizeSource(source: any): any {
         pages: pages.length ? pages.map(stripEditorState) : [createBlankPage()],
     };
 }
-function addRawBoundedIssues(rawTemplate: any, issues: any): any {
-    const pages = Array.isArray(rawTemplate?.pages) ? rawTemplate.pages : [] as any;
-    const totalElements = pages.reduce((total: any, page: any): any => total + (Array.isArray(page?.elements) ? page.elements.length : 0), 0) as any;
+function addRawBoundedIssues(rawTemplate: unknown, issues: TemplateIssue[]): void {
+    const source = object(rawTemplate);
+    const pages = Array.isArray(source.pages) ? source.pages : [];
+    const totalElements = pages.reduce((total, page) => {
+        const elements = object(page).elements;
+        return total + (Array.isArray(elements) ? elements.length : 0);
+    }, 0);
     if (pages.length > TEMPLATE_LIMITS.maxPages) {
         issues.push({ path: "pages", message: `A template supports at most ${TEMPLATE_LIMITS.maxPages} pages.`, severity: "error" });
     }
     if (totalElements > TEMPLATE_LIMITS.maxElements) {
         issues.push({ path: "pages", message: `A template supports at most ${TEMPLATE_LIMITS.maxElements} elements.`, severity: "error" });
     }
-    pages.forEach((page: any, pageIndex: any): any => {
-        const elements = Array.isArray(page?.elements) ? page.elements : [] as any;
+    pages.forEach((page, pageIndex) => {
+        const pageSource = object(page);
+        const elements = Array.isArray(pageSource.elements) ? pageSource.elements : [];
         if (elements.length > TEMPLATE_LIMITS.maxElementsPerPage) {
             issues.push({ path: `pages[${pageIndex}].elements`, message: `A page supports at most ${TEMPLATE_LIMITS.maxElementsPerPage} elements.`, severity: "error" });
         }
-        elements.forEach((element: any, elementIndex: any): any => {
-            const rule = getElementSizeRule(element?.type) as any;
+        elements.forEach((element, elementIndex) => {
+            const elementSource = object(element);
+            const rule = getElementSizeRule(elementSource.type);
             if (!rule) {
                 return;
             }
-            ["x", "y", "width", "height", "rotation", "zIndex"].forEach((key: any): any => {
-                const value = element?.[key] as any;
+            ["x", "y", "width", "height", "rotation", "zIndex"].forEach((key) => {
+                const value = elementSource[key];
                 if (value != null && !Number.isFinite(Number(value))) {
                     issues.push({ path: `pages[${pageIndex}].elements[${elementIndex}].${key}`, message: `${key} must be numeric.`, severity: "error" });
                 }
             });
-            if (element?.width != null && (Number(element.width) < rule.minWidth || Number(element.width) > rule.maxWidth)) {
+            if (elementSource.width != null && (Number(elementSource.width) < rule.minWidth || Number(elementSource.width) > rule.maxWidth)) {
                 issues.push({ path: `pages[${pageIndex}].elements[${elementIndex}].width`, message: `width must be between ${rule.minWidth} and ${rule.maxWidth}.`, severity: "error" });
             }
-            if (element?.height != null && (Number(element.height) < rule.minHeight || Number(element.height) > rule.maxHeight)) {
+            if (elementSource.height != null && (Number(elementSource.height) < rule.minHeight || Number(elementSource.height) > rule.maxHeight)) {
                 issues.push({ path: `pages[${pageIndex}].elements[${elementIndex}].height`, message: `height must be between ${rule.minHeight} and ${rule.maxHeight}.`, severity: "error" });
             }
         });
@@ -282,40 +293,43 @@ function addRawBoundedIssues(rawTemplate: any, issues: any): any {
 const REMOVED_PAGE_SETTINGS_FIELDS = [
     "paperSize", "pageWidthMm", "pageHeightMm", "widthMm", "heightMm", "marginXMm", "marginYMm", "marginX", "marginY",
     "pageBackground", "pageCornerVisible", "headerLineVisible", "footerLineVisible", "headerOffsetMm", "footerOffsetMm", "printMarksVisible",
-] as any;
+];
 const REMOVED_ELEMENT_FIELDS = [
     "display", "isLocked", "isPrint", "angle", "left", "top", "dataKey", "imageUrl", "codeFormat", "errorCorrectionLevel", "pageNumberFormat", "opacity",
-] as any;
+];
 const REMOVED_TABLE_PROP_FIELDS = [
     "headers", "rows", "footerRows", "data", "dataKey", "footerKey", "columnKey", "columnsVariable", "transformConfig",
     "customScript", "customScriptVariable", "designOmitRows", "designRowCount", "embeddedCellTextPosition", "embeddedCellTextLayer",
-] as any;
-const REMOVED_TABLE_COLUMN_FIELDS = ["field", "header", "format"] as any;
-function addRemovedFieldIssues(rawTemplate: any, issues: any): any {
-    const pageSettings = object(rawTemplate?.pageSettings) as any;
-    REMOVED_PAGE_SETTINGS_FIELDS.forEach((field: any): any => {
+];
+const REMOVED_TABLE_COLUMN_FIELDS = ["field", "header", "format"];
+function addRemovedFieldIssues(rawTemplate: unknown, issues: TemplateIssue[]): void {
+    const source = object(rawTemplate);
+    const pageSettings = object(source.pageSettings);
+    REMOVED_PAGE_SETTINGS_FIELDS.forEach((field) => {
         if (Object.hasOwn(pageSettings, field)) {
             issues.push({ path: `pageSettings.${field}`, message: `${field} was removed; use the v2 canonical field.`, severity: "error" });
         }
     });
-    (Array.isArray(rawTemplate?.pages) ? rawTemplate.pages : []).forEach((page: any, pageIndex: any): any => {
-        (Array.isArray(page?.elements) ? page.elements : []).forEach((element: any, elementIndex: any): any => {
-            REMOVED_ELEMENT_FIELDS.forEach((field: any): any => {
+    (Array.isArray(source.pages) ? source.pages : []).forEach((page, pageIndex) => {
+        const elements = object(page).elements;
+        (Array.isArray(elements) ? elements : []).forEach((element, elementIndex) => {
+            const elementSource = object(element);
+            REMOVED_ELEMENT_FIELDS.forEach((field) => {
                 if (Object.hasOwn(object(element), field)) {
                     issues.push({ path: `pages[${pageIndex}].elements[${elementIndex}].${field}`, message: `${field} was removed; use the v2 canonical field.`, severity: "error" });
                 }
             });
-            if (element?.type !== "table") {
+            if (elementSource.type !== "table") {
                 return;
             }
-            const props = object(element.props) as any;
-            REMOVED_TABLE_PROP_FIELDS.forEach((field: any): any => {
+            const props = object(elementSource.props);
+            REMOVED_TABLE_PROP_FIELDS.forEach((field) => {
                 if (Object.hasOwn(props, field)) {
                     issues.push({ path: `pages[${pageIndex}].elements[${elementIndex}].props.${field}`, message: `${field} was removed; use the v2 table field.`, severity: "error" });
                 }
             });
-            (Array.isArray(props.columns) ? props.columns : []).forEach((column: any, columnIndex: any): any => {
-                REMOVED_TABLE_COLUMN_FIELDS.forEach((field: any): any => {
+            (Array.isArray(props.columns) ? props.columns : []).forEach((column, columnIndex) => {
+                REMOVED_TABLE_COLUMN_FIELDS.forEach((field) => {
                     if (Object.hasOwn(object(column), field)) {
                         issues.push({ path: `pages[${pageIndex}].elements[${elementIndex}].props.columns[${columnIndex}].${field}`, message: `${field} was removed; use the v2 column field.`, severity: "error" });
                     }
@@ -324,24 +338,28 @@ function addRemovedFieldIssues(rawTemplate: any, issues: any): any {
         });
     });
 }
-function addRawGroupIssues(rawTemplate: any, issues: any): any {
-    const claimedElementIds = new Set() as any;
-    const groupIds = new Set() as any;
-    (Array.isArray(rawTemplate?.pages) ? rawTemplate.pages : []).forEach((page: any, pageIndex: any): any => {
-        const elementIds = new Set((Array.isArray(page?.elements) ? page.elements : []).map((element: any): any => String(element?.id || "").trim()).filter(Boolean)) as any;
-        const groups = Array.isArray(page?.groups) ? page.groups : [] as any;
-        groups.forEach((group: any, groupIndex: any): any => {
-            const path = `pages[${pageIndex}].groups[${groupIndex}]` as any;
-            const id = String(group?.id || "").trim() as any;
+function addRawGroupIssues(rawTemplate: unknown, issues: TemplateIssue[]): void {
+    const source = object(rawTemplate);
+    const claimedElementIds = new Set<string>();
+    const groupIds = new Set<string>();
+    (Array.isArray(source.pages) ? source.pages : []).forEach((page, pageIndex) => {
+        const pageSource = object(page);
+        const elements = Array.isArray(pageSource.elements) ? pageSource.elements : [];
+        const elementIds = new Set(elements.map((element) => String(object(element).id || "").trim()).filter(Boolean));
+        const groups = Array.isArray(pageSource.groups) ? pageSource.groups : [];
+        groups.forEach((group, groupIndex) => {
+            const path = `pages[${pageIndex}].groups[${groupIndex}]`;
+            const groupSource = object(group);
+            const id = String(groupSource.id || "").trim();
             if (!id || groupIds.has(id)) {
                 issues.push({ path: `${path}.id`, message: "Group id must be unique.", severity: "error" });
             }
             groupIds.add(id);
-            const ids = Array.isArray(group?.elementIds) ? group.elementIds.map((item: any): any => String(item || "").trim()) : [] as any;
+            const ids = Array.isArray(groupSource.elementIds) ? groupSource.elementIds.map((item) => String(item || "").trim()) : [];
             if (ids.length < 2 || new Set(ids).size !== ids.length) {
                 issues.push({ path: `${path}.elementIds`, message: "A group must contain at least two unique elements.", severity: "error" });
             }
-            ids.forEach((elementId: any): any => {
+            ids.forEach((elementId) => {
                 if (!elementIds.has(elementId)) {
                     issues.push({ path: `${path}.elementIds`, message: "Group members must belong to the same page.", severity: "error" });
                 }
@@ -353,7 +371,7 @@ function addRawGroupIssues(rawTemplate: any, issues: any): any {
         });
     });
 }
-function addStringSizeIssues(value: any, path: any, issues: any, visited: any = new WeakSet()): any {
+function addStringSizeIssues(value: unknown, path: string, issues: TemplateIssue[], visited = new WeakSet<object>()): void {
     if (typeof value === "string" && value.length > TEMPLATE_LIMITS.maxStringCharacters) {
         issues.push({ path, message: `Value exceeds ${TEMPLATE_LIMITS.maxStringCharacters} characters.`, severity: "error" });
         return;
@@ -362,9 +380,9 @@ function addStringSizeIssues(value: any, path: any, issues: any, visited: any = 
         return;
     }
     visited.add(value);
-    Object.entries(value).forEach(([key, child]: any): any => addStringSizeIssues(child, `${path}.${key}`, issues, visited));
+    Object.entries(value).forEach(([key, child]) => addStringSizeIssues(child, `${path}.${key}`, issues, visited));
 }
-export function createBlankPage(): any {
+export function createBlankPage(): TemplatePage {
     return {
         id: "page-1",
         title: "Page 1",
@@ -372,8 +390,8 @@ export function createBlankPage(): any {
         groups: [],
     };
 }
-export function createBlankTemplateDocument(overrides: any = {}): any {
-    const now = new Date().toISOString() as any;
+export function createBlankTemplateDocument(overrides: UnknownRecord = {}): TemplateDocument {
+    const now = new Date().toISOString();
     const document = {
         schemaVersion: TEMPLATE_SCHEMA_VERSION,
         id: newId(),
@@ -385,13 +403,13 @@ export function createBlankTemplateDocument(overrides: any = {}): any {
         },
         pageSettings: normalizePageSettings(),
         pages: [createBlankPage()],
-    } as any;
+    };
     return normalizeSource({ ...document, ...clone(overrides) });
 }
-export function validateTemplateDocument(source: any): any {
-    const issues = [] as any;
-    const rawTemplate = source as any;
-    const version = Number(rawTemplate?.schemaVersion) as any;
+export function validateTemplateDocument(source: unknown): { valid: boolean; document: TemplateDocument | null; issues: TemplateIssue[] } {
+    const issues: TemplateIssue[] = [];
+    const rawTemplate = object(source);
+    const version = Number(rawTemplate.schemaVersion);
     if (version !== TEMPLATE_SCHEMA_VERSION) {
         return {
             valid: false,
@@ -412,25 +430,26 @@ export function validateTemplateDocument(source: any): any {
         issues.push({ path: "document", message: "Template must be serializable JSON data.", severity: "error" });
     }
     addStringSizeIssues(rawTemplate, "document", issues);
-    if (rawTemplate?.meta?.unit && rawTemplate.meta.unit !== "mm") {
+    const rawMeta = object(rawTemplate.meta);
+    if (rawMeta.unit && rawMeta.unit !== "mm") {
         issues.push({ path: "meta.unit", message: "Template unit must be mm.", severity: "error" });
     }
     addRemovedFieldIssues(rawTemplate, issues);
     addRawBoundedIssues(rawTemplate, issues);
     addRawGroupIssues(rawTemplate, issues);
-    const document = normalizeSource(source) as any;
+    const document = normalizeSource(source);
     if (!Array.isArray(document.pages) || !document.pages.length) {
         issues.push({ path: "pages", message: "A template requires at least one page.", severity: "error" });
     }
-    const pageIds = new Set() as any;
-    const elementIds = new Set() as any;
-    document.pages.forEach((page: any, pageIndex: any): any => {
+    const pageIds = new Set();
+    const elementIds = new Set();
+    document.pages.forEach((page, pageIndex) => {
         if (!page.id || pageIds.has(page.id)) {
             issues.push({ path: `pages[${pageIndex}].id`, message: "Page id must be unique.", severity: "error" });
         }
         pageIds.add(page.id);
-        (page.elements || []).forEach((element: any, elementIndex: any): any => {
-            const path = `pages[${pageIndex}].elements[${elementIndex}]` as any;
+        (page.elements || []).forEach((element, elementIndex) => {
+            const path = `pages[${pageIndex}].elements[${elementIndex}]`;
             if (!element?.id || elementIds.has(element.id)) {
                 issues.push({ path: `${path}.id`, message: "Element id must be unique.", severity: "error" });
             }
@@ -438,43 +457,48 @@ export function validateTemplateDocument(source: any): any {
             if (!isElementType(element?.type)) {
                 issues.push({ path: `${path}.type`, message: `Unsupported element type: ${element?.type || "unknown"}.`, severity: "error" });
             }
-            validateElementProperties(element).forEach((issue: any): any => {
+            validateElementProperties(element).forEach((issue: TemplateIssue) => {
                 issues.push({ ...issue, path: `${path}.${issue.path}` });
             });
         });
     });
-    const paper = document.pageSettings.paper as any;
-    const margin = document.pageSettings.margin as any;
+    const paper = document.pageSettings.paper;
+    const margin = document.pageSettings.margin;
     if (margin.left + margin.right >= paper.widthMm || margin.top + margin.bottom >= paper.heightMm) {
         issues.push({ path: "pageSettings.margin", message: "Margins must leave a positive printable area.", severity: "error" });
     }
-    return { valid: !issues.some((item: any): any => item.severity === "error"), document, issues };
+    return { valid: !issues.some((item) => item.severity === "error"), document, issues };
 }
-export function serializeTemplateDocument(template: any, metadata: any = {}): any {
-    const sourceResult = validateTemplateDocument(template) as any;
+export function serializeTemplateDocument(template: unknown, metadata: UnknownRecord = {}): { valid: boolean; document: TemplateDocument | null; issues: TemplateIssue[] } {
+    const sourceResult = validateTemplateDocument(template);
     if (!sourceResult.valid) {
         return sourceResult;
     }
-    const source = sourceResult.document as any;
-    const now = new Date().toISOString() as any;
+    const source = sourceResult.document;
+    if (!source)
+        return sourceResult;
+    const now = new Date().toISOString();
     const document = normalizeSource({
         ...source,
         ...clone(metadata),
         meta: {
             ...source.meta,
             ...object(metadata.meta),
-            createdAt: metadata.meta?.createdAt || source.meta.createdAt || now,
+            createdAt: object(metadata.meta).createdAt || source.meta.createdAt || now,
             updatedAt: now,
         },
-    }) as any;
+    });
     return validateTemplateDocument(document);
 }
-export function createPublishReadyTemplatePayload(template: any): any {
-    const result = serializeTemplateDocument(template) as any;
+export function createPublishReadyTemplatePayload(template: unknown): { valid: boolean; document: TemplateDocument | null; issues: TemplateIssue[]; payload: TemplateDocument | null } {
+    const result = serializeTemplateDocument(template);
     if (!result.valid) {
         return { ...result, payload: null };
     }
-    const { schemaVersion, id, meta, pageSettings, pages } = result.document as any;
+    const document = result.document;
+    if (!document)
+        return { ...result, payload: null };
+    const { schemaVersion, id, meta, pageSettings, pages } = document;
     return {
         ...result,
         payload: {

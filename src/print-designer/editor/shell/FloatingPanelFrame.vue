@@ -63,15 +63,15 @@ const props = defineProps({
         type: Number,
         default: 1,
     },
-}) as any;
-const emit = defineEmits(["close", "focus", "drag-start"]) as any;
-const panelStyle = computed((): any => ({
+});
+const emit = defineEmits(["close", "focus", "drag-start"]);
+const panelStyle = computed(() => ({
     width: `${props.width}px`,
     height: `${props.height}px`,
     transform: `translate3d(${props.x}px, ${props.y}px, 0)`,
     zIndex: props.zIndex,
-})) as any;
-function onHeaderPointerDown(event: any): any {
+}));
+function onHeaderPointerDown(event) {
     emit("focus", props.panelId);
     emit("drag-start", {
         panelId: props.panelId,

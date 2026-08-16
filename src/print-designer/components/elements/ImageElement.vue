@@ -25,13 +25,13 @@ const props = defineProps({
         type: Object,
         required: true,
     },
-}) as any;
-const frameStyle = computed((): any => previewPanelStyle(props.object, "#f8fafc")) as any;
-const imageStyle = computed((): any => ({
+});
+const frameStyle = computed(() => previewPanelStyle(props.object, "#f8fafc"));
+const imageStyle = computed(() => ({
     objectFit: props.object.style?.objectFit || "contain",
     objectPosition: imageObjectPosition(props.object.style),
-})) as any;
-const placeholder = computed((): any => bindingLabel(props.object) || props.object.props?.placeholder || "未绑定图片") as any;
+}));
+const placeholder = computed(() => bindingLabel(props.object) || props.object.props?.placeholder || "未绑定图片");
 </script>
 
 <style scoped lang="scss">

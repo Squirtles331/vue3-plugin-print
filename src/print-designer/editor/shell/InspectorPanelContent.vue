@@ -27,10 +27,10 @@ defineProps({
         default: "properties",
     },
 });
-const documentStore = useEditorDocumentStore() as any;
-const selectionStore = useEditorSelectionStore() as any;
-const { layers, variables } = storeToRefs(documentStore) as any;
-const { selectedIds } = storeToRefs(selectionStore) as any;
+const documentStore = useEditorDocumentStore();
+const selectionStore = useEditorSelectionStore();
+const { layers, variables } = storeToRefs(documentStore);
+const { selectedIds } = storeToRefs(selectionStore);
 </script>
 
 <style scoped lang="scss">

@@ -65,14 +65,14 @@ import ViewSettingsPanel from "../panels/ViewSettingsPanel.vue";
 import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorSelectionStore } from "../stores/selectionStore";
 import { useEditorShellStore } from "../stores/shellStore";
-const emit = defineEmits(["bind"]) as any;
-const shellStore = useEditorShellStore() as any;
-const documentStore = useEditorDocumentStore() as any;
-const selectionStore = useEditorSelectionStore() as any;
-const { activeRightPanel, rightDockCollapsed, rightPanelWidth } = storeToRefs(shellStore) as any;
-const { layers, variables } = storeToRefs(documentStore) as any;
-const { selectedIds } = storeToRefs(selectionStore) as any;
-const rightDockRef = ref(null) as any;
+const emit = defineEmits(["bind"]);
+const shellStore = useEditorShellStore();
+const documentStore = useEditorDocumentStore();
+const selectionStore = useEditorSelectionStore();
+const { activeRightPanel, rightDockCollapsed, rightPanelWidth } = storeToRefs(shellStore);
+const { layers, variables } = storeToRefs(documentStore);
+const { selectedIds } = storeToRefs(selectionStore);
+const rightDockRef = ref(null);
 const panels = [
     { key: "properties", label: "属性", icon: Setting },
     { key: "page", label: "页面", icon: Setting },
@@ -80,9 +80,9 @@ const panels = [
     { key: "layers", label: "结构", icon: Files },
     { key: "bindings", label: "绑定", icon: DataLine },
     { key: "history", label: "历史", icon: Clock },
-] as any;
-const panelTitle = computed((): any => {
-    const map: any = {
+];
+const panelTitle = computed(() => {
+    const map = {
         properties: "元素属性",
         page: "页面设置",
         view: "视图设置",
@@ -91,9 +91,9 @@ const panelTitle = computed((): any => {
         history: "历史记录",
     };
     return map[activeRightPanel.value] || "右侧面板";
-}) as any;
-const panelDescription = computed((): any => {
-    const map: any = {
+});
+const panelDescription = computed(() => {
+    const map = {
         properties: !selectedIds.value.length
             ? "选中画布元素后，可在这里修改位置、样式和绑定。"
             : selectedIds.value.length === 1
@@ -106,13 +106,13 @@ const panelDescription = computed((): any => {
         history: "查看最近操作，确认可撤销范围。",
     };
     return map[activeRightPanel.value] || "";
-}) as any;
-const panelBadges = computed((): any => ({
+});
+const panelBadges = computed(() => ({
     properties: selectedIds.value.length,
     layers: layers.value.length,
     bindings: variables.value.length,
-})) as any;
-function onPointerMove(event: any): any {
+}));
+function onPointerMove(event) {
     const dockElement = rightDockRef.value;
     if (!dockElement) {
         return;
@@ -120,16 +120,16 @@ function onPointerMove(event: any): any {
     const dockRect = dockElement.getBoundingClientRect();
     shellStore.setRightPanelWidth(dockRect.right - event.clientX);
 }
-function stopResize(): any {
+function stopResize() {
     window.removeEventListener("pointermove", onPointerMove);
     window.removeEventListener("pointerup", stopResize);
 }
-function startResize(event: any): any {
+function startResize(event) {
     event.preventDefault();
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", stopResize);
 }
-onBeforeUnmount((): any => {
+onBeforeUnmount(() => {
     stopResize();
 });
 </script>

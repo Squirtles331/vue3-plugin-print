@@ -6,10 +6,10 @@ import { validateElementProperty } from "../src/print-designer/core/propertyCapa
 import { useEditorDocumentStore } from "../src/print-designer/editor/stores/documentStore.js";
 import { resolveRuntimeTemplate } from "../src/print-designer/runtime/dataResolver.js";
 import { createBlankTemplateDocument, serializeTemplateDocument } from "../src/print-designer/template/templateDocument.js";
-test("locked elements reject property, order, and delete mutations until explicitly unlocked", (): any => {
+test("locked elements reject property, order, and delete mutations until explicitly unlocked", () => {
     setActivePinia(createPinia());
-    const store = useEditorDocumentStore() as any;
-    const element = createElement("text", { id: "locked-text", pageId: "page-1", locked: true, content: "Locked" }) as any;
+    const store = useEditorDocumentStore();
+    const element = createElement("text", { id: "locked-text", pageId: "page-1", locked: true, content: "Locked" });
     store.loadTemplateDocument(createBlankTemplateDocument({ pages: [{ id: "page-1", title: "Page 1", elements: [element] }] }));
     assert.equal(store.updateObjectProps("locked-text", { content: "Changed" }), false);
     assert.equal(store.reorderObject("locked-text", "bringToFront"), false);
@@ -18,8 +18,8 @@ test("locked elements reject property, order, and delete mutations until explici
     assert.equal(store.updateObjectProps("locked-text", { content: "Changed" }), true);
     assert.equal(store.objectsById["locked-text"].content, "Changed");
 });
-test("all supported data-aware elements resolve runtime values and preserve structural elements", (): any => {
-    const pageId = "page-1" as any;
+test("all supported data-aware elements resolve runtime values and preserve structural elements", () => {
+    const pageId = "page-1";
     const elements = [
         createElement("text", { id: "text", pageId, variable: "text" }),
         createElement("image", { id: "image", pageId, variable: "image" }),
@@ -31,29 +31,29 @@ test("all supported data-aware elements resolve runtime values and preserve stru
         createElement("line", { id: "line", pageId }),
         createElement("rect", { id: "rect", pageId }),
         createElement("circle", { id: "circle", pageId }),
-    ] as any;
-    const document = createBlankTemplateDocument({ pages: [{ id: pageId, title: "Page 1", elements }] }) as any;
-    const resolved = resolveRuntimeTemplate(document, { text: "Hello", image: "https://example.test/logo.png", code: "ABC-123", items: [{ sku: "B" }, { sku: "A" }], labels: [{ title: "First" }, { title: "Second" }] }) as any;
-    const byId = Object.fromEntries(resolved.document.pages[0].elements.map((element: any): any => [element.id, element])) as any;
+    ];
+    const document = createBlankTemplateDocument({ pages: [{ id: pageId, title: "Page 1", elements }] });
+    const resolved = resolveRuntimeTemplate(document, { text: "Hello", image: "https://example.test/logo.png", code: "ABC-123", items: [{ sku: "B" }, { sku: "A" }], labels: [{ title: "First" }, { title: "Second" }] });
+    const byId = Object.fromEntries(resolved.document.pages[0].elements.map((element) => [element.id, element]));
     assert.equal(byId.text.runtime.value.value, "Hello");
     assert.equal(byId.image.runtime.value.value, "https://example.test/logo.png");
     assert.equal(byId.barcode.runtime.value.value, "ABC-123");
     assert.equal(byId.qrcode.runtime.value.value, "ABC-123");
-    assert.deepEqual(byId.table.runtime.table.rows.map((row: any): any => row.sku), ["A", "B"]);
+    assert.deepEqual(byId.table.runtime.table.rows.map((row) => row.sku), ["A", "B"]);
     assert.equal(byId.labels.runtime.multiLabel.rows.length, 2);
     assert.equal(byId.line.runtime && Object.keys(byId.line.runtime).length, 0);
-    const serialized = serializeTemplateDocument(document) as any;
+    const serialized = serializeTemplateDocument(document);
     assert.equal(serialized.valid, true, JSON.stringify(serialized.issues));
 });
-test("property capability validation rejects invalid machine-code, binding, table, and label values", (): any => {
+test("property capability validation rejects invalid machine-code, binding, table, and label values", () => {
     assert.match(validateElementProperty("barcode", "props", "format", "UNKNOWN"), /format/);
     assert.match(validateElementProperty("image", "root", "variable", "bad path!"), /binding/);
     assert.match(validateElementProperty("table", "props", "columns", []), /column/);
     assert.match(validateElementProperty("multiLabel", "props", "rows", 0), /rows/);
     assert.equal(validateElementProperty("qrcode", "props", "eccLevel", "H"), null);
 });
-test("unresolved bindings stay explicit and removed table scripts are rejected", (): any => {
-    const pageId = "page-1" as any;
+test("unresolved bindings stay explicit and removed table scripts are rejected", () => {
+    const pageId = "page-1";
     const document = createBlankTemplateDocument({
         pages: [{ id: pageId, title: "Page 1", elements: [
                     createElement("image", { id: "image", pageId, variable: "missing.image" }),
@@ -62,19 +62,19 @@ test("unresolved bindings stay explicit and removed table scripts are rejected",
                     createElement("table", { id: "table", pageId, props: { columns: [{ key: "id", title: "ID" }], dataVariable: "missing.rows", sampleData: [], footerData: [] } }),
                     createElement("multiLabel", { id: "labels", pageId, props: { rows: 1, cols: 1, dataVariable: "missing.labels", sampleData: [] } }),
                 ] }],
-    }) as any;
-    document.pages[0].elements.find((element: any): any => element.id === "table").props.customScript = "throw new Error('must not run')";
-    const resolved = resolveRuntimeTemplate(document, {}) as any;
-    const byId = Object.fromEntries(resolved.document.pages[0].elements.map((element: any): any => [element.id, element])) as any;
-    const serialized = serializeTemplateDocument(document) as any;
+    });
+    document.pages[0].elements.find((element) => element.id === "table").props.customScript = "throw new Error('must not run')";
+    const resolved = resolveRuntimeTemplate(document, {});
+    const byId = Object.fromEntries(resolved.document.pages[0].elements.map((element) => [element.id, element]));
+    const serialized = serializeTemplateDocument(document);
     assert.equal(byId.image.runtime.value.status, "missing");
     assert.equal(byId.barcode.runtime.value.status, "missing");
     assert.equal(byId.qrcode.runtime.value.status, "missing");
     assert.equal(byId.table.runtime.table.dataStatus, "missing");
     assert.equal(byId.labels.runtime.multiLabel.status, "missing");
-    assert.ok(resolved.issues.some((issue: any): any => /Missing binding value/.test(issue.message)));
-    assert.ok(resolved.issues.some((issue: any): any => /Missing table data/.test(issue.message)));
-    assert.ok(resolved.issues.some((issue: any): any => /disabled/.test(issue.message)));
+    assert.ok(resolved.issues.some((issue) => /Missing binding value/.test(issue.message)));
+    assert.ok(resolved.issues.some((issue) => /Missing table data/.test(issue.message)));
+    assert.ok(resolved.issues.some((issue) => /disabled/.test(issue.message)));
     assert.equal(serialized.valid, false);
-    assert.ok(serialized.issues.some((issue: any): any => issue.path.endsWith("props.customScript")));
+    assert.ok(serialized.issues.some((issue) => issue.path.endsWith("props.customScript")));
 });

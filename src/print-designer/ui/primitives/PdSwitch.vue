@@ -4,10 +4,10 @@ const props = defineProps({
     disabled: { type: Boolean, default: false },
     activeText: { type: String, default: "" },
     inactiveText: { type: String, default: "" },
-}) as any;
-const emit = defineEmits(["update:modelValue", "change"]) as any;
-const switchClass = computed((): any => ["pd-switch", { "pd-switch--checked": props.modelValue }]) as any;
-function toggleValue(): any {
+});
+const emit = defineEmits(["update:modelValue", "change"]);
+const switchClass = computed(() => ["pd-switch", { "pd-switch--checked": props.modelValue }]);
+function toggleValue() {
     if (props.disabled) {
         return;
     }
