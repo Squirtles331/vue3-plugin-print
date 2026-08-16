@@ -98,7 +98,7 @@ const props = defineProps({
   runtimeData: { type: Object, default: undefined },
   printPolicy: { type: Object, default: () => ({}) },
 });
-const emit = defineEmits(["template-change", "template-migrated", "update:runtimeData", "error"]);
+const emit = defineEmits(["template-change", "update:runtimeData", "error"]);
 
 const editorRootRef = ref(null);
 const shellStore = useEditorShellStore();
@@ -145,13 +145,6 @@ function reportError(scope, error, fallback) {
 
 function currentTemplateResult() {
   return serializeTemplateDocument(templateModel.value, { id: templateId.value });
-}
-
-function emitMigration(result) {
-  if (!result?.document || !Number.isFinite(result.fromVersion) || result.fromVersion >= result.document.schemaVersion) {
-    return;
-  }
-  emit("template-migrated", { fromVersion: result.fromVersion, document: result.document, issues: result.issues || [] });
 }
 
 function scheduleRuntimeDataDraftSave(data) {
@@ -757,7 +750,6 @@ function loadTemplateDocument(document, options = {}) {
     runtimeDataRevision += 1;
     historyStore.reset();
     selectionStore.clearSelection();
-    emitMigration(result);
     void restoreRuntimeDataForTemplate();
   }
   return result;
@@ -771,7 +763,13 @@ async function replaceTemplateDocument(document, options = {}) {
       return null;
     }
   }
-  return loadTemplateDocument(document, options);
+  const result = loadTemplateDocument(document, options);
+  if (!result.document) {
+    const error = new Error(result.issues?.[0]?.message || "模板版本不受支持。");
+    error.issues = result.issues;
+    reportError("template.load", error, "模板无法加载");
+  }
+  return result;
 }
 
 function getTemplateDocument() {

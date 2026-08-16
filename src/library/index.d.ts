@@ -87,20 +87,6 @@ export interface TemplateDocument {
   pages: TemplatePage[];
 }
 
-/** v1 is accepted at load/import boundaries and automatically migrated to TemplateDocument v2. */
-export interface LegacyTemplateDocument extends Omit<TemplateDocument, "schemaVersion" | "pages"> {
-  schemaVersion?: 0 | 1;
-  pages: Array<Omit<TemplatePage, "groups"> & { groups?: TemplateGroup[] }>;
-}
-
-export type TemplateDocumentInput = TemplateDocument | LegacyTemplateDocument;
-
-export interface TemplateMigratedPayload {
-  fromVersion: number;
-  document: TemplateDocument;
-  issues: TemplateIssue[];
-}
-
 export interface TemplateIssue {
   code?: string;
   path: string;
@@ -119,7 +105,7 @@ export interface TemplateResult {
 export interface TemplateRepository {
   create?(overrides?: Partial<TemplateDocument>): Promise<TemplateDocument>;
   list(): Promise<Array<{ id: string; name: string; updatedAt: string }>>;
-  get(id: string): Promise<TemplateDocumentInput | null>;
+  get(id: string): Promise<TemplateDocument | null>;
   save(document: TemplateDocument): Promise<TemplateDocument>;
   delete(id: string): Promise<boolean>;
   clear?(): Promise<void>;
@@ -138,7 +124,7 @@ export interface PrintTemplateStudioErrorPayload {
 }
 
 export interface PrintTemplateStudioProps {
-  template?: TemplateDocumentInput | null;
+  template?: TemplateDocument | null;
   runtimeData?: Record<string, unknown>;
   repository?: TemplateRepository | null;
   storageKey?: string;
@@ -150,15 +136,14 @@ export interface PrintTemplateStudioEmitValidators {
   "update:template": (template: TemplateDocument) => boolean;
   "update:runtimeData": (runtimeData: Record<string, unknown>) => boolean;
   "template-change": (template: TemplateDocument) => boolean;
-  "template-migrated": (payload: TemplateMigratedPayload) => boolean;
   error: (payload: PrintTemplateStudioErrorPayload) => boolean;
   ready: (instance: PrintTemplateStudioInstance) => boolean;
 }
 
 export interface PrintTemplateStudioInstance {
   whenReady(): Promise<PrintTemplateStudioInstance>;
-  loadTemplateDocument(document: TemplateDocumentInput): TemplateResult | undefined;
-  replaceTemplateDocument(document: TemplateDocumentInput): Promise<TemplateResult | null> | undefined;
+  loadTemplateDocument(document: TemplateDocument): TemplateResult | undefined;
+  replaceTemplateDocument(document: TemplateDocument): Promise<TemplateResult | null> | undefined;
   getTemplateDocument(): TemplateResult | undefined;
   getPublishReadyTemplatePayload(): TemplateResult & { payload?: TemplateDocument | null } | undefined;
   setRuntimeData(data: Record<string, unknown>): void;
@@ -179,7 +164,6 @@ export const PrintTemplateStudio: DefineComponent<
 export const TEMPLATE_SCHEMA_VERSION: number;
 export function createBlankTemplateDocument(overrides?: Partial<TemplateDocument>): TemplateDocument;
 export function validateTemplateDocument(document: unknown): TemplateResult;
-export function migrateTemplateDocument(document: unknown): TemplateResult & { fromVersion?: number };
 export function serializeTemplateDocument(document: unknown): TemplateResult;
 export function createPublishReadyTemplatePayload(document: unknown): TemplateResult & { payload?: TemplateDocument | null };
 export function createLocalTemplateRepository(options?: { storage?: Storage; key?: string }): TemplateRepository;

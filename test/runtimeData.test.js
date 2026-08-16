@@ -91,7 +91,7 @@ test("validates print runtime with the same blocking issues used by preview", ()
 
 test("runtime data cannot replace authored table columns or presentation", () => {
   const document = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     pages: [{ id: "page-1", elements: [{ id: "items", type: "table", x: 0, y: 0, width: 80, height: 32, props: { columns: [{ key: "sku", valuePath: "product.sku", title: "SKU", width: 48 }], columnsVariable: "runtimeColumns", dataVariable: "items" }, style: { color: "#123456" } }] }],
   };
   const resolved = resolveRuntimeTemplate(document, { runtimeColumns: [{ key: "unsafe", title: "Unsafe", width: 1 }], items: [{ product: { sku: "A-1" } }] });

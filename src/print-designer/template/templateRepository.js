@@ -1,6 +1,6 @@
 import { createBlankTemplateDocument, serializeTemplateDocument, validateTemplateDocument } from "./templateDocument.js";
 
-const DEFAULT_STORAGE_KEY = "print-template-studio:templates:v1";
+const DEFAULT_STORAGE_KEY = "print-template-studio:templates:v2";
 
 function clone(value) {
   if (typeof structuredClone === "function") {

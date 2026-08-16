@@ -6,7 +6,7 @@ import { pageCards } from "../../mock/pages";
 import { createTemplateModel } from "../documentModel.js";
 import { mmToRoundedCssPx } from "../measurement.js";
 import { CUSTOM_PAPER_SIZE_KEY, getPaperPreset } from "../paperSizePresets";
-import { createBlankTemplateDocument, migrateTemplateDocument } from "../../template/templateDocument.js";
+import { createBlankTemplateDocument, validateTemplateDocument } from "../../template/templateDocument.js";
 
 const DEFAULT_PAPER_KEY = "A4";
 const DEFAULT_PAPER_PRESET = getPaperPreset(DEFAULT_PAPER_KEY);
@@ -173,10 +173,10 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
   }
 
   function loadTemplateDocument(source, { markAsDirty = false } = {}) {
-    const { document, issues, fromVersion } = migrateTemplateDocument(source);
+    const { document, issues } = validateTemplateDocument(source);
 
     if (!document) {
-      return { document: null, issues, fromVersion };
+      return { document: null, issues };
     }
 
     templateId.value = document.id;
@@ -230,7 +230,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
       markSaved();
     }
 
-    return { document, issues, fromVersion };
+    return { document, issues };
   }
 
   function createNewTemplate(overrides = {}) {

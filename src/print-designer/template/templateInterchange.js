@@ -1,4 +1,4 @@
-import { TEMPLATE_LIMITS, migrateTemplateDocument, serializeTemplateDocument, validateTemplateDocument } from "./templateDocument.js";
+import { TEMPLATE_LIMITS, serializeTemplateDocument, validateTemplateDocument } from "./templateDocument.js";
 
 export const TEMPLATE_INTERCHANGE_FORMAT = "print-template-studio/template";
 export const TEMPLATE_INTERCHANGE_VERSION = 2;
@@ -61,14 +61,10 @@ export function parseTemplateInterchange(input) {
     return error("format", "Template import uses an unsupported format.");
   }
   const formatVersion = Number(envelope.formatVersion);
-  if (![1, TEMPLATE_INTERCHANGE_VERSION].includes(formatVersion)) {
+  if (formatVersion !== TEMPLATE_INTERCHANGE_VERSION) {
     return error("formatVersion", `Template interchange version ${envelope.formatVersion ?? "unknown"} is not supported.`);
   }
 
-  const migration = migrateTemplateDocument(envelope.template);
-  if (!migration.document) {
-    return { document: null, issues: migration.issues };
-  }
   const validation = validateTemplateDocument(envelope.template);
   if (!validation.valid) {
     return { document: null, issues: validation.issues };
@@ -78,7 +74,7 @@ export function parseTemplateInterchange(input) {
   const now = new Date().toISOString();
   document.id = freshId();
   document.meta = { ...document.meta, createdAt: now, updatedAt: now };
-  return { document, issues: migration.issues };
+  return { document, issues: [] };
 }
 
 export function downloadTemplateInterchange(template, filename = "print-template.json") {

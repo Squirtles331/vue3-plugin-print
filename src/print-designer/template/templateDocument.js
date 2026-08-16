@@ -310,29 +310,6 @@ function normalizeSource(source) {
   };
 }
 
-function findExecutableLegacyFields(source, issues) {
-  const rawTemplate = source?.template && typeof source.template === "object" ? source.template : source;
-  (rawTemplate?.pages || []).forEach((page, pageIndex) => {
-    (page?.elements || []).forEach((element, elementIndex) => {
-      const props = object(element?.props);
-      if (props.customScript || props.customScriptVariable) {
-        issues.push({
-          path: `pages[${pageIndex}].elements[${elementIndex}].props`,
-          message: "Executable legacy table fields were removed. Use declarative transforms instead.",
-          severity: "warning",
-        });
-      }
-      if (props.columnsVariable || props.columnKey) {
-        issues.push({
-          path: `pages[${pageIndex}].elements[${elementIndex}].props.columnsVariable`,
-          message: "Dynamic table column schemas were removed. Static authored columns are used.",
-          severity: "warning",
-        });
-      }
-    });
-  });
-}
-
 function addRawBoundedIssues(rawTemplate, issues) {
   const pages = Array.isArray(rawTemplate?.pages) ? rawTemplate.pages : [];
   const totalElements = pages.reduce((total, page) => total + (Array.isArray(page?.elements) ? page.elements.length : 0), 0);
@@ -372,10 +349,6 @@ function addRawBoundedIssues(rawTemplate, issues) {
 }
 
 function addRawGroupIssues(rawTemplate, issues) {
-  if (Number(rawTemplate?.schemaVersion || 0) < 2) {
-    return;
-  }
-
   const claimedElementIds = new Set();
   const groupIds = new Set();
   (Array.isArray(rawTemplate?.pages) ? rawTemplate.pages : []).forEach((page, pageIndex) => {
@@ -445,33 +418,21 @@ export function createBlankTemplateDocument(overrides = {}) {
   return normalizeSource({ ...document, ...clone(overrides) });
 }
 
-export function migrateTemplateDocument(source) {
-  const version = Number(source?.schemaVersion || 0);
-
-  if (version > TEMPLATE_SCHEMA_VERSION) {
-    return {
-      document: null,
-      issues: [{ path: "schemaVersion", message: `Template schema version ${version} is newer than this editor supports.`, severity: "error" }],
-      fromVersion: version,
-    };
-  }
-
-  const issues = version === TEMPLATE_SCHEMA_VERSION ? [] : [{ path: "schemaVersion", message: `A legacy template was normalized to schema version ${TEMPLATE_SCHEMA_VERSION}.`, severity: "warning" }];
-  const rawTemplate = source?.template && typeof source.template === "object" ? source.template : source;
-  if (rawTemplate?.meta?.unit && rawTemplate.meta.unit !== "mm") {
-    issues.push({ path: "meta.unit", message: "Template geometry is stored in millimetres; the legacy unit metadata was normalized to mm.", severity: "warning" });
-  }
-  findExecutableLegacyFields(source, issues);
-  return {
-    document: normalizeSource(source),
-    issues,
-    fromVersion: version,
-  };
-}
-
 export function validateTemplateDocument(source) {
   const issues = [];
   const rawTemplate = source?.template && typeof source.template === "object" ? source.template : source;
+  const version = Number(rawTemplate?.schemaVersion);
+  if (version !== TEMPLATE_SCHEMA_VERSION) {
+    return {
+      valid: false,
+      document: null,
+      issues: [{
+        path: "schemaVersion",
+        message: `Only template schema version ${TEMPLATE_SCHEMA_VERSION} is supported.`,
+        severity: "error",
+      }],
+    };
+  }
   try {
     if (JSON.stringify(rawTemplate || {}).length > TEMPLATE_LIMITS.maxSerializedCharacters) {
       issues.push({ path: "document", message: `Template exceeds ${TEMPLATE_LIMITS.maxSerializedCharacters} serialized characters.`, severity: "error" });
@@ -480,14 +441,13 @@ export function validateTemplateDocument(source) {
     issues.push({ path: "document", message: "Template must be serializable JSON data.", severity: "error" });
   }
   addStringSizeIssues(rawTemplate, "document", issues);
+  if (rawTemplate?.meta?.unit && rawTemplate.meta.unit !== "mm") {
+    issues.push({ path: "meta.unit", message: "Template unit must be mm.", severity: "error" });
+  }
   addRawBoundedIssues(rawTemplate, issues);
   addRawGroupIssues(rawTemplate, issues);
 
-  const { document, issues: migrationIssues } = migrateTemplateDocument(source);
-  issues.push(...migrationIssues);
-  if (!document) {
-    return { valid: false, document: null, issues };
-  }
+  const document = normalizeSource(source);
 
   if (!Array.isArray(document.pages) || !document.pages.length) {
     issues.push({ path: "pages", message: "A template requires at least one page.", severity: "error" });
@@ -525,7 +485,11 @@ export function validateTemplateDocument(source) {
 }
 
 export function serializeTemplateDocument(template, metadata = {}) {
-  const source = normalizeSource(template);
+  const sourceResult = validateTemplateDocument(template);
+  if (!sourceResult.valid) {
+    return sourceResult;
+  }
+  const source = sourceResult.document;
   const now = new Date().toISOString();
   const document = normalizeSource({
     ...source,

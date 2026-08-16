@@ -36,6 +36,7 @@ export function createTemplateModel({
   objectsById,
   }) {
   return {
+    schemaVersion: 2,
     meta: {
       name: documentName,
       unit,

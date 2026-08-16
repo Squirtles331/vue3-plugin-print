@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { test } from "vitest";
 import { reactive } from "vue";
 import { createElement } from "../src/print-designer/core/elementFactory.js";
 import { buildTableInsertOverrides, TABLE_INSERT_MODES } from "../src/print-designer/core/tableInsertBuilder.js";
-import { createBlankTemplateDocument, createPublishReadyTemplatePayload, migrateTemplateDocument, serializeTemplateDocument, validateTemplateDocument } from "../src/print-designer/template/templateDocument.js";
+import { createBlankTemplateDocument, createPublishReadyTemplatePayload, serializeTemplateDocument, validateTemplateDocument } from "../src/print-designer/template/templateDocument.js";
 import { getElementPropertyCapability, validateElementProperty } from "../src/print-designer/core/propertyCapabilities.js";
 import { createLocalTemplateRepository } from "../src/print-designer/template/templateRepository.js";
 import { createLocalRuntimeDataDraftRepository } from "../src/print-designer/template/runtimeDataDraftRepository.js";
@@ -50,9 +49,9 @@ test("default custom table is a 5 by 10 headerless grid sized like the blank-gri
   assert.equal(custom.height, 130);
 });
 
-test("migrates legacy table data into the safe editable cell model", () => {
-  const result = migrateTemplateDocument({
-    schemaVersion: 1,
+test("normalizes v2 table data into the safe editable cell model", () => {
+  const result = serializeTemplateDocument({
+    schemaVersion: 2,
     pages: [{
       id: "page-1",
       elements: [{
@@ -118,31 +117,26 @@ test("local repository deletes saved templates and clears only its own collectio
   assert.equal(storage.getItem("unrelated-preference"), "preserve-me");
 });
 
-test("local repository upgrades legacy v1 records when they are read", async () => {
+test("local repository rejects v1 records when they are read", async () => {
   const memory = new Map();
   const storage = { getItem: (key) => memory.get(key) || null, setItem: (key, value) => memory.set(key, value) };
   const repository = createLocalTemplateRepository({ storage, key: "legacy-read-templates" });
   const legacy = { schemaVersion: 1, id: "legacy-record", meta: { name: "Legacy record", unit: "mm" }, pages: [{ id: "page-1", elements: [] }] };
   storage.setItem("legacy-read-templates", JSON.stringify({ "legacy-record": legacy }));
 
-  const loaded = await repository.get("legacy-record");
-
-  assert.equal(loaded.schemaVersion, 2);
-  assert.deepEqual(loaded.pages[0].groups, []);
-  assert.equal(JSON.parse(storage.getItem("legacy-read-templates"))["legacy-record"].schemaVersion, 1);
+  await assert.rejects(() => repository.get("legacy-record"), /Stored template validation failed/);
 });
 
-test("upgrades v1 templates to v2 with persistent empty group collections", () => {
-  const result = migrateTemplateDocument({
+test("rejects v1 templates instead of migrating them", () => {
+  const result = validateTemplateDocument({
     schemaVersion: 1,
     id: "legacy-v1",
     pages: [{ id: "page-1", elements: [{ ...createElement("text"), id: "text-1" }] }],
   });
 
-  assert.equal(result.fromVersion, 1);
-  assert.equal(result.document.schemaVersion, 2);
-  assert.deepEqual(result.document.pages[0].groups, []);
-  assert.ok(result.issues.some((issue) => issue.severity === "warning"));
+  assert.equal(result.valid, false);
+  assert.equal(result.document, null);
+  assert.match(result.issues[0].message, /Only template schema version 2/);
 });
 
 test("normalizes v2 same-page groups and reports invalid group constraints", () => {
@@ -194,32 +188,15 @@ test("publish-ready payload only exposes runtime template fields", () => {
   assert.deepEqual(Object.keys(result.payload).sort(), ["id", "meta", "pageSettings", "pages", "schemaVersion"]);
 });
 
-test("normalizes documented legacy page and element aliases into canonical fields", () => {
-  const fixture = JSON.parse(readFileSync(new URL("./fixtures/legacy-template-v0.json", import.meta.url), "utf8"));
-  const result = migrateTemplateDocument(fixture);
-  const page = result.document.pages[0];
-  const element = page.elements[0];
-
-  assert.equal(result.issues[0].severity, "warning");
-  assert.deepEqual(result.document.pageSettings.margin, { top: 7, right: 6, bottom: 7, left: 6 });
-  assert.equal(result.document.pageSettings.background, "#f8fafc");
-  assert.equal(element.x, 8);
-  assert.equal(element.y, 12);
-  assert.equal(element.props.format, "CODE39");
-  assert.equal("pageWidthMm" in result.document.pageSettings, false);
-  assert.equal("left" in element, false);
-  assert.equal("selected" in element, false);
-});
-
-test("normalizes legacy unit metadata to millimetres", () => {
-  const result = migrateTemplateDocument({
-    schemaVersion: 1,
+test("rejects a non-v2 document unit", () => {
+  const result = validateTemplateDocument({
+    schemaVersion: 2,
     meta: { name: "Legacy pixels", unit: "px" },
     pages: [{ id: "page-1", elements: [] }],
   });
 
-  assert.equal(result.document.meta.unit, "mm");
-  assert.ok(result.issues.some((issue) => issue.path === "meta.unit"));
+  assert.equal(result.valid, false);
+  assert.ok(result.issues.some((issue) => issue.path === "meta.unit" && issue.severity === "error"));
 });
 
 test("reports bounded invalid values without serializing invalid output", () => {

@@ -74,7 +74,7 @@ describe("layout commands", () => {
     expect(state.objectsById.beta.x).toBe(54);
 
     const serialized = serializeTemplateDocument({
-      schemaVersion: 1,
+      schemaVersion: 2,
       id: "layout-document",
       meta: { name: "Layout document", unit: "mm" },
       pageSettings: { paper: page, margin: { top: 0, right: 0, bottom: 0, left: 0 } },

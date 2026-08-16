@@ -9,7 +9,6 @@ export {
   TEMPLATE_SCHEMA_VERSION,
   createBlankTemplateDocument,
   createPublishReadyTemplatePayload,
-  migrateTemplateDocument,
   serializeTemplateDocument,
   validateTemplateDocument,
 } from "../print-designer/template/templateDocument.js";

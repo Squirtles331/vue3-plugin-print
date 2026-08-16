@@ -26,7 +26,7 @@ const props = defineProps({
   printPolicy: { type: Object, default: () => ({}) },
 });
 
-const emit = defineEmits(["update:template", "update:runtimeData", "template-change", "template-migrated", "error", "ready"]);
+const emit = defineEmits(["update:template", "update:runtimeData", "template-change", "error", "ready"]);
 const mountTargetRef = ref(null);
 let editorApp = null;
 let editorRoot = null;
@@ -44,7 +44,7 @@ const containerStyle = computed(() => ({
 function localStorageKeys(storageKey) {
   if (!storageKey || storageKey === "default") {
     return {
-      templates: "print-template-studio:templates:v1",
+      templates: "print-template-studio:templates:v2",
       presets: "print-template-studio:element-presets:v1",
       runtimeDataDrafts: "print-template-studio:runtime-data-drafts:v2",
     };
@@ -52,7 +52,7 @@ function localStorageKeys(storageKey) {
 
   const namespace = storageKey.trim() || "default";
   return {
-      templates: `print-template-studio:${namespace}:templates:v1`,
+      templates: `print-template-studio:${namespace}:templates:v2`,
       presets: `print-template-studio:${namespace}:element-presets:v1`,
       runtimeDataDrafts: `print-template-studio:${namespace}:runtime-data-drafts:v2`,
   };
@@ -117,10 +117,6 @@ function onError(payload) {
   emit("error", payload);
 }
 
-function onTemplateMigrated(payload) {
-  emit("template-migrated", payload);
-}
-
 onMounted(() => {
   const keys = localStorageKeys(props.storageKey);
   const repository = props.repository || createLocalTemplateRepository({ key: keys.templates });
@@ -133,7 +129,6 @@ onMounted(() => {
     runtimeData: props.runtimeData,
     printPolicy: props.printPolicy,
     onTemplateChange,
-    onTemplateMigrated,
     onUpdateRuntimeData: onRuntimeDataChange,
     onError,
   });
