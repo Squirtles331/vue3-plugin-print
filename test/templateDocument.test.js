@@ -7,6 +7,7 @@ import { buildTableInsertOverrides, TABLE_INSERT_MODES } from "../src/print-desi
 import { createBlankTemplateDocument, createPublishReadyTemplatePayload, migrateTemplateDocument, serializeTemplateDocument, validateTemplateDocument } from "../src/print-designer/template/templateDocument.js";
 import { getElementPropertyCapability, validateElementProperty } from "../src/print-designer/core/propertyCapabilities.js";
 import { createLocalTemplateRepository } from "../src/print-designer/template/templateRepository.js";
+import { createLocalRuntimeDataDraftRepository } from "../src/print-designer/template/runtimeDataDraftRepository.js";
 
 test("new elements reserve business data for table line-item presets only", () => {
   const text = createElement("text");
@@ -31,8 +32,48 @@ test("custom table insert keeps structural dimensions without sample data", () =
   assert.equal(custom.props.columns.length, 3);
   assert.deepEqual(custom.props.sampleData, []);
   assert.deepEqual(custom.props.footerData, []);
+  assert.equal(custom.props.showHeader, false);
   assert.equal(custom.props.showFooter, false);
+  assert.equal(custom.props.rowHeight, 13);
   assert.equal(custom.editorHints.rowCount, 4);
+});
+
+test("default custom table is a 5 by 10 headerless grid sized like the blank-grid preset", () => {
+  const custom = buildTableInsertOverrides({ mode: TABLE_INSERT_MODES.CUSTOM });
+
+  assert.equal(custom.props.columns.length, 5);
+  assert.equal(custom.editorHints.rowCount, 10);
+  assert.equal(custom.props.showHeader, false);
+  assert.equal(custom.props.showFooter, false);
+  assert.equal(custom.props.rowHeight, 13);
+  assert.equal(custom.width, 180);
+  assert.equal(custom.height, 130);
+});
+
+test("migrates legacy table data into the safe editable cell model", () => {
+  const result = migrateTemplateDocument({
+    schemaVersion: 1,
+    pages: [{
+      id: "page-1",
+      elements: [{
+        id: "table-1",
+        type: "table",
+        props: {
+          columns: [{ field: "amount", header: "Amount" }],
+          data: [{ amount: { value: 3, rowSpan: 2, style: { backgroundColor: "#ffffff", customCss: "blocked" } } }],
+          rowHeights: { body: { 0: 9, bad: 20 }, footer: { 1: 7 } },
+          customScript: "alert('blocked')",
+        },
+      }],
+    }],
+  });
+  const table = result.document.pages[0].elements[0];
+
+  assert.equal(table.props.columns[0].key, "amount");
+  assert.equal(table.props.sampleData[0].amount.value, 3);
+  assert.deepEqual(table.props.sampleData[0].amount.style, { backgroundColor: "#ffffff" });
+  assert.deepEqual(table.props.rowHeights, { body: { 0: 9 }, footer: { 1: 7 } });
+  assert.equal("customScript" in table.props, false);
 });
 
 test("template serialization strips editor-only page state", () => {
@@ -42,7 +83,8 @@ test("template serialization strips editor-only page state", () => {
   const result = serializeTemplateDocument(template);
 
   assert.equal(result.valid, true);
-  assert.equal(result.document.schemaVersion, 1);
+  assert.equal(result.document.schemaVersion, 2);
+  assert.deepEqual(result.document.pages[0].groups, []);
   assert.equal("isCurrent" in result.document.pages[0], false);
   assert.equal("selected" in result.document.pages[0].elements[0], false);
 });
@@ -74,6 +116,68 @@ test("local repository deletes saved templates and clears only its own collectio
   await repository.clear();
   assert.deepEqual(await repository.list(), []);
   assert.equal(storage.getItem("unrelated-preference"), "preserve-me");
+});
+
+test("local repository upgrades legacy v1 records when they are read", async () => {
+  const memory = new Map();
+  const storage = { getItem: (key) => memory.get(key) || null, setItem: (key, value) => memory.set(key, value) };
+  const repository = createLocalTemplateRepository({ storage, key: "legacy-read-templates" });
+  const legacy = { schemaVersion: 1, id: "legacy-record", meta: { name: "Legacy record", unit: "mm" }, pages: [{ id: "page-1", elements: [] }] };
+  storage.setItem("legacy-read-templates", JSON.stringify({ "legacy-record": legacy }));
+
+  const loaded = await repository.get("legacy-record");
+
+  assert.equal(loaded.schemaVersion, 2);
+  assert.deepEqual(loaded.pages[0].groups, []);
+  assert.equal(JSON.parse(storage.getItem("legacy-read-templates"))["legacy-record"].schemaVersion, 1);
+});
+
+test("upgrades v1 templates to v2 with persistent empty group collections", () => {
+  const result = migrateTemplateDocument({
+    schemaVersion: 1,
+    id: "legacy-v1",
+    pages: [{ id: "page-1", elements: [{ ...createElement("text"), id: "text-1" }] }],
+  });
+
+  assert.equal(result.fromVersion, 1);
+  assert.equal(result.document.schemaVersion, 2);
+  assert.deepEqual(result.document.pages[0].groups, []);
+  assert.ok(result.issues.some((issue) => issue.severity === "warning"));
+});
+
+test("normalizes v2 same-page groups and reports invalid group constraints", () => {
+  const first = { ...createElement("text"), id: "text-1" };
+  const second = { ...createElement("text"), id: "text-2" };
+  const valid = serializeTemplateDocument({
+    schemaVersion: 2,
+    id: "grouped",
+    pages: [{ id: "page-1", elements: [first, second], groups: [{ id: "group-1", name: "Address", elementIds: ["text-1", "text-2"] }] }],
+  });
+  const invalid = validateTemplateDocument({
+    ...valid.document,
+    pages: [{ ...valid.document.pages[0], groups: [{ id: "group-1", elementIds: ["text-1", "text-1"] }] }],
+  });
+
+  assert.equal(valid.valid, true);
+  assert.deepEqual(valid.document.pages[0].groups[0].elementIds, ["text-1", "text-2"]);
+  assert.equal(invalid.valid, false);
+  assert.ok(invalid.issues.some((issue) => issue.path.endsWith("groups[0].elementIds")));
+});
+
+test("runtime data drafts are isolated per template and never enter template JSON", async () => {
+  const memory = new Map();
+  const storage = { getItem: (key) => memory.get(key) || null, setItem: (key, value) => memory.set(key, value) };
+  const drafts = createLocalRuntimeDataDraftRepository({ storage, key: "test-runtime-drafts" });
+  const document = createBlankTemplateDocument({ id: "template-a" });
+
+  await drafts.save("template-a", { customer: { name: "Ada" } });
+  await drafts.save("template-b", { customer: { name: "Grace" } });
+
+  assert.deepEqual(await drafts.get("template-a"), { customer: { name: "Ada" } });
+  assert.deepEqual(await drafts.get("template-b"), { customer: { name: "Grace" } });
+  assert.equal(JSON.stringify(serializeTemplateDocument(document).document).includes("Ada"), false);
+  assert.equal(await drafts.delete("template-a"), true);
+  assert.equal(await drafts.get("template-a"), null);
 });
 
 test("local repository surfaces corrupt browser storage", async () => {

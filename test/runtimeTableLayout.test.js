@@ -80,3 +80,28 @@ test("runtime table uses a single preview placeholder row and omits it when prin
   preview.unmount();
   printed.unmount();
 });
+
+test("runtime pagination keeps a merged row group in one table fragment", () => {
+  const document = createTableDocument({
+    columns: [{ key: "name" }, { key: "amount" }],
+    sampleData: [
+      { name: { value: "Merged", rowSpan: 2 }, amount: "1" },
+      { name: { value: "", rowSpan: 0, colSpan: 0 }, amount: "2" },
+      { name: "Last", amount: "3" },
+    ],
+    footerData: [],
+    showFooter: false,
+    headerHeight: 5,
+    rowHeight: 8,
+    autoPaginate: true,
+  });
+  document.pages[0].elements[0].height = 20;
+  const wrapper = mount(RuntimeDocument, { props: { document, runtimeData: {}, mode: "preview" } });
+  const pages = wrapper.findAll(".runtime-page");
+
+  assert.equal(pages.length, 2);
+  assert.equal(pages[0].findAll("tbody tr").length, 2);
+  assert.equal(pages[0].find("tbody td").attributes("rowspan"), "2");
+  assert.deepEqual(pages[1].findAll("tbody td").map((cell) => cell.text()), ["Last", "3"]);
+  wrapper.unmount();
+});

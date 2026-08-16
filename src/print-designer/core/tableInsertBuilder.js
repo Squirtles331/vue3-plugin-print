@@ -6,6 +6,11 @@ export const TABLE_INSERT_MODES = {
 export const DEFAULT_TABLE_INSERT_MODE = TABLE_INSERT_MODES.SAMPLE;
 export const DEFAULT_TABLE_INSERT_COLUMN_COUNT = 5;
 export const DEFAULT_TABLE_INSERT_ROW_COUNT = 26;
+export const DEFAULT_CUSTOM_TABLE_INSERT_ROW_COUNT = 10;
+
+const SAMPLE_TABLE_ROW_HEIGHT = 6;
+const CUSTOM_TABLE_ROW_HEIGHT = 13;
+const DEFAULT_TABLE_COLUMN_WIDTH = 36;
 
 const LINE_ITEM_COLUMNS = [
   { key: "id", valuePath: "id", title: "ID", width: 60, align: "center" },
@@ -88,25 +93,30 @@ export function createTableSummaryRows(columns) {
   );
 }
 
-function createInsertedTableSize(columnCount, rowCount, footerRowCount) {
+function createInsertedTableSize(columnCount, rowCount, footerRowCount, { mode, rowHeight } = {}) {
+  const isCustom = mode === TABLE_INSERT_MODES.CUSTOM;
+  const headerHeight = isCustom ? 0 : 7;
+  const footerHeight = isCustom ? 0 : footerRowCount * 7;
   return {
-    width: Math.min(220, Math.max(120, columnCount * 36)),
-    height: Math.min(220, Math.max(48, 7 + rowCount * 6 + footerRowCount * 7)),
+    width: Math.min(220, Math.max(120, columnCount * DEFAULT_TABLE_COLUMN_WIDTH)),
+    height: Math.min(220, Math.max(48, headerHeight + rowCount * rowHeight + footerHeight)),
   };
 }
 
 export function buildTableInsertOverrides({
   mode = DEFAULT_TABLE_INSERT_MODE,
   columnCount = DEFAULT_TABLE_INSERT_COLUMN_COUNT,
-  rowCount = DEFAULT_TABLE_INSERT_ROW_COUNT,
+  rowCount = mode === TABLE_INSERT_MODES.CUSTOM ? DEFAULT_CUSTOM_TABLE_INSERT_ROW_COUNT : DEFAULT_TABLE_INSERT_ROW_COUNT,
 } = {}) {
   const normalizedColumnCount = normalizePositiveInteger(columnCount, DEFAULT_TABLE_INSERT_COLUMN_COUNT);
-  const normalizedRowCount = normalizePositiveInteger(rowCount, DEFAULT_TABLE_INSERT_ROW_COUNT);
+  const fallbackRowCount = mode === TABLE_INSERT_MODES.CUSTOM ? DEFAULT_CUSTOM_TABLE_INSERT_ROW_COUNT : DEFAULT_TABLE_INSERT_ROW_COUNT;
+  const normalizedRowCount = normalizePositiveInteger(rowCount, fallbackRowCount);
   const isSample = mode === TABLE_INSERT_MODES.SAMPLE;
   const columns = createTableInsertColumns(normalizedColumnCount, { mode });
   const sampleData = isSample ? createSampleTableRows(columns, normalizedRowCount) : [];
   const footerData = isSample ? createTableSummaryRows(columns) : [];
-  const size = createInsertedTableSize(normalizedColumnCount, normalizedRowCount, footerData.length);
+  const rowHeight = isSample ? SAMPLE_TABLE_ROW_HEIGHT : CUSTOM_TABLE_ROW_HEIGHT;
+  const size = createInsertedTableSize(normalizedColumnCount, normalizedRowCount, footerData.length, { mode, rowHeight });
 
   return {
     ...size,
@@ -115,11 +125,12 @@ export function buildTableInsertOverrides({
       sampleData,
       footerData,
       blankHeaders: !isSample,
-      showHeader: true,
+      showHeader: isSample,
       showFooter: footerData.length > 0,
       headerHeight: 7,
-      rowHeight: 6,
+      rowHeight,
       footerHeight: 7,
+      rowHeights: { body: {}, footer: {} },
     },
     editorHints: {
       omitRows: false,

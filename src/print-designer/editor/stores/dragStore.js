@@ -17,6 +17,7 @@ function normalizePaletteDragItem(item) {
 
 export const useEditorDragStore = defineStore("printDesignerDrag", () => {
   const activePaletteSession = ref(null);
+  const requestedPaletteInsert = ref(null);
   const nextSessionId = ref(1);
 
   const activePaletteItem = computed(() => activePaletteSession.value?.item || null);
@@ -48,11 +49,31 @@ export const useEditorDragStore = defineStore("printDesignerDrag", () => {
     return true;
   }
 
+  function requestPaletteInsert(item) {
+    const normalizedItem = normalizePaletteDragItem(item);
+    if (!normalizedItem) {
+      return false;
+    }
+    requestedPaletteInsert.value = { id: nextSessionId.value++, item: normalizedItem };
+    return true;
+  }
+
+  function consumePaletteInsert(requestId) {
+    if (!requestedPaletteInsert.value || (requestId != null && requestedPaletteInsert.value.id !== requestId)) {
+      return false;
+    }
+    requestedPaletteInsert.value = null;
+    return true;
+  }
+
   return {
     activePaletteSession,
+    requestedPaletteInsert,
     activePaletteItem,
     isPaletteDragging,
     beginPaletteDrag,
     clearPaletteDrag,
+    requestPaletteInsert,
+    consumePaletteInsert,
   };
 });

@@ -33,19 +33,26 @@
       @duplicate="onDuplicateLayer"
       @remove="onRemoveLayer"
     />
-    <DataPanel v-else :variables="variables" :search-query="searchQuery" @select="emit('bind', $event)" />
+    <RuntimeDataPanel
+      v-else
+      :runtime-data="runtimeData"
+      :variables="variables"
+      :selected-count="selectedIds.length"
+      :search-query="searchQuery"
+      @update:runtime-data="emit('runtime-data', $event)"
+      @bind="emit('bind', $event)"
+    />
   </section>
 </template>
 
 <script setup>
 import { computed, onBeforeUnmount } from "vue";
 import { storeToRefs } from "pinia";
-import DataPanel from "../../components/sidebar/DataPanel.vue";
 import InsertPanel from "../../components/sidebar/InsertPanel.vue";
 import LayersPanel from "../../components/sidebar/LayersPanel.vue";
 import PagesPanel from "../../components/sidebar/PagesPanel.vue";
-import { createElement } from "../../core/elementFactory.js";
-import { createAddObjectCommand, createRemoveObjectsCommand, createUpdateObjectPropsCommand } from "../commands/documentCommands.js";
+import RuntimeDataPanel from "../panels/RuntimeDataPanel.vue";
+import { createRemoveObjectsCommand, createUpdateObjectPropsCommand } from "../commands/documentCommands.js";
 import { executeEditorCommand } from "../commands/executeCommand.js";
 import { createDuplicateCommand, createDuplicateObjects, createReorderObjectCommand } from "../commands/layoutCommands.js";
 import {
@@ -62,6 +69,7 @@ import { useEditorHistoryStore } from "../stores/historyStore";
 import { useEditorSelectionStore } from "../stores/selectionStore";
 import { useEditorShellStore } from "../stores/shellStore";
 import { useEditorViewportStore } from "../stores/viewportStore.js";
+import { useEditorPreviewStore } from "../stores/previewStore.js";
 
 const props = defineProps({
   panelKey: {
@@ -73,7 +81,7 @@ const props = defineProps({
     default: "",
   },
 });
-const emit = defineEmits(["bind"]);
+const emit = defineEmits(["bind", "runtime-data"]);
 
 const documentStore = useEditorDocumentStore();
 const dragStore = useEditorDragStore();
@@ -81,8 +89,10 @@ const historyStore = useEditorHistoryStore();
 const selectionStore = useEditorSelectionStore();
 const shellStore = useEditorShellStore();
 const viewportStore = useEditorViewportStore();
+const previewStore = useEditorPreviewStore();
 const { palette, pages, layers, variables, objectsById, pageWidthMm, pageHeightMm } = storeToRefs(documentStore);
 const { selectedIds } = storeToRefs(selectionStore);
+const { runtimeData } = storeToRefs(previewStore);
 const { allowOverflowDrag } = storeToRefs(viewportStore);
 const resolvedPanelKey = computed(() => {
   if (props.panelKey === "insert") {
@@ -123,20 +133,7 @@ function onPaletteDragEnd() {
 }
 
 function onPaletteInsert(item) {
-  if (!item?.type) {
-    return;
-  }
-
-  const pageId = documentStore.currentPage?.id || "page-1";
-  const nextObject = createElement(item.type, {
-    pageId,
-    zIndex: documentStore.layers.length,
-  });
-
-  runCommand(createAddObjectCommand(documentStore, nextObject));
-  selectionStore.select(nextObject.id);
-  selectionStore.focusedPageId = pageId;
-  selectionStore.hoverObjectId = null;
+  dragStore.requestPaletteInsert(item);
   shellStore.openRightDock("properties");
 }
 
@@ -189,7 +186,12 @@ function onMovePage({ page, direction }) {
 }
 
 function onLayerSelect(layerId) {
-  selectionStore.select(layerId);
+  const group = documentStore.currentPage?.groups?.find((candidate) => candidate.elementIds?.includes(layerId));
+  if (group) {
+    selectionStore.selectGroup(group);
+  } else {
+    selectionStore.select(layerId);
+  }
   selectionStore.focusedPageId = documentStore.currentPage?.id || "page-1";
   selectionStore.hoverObjectId = null;
 }

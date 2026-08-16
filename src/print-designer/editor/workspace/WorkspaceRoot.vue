@@ -150,8 +150,9 @@ const {
   draggingGuide,
   activeGuideDraft,
 } = storeToRefs(viewportStore);
-const { currentPage, unit, pageWidthMm, pageHeightMm, pageWidthPx, pageHeightPx } =
+const { currentPage, unit, pageWidthMm, pageHeightMm, pageWidthPx, pageHeightPx, marginTopMm, marginRightMm, marginBottomMm, marginLeftMm } =
   storeToRefs(documentStore);
+const { requestedPaletteInsert } = storeToRefs(dragStore);
 
 const viewportRef = ref(null);
 const canvasViewportRef = ref(null);
@@ -160,6 +161,7 @@ const paperOffsetTop = ref(0);
 const pendingTableInsert = ref(null);
 const tableDialogVisible = ref(false);
 let viewportResizeObserver = null;
+let clickInsertOffset = 0;
 
 const scaledPaperWidth = computed(() => Math.round(pageWidthPx.value * zoom.value));
 const scaledPaperHeight = computed(() => Math.round(pageHeightPx.value * zoom.value));
@@ -293,12 +295,42 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
-function clampInsertPosition(position, size, pageSize) {
+function clampSafeInsertPosition(position, size, pageSize, startMargin, endMargin) {
   if (viewportStore.allowOverflowDrag) {
     return roundMm(position);
   }
+  const min = Math.max(0, Number(startMargin) || 0);
+  const max = Math.max(min, Number(pageSize) - (Number(endMargin) || 0) - Number(size));
+  return clamp(roundMm(position), min, max);
+}
 
-  return clamp(roundMm(position), 0, Math.max(0, roundMm(pageSize - size)));
+function defaultInsertPoint(item) {
+  const preview = createElement(item.type, { pageId: currentPage.value?.id || "page-1" });
+  const offset = (clickInsertOffset++ % 6) * 4;
+  return {
+    x: clampSafeInsertPosition((Number(marginLeftMm.value) || 0) + 8 + offset, preview.width, pageWidthMm.value, marginLeftMm.value, marginRightMm.value),
+    y: clampSafeInsertPosition((Number(marginTopMm.value) || 0) + 8 + offset, preview.height, pageHeightMm.value, marginTopMm.value, marginBottomMm.value),
+  };
+}
+
+function insertPaletteItem(payload, point) {
+  if (!payload?.type || !point) {
+    return false;
+  }
+  const pageId = currentPage.value?.id || "page-1";
+  if (payload.type === ElementType.TABLE) {
+    pendingTableInsert.value = { pageId, x: roundMm(point.x), y: roundMm(point.y) };
+    tableDialogVisible.value = true;
+    return true;
+  }
+  const nextObject = createElement(payload.type, { pageId });
+  nextObject.x = clampSafeInsertPosition(point.x, nextObject.width, pageWidthMm.value, marginLeftMm.value, marginRightMm.value);
+  nextObject.y = clampSafeInsertPosition(point.y, nextObject.height, pageHeightMm.value, marginTopMm.value, marginBottomMm.value);
+  executeEditorCommand(historyStore, createAddObjectCommand(documentStore, nextObject));
+  selectionStore.select(nextObject.id);
+  selectionStore.focusedPageId = pageId;
+  selectionStore.hoverObjectId = null;
+  return true;
 }
 
 function guideToViewportX(position) {
@@ -444,33 +476,9 @@ function onViewportDrop(event) {
     return;
   }
 
-  const pageId = currentPage.value?.id || "page-1";
-
-  if (payload.type === ElementType.TABLE) {
-    pendingTableInsert.value = {
-      pageId,
-      x: roundMm(point.documentX),
-      y: roundMm(point.documentY),
-    };
-    tableDialogVisible.value = true;
-    dragStore.clearPaletteDrag();
-    viewportStore.setPointerCoordinate(point.documentX, point.documentY, true);
-    return;
-  }
-
-  const nextObject = createElement(payload.type, {
-    pageId,
-  });
-
-  nextObject.x = clampInsertPosition(point.documentX, nextObject.width, pageWidthMm.value);
-  nextObject.y = clampInsertPosition(point.documentY, nextObject.height, pageHeightMm.value);
-
-  executeEditorCommand(historyStore, createAddObjectCommand(documentStore, nextObject));
-  selectionStore.select(nextObject.id);
-  selectionStore.focusedPageId = pageId;
-  selectionStore.hoverObjectId = null;
+  insertPaletteItem(payload, { x: point.documentX, y: point.documentY });
   dragStore.clearPaletteDrag();
-  viewportStore.setPointerCoordinate(nextObject.x, nextObject.y, true);
+  viewportStore.setPointerCoordinate(point.documentX, point.documentY, true);
 }
 
 function cancelTableInsert() {
@@ -492,8 +500,8 @@ function confirmTableInsert(config) {
     ...buildTableInsertOverrides(config),
   });
 
-  nextObject.x = clampInsertPosition(pendingInsert.x, nextObject.width, pageWidthMm.value);
-  nextObject.y = clampInsertPosition(pendingInsert.y, nextObject.height, pageHeightMm.value);
+  nextObject.x = clampSafeInsertPosition(pendingInsert.x, nextObject.width, pageWidthMm.value, marginLeftMm.value, marginRightMm.value);
+  nextObject.y = clampSafeInsertPosition(pendingInsert.y, nextObject.height, pageHeightMm.value, marginTopMm.value, marginBottomMm.value);
 
   executeEditorCommand(historyStore, createAddObjectCommand(documentStore, nextObject));
   selectionStore.select(nextObject.id);
@@ -568,6 +576,14 @@ watch(
 watch([pageWidthPx, pageHeightPx], async () => {
   await nextTick();
   updateViewportMetrics();
+});
+
+watch(requestedPaletteInsert, (request) => {
+  if (!request?.item) {
+    return;
+  }
+  insertPaletteItem(request.item, defaultInsertPoint(request.item));
+  dragStore.consumePaletteInsert(request.id);
 });
 
 function getGuideDraft(event, orientation) {

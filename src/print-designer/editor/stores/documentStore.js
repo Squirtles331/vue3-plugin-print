@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { computed, ref, shallowRef } from "vue";
-import { cloneDeep } from "../../core/clone.js";
+import { cloneDeep, createId } from "../../core/clone.js";
 import { paletteItems } from "../../mock/palette";
 import { pageCards } from "../../mock/pages";
 import { createTemplateModel } from "../documentModel.js";
@@ -71,6 +71,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
 
   const totalPages = computed(() => pages.value.length);
   const currentPage = computed(() => pages.value.find((page) => page.id === currentPageId.value) || pages.value[0] || null);
+  const currentPageGroups = computed(() => Array.isArray(currentPage.value?.groups) ? currentPage.value.groups : []);
   const currentPageNumber = computed(() =>
     currentPage.value ? pages.value.findIndex((page) => page.id === currentPage.value.id) + 1 : 1
   );
@@ -172,10 +173,10 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
   }
 
   function loadTemplateDocument(source, { markAsDirty = false } = {}) {
-    const { document, issues } = migrateTemplateDocument(source);
+    const { document, issues, fromVersion } = migrateTemplateDocument(source);
 
     if (!document) {
-      return { document: null, issues };
+      return { document: null, issues, fromVersion };
     }
 
     templateId.value = document.id;
@@ -229,7 +230,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
       markSaved();
     }
 
-    return { document, issues };
+    return { document, issues, fromVersion };
   }
 
   function createNewTemplate(overrides = {}) {
@@ -300,6 +301,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     pageObjectMap.value = Object.fromEntries(
       Object.entries(pageObjectMap.value).map(([pageId, ids]) => [pageId, ids.filter((id) => id !== objectId)])
     );
+    prunePageGroups([objectId]);
     markDirty();
     return true;
   }
@@ -318,6 +320,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     pageObjectMap.value = Object.fromEntries(
       Object.entries(pageObjectMap.value).map(([pageId, ids]) => [pageId, ids.filter((id) => !removable.has(id))])
     );
+    prunePageGroups(removableIds);
     markDirty();
     return true;
   }
@@ -460,6 +463,67 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
       [pageId]: nextIds,
     };
     markDirty();
+    return true;
+  }
+
+  function setPageGroups(pageId, groups = []) {
+    const knownIds = new Set(pageObjectMap.value[pageId] || []);
+    const claimedIds = new Set();
+    const groupIds = new Set();
+    const normalizedGroups = (Array.isArray(groups) ? groups : []).reduce((result, group, index) => {
+      const id = String(group?.id || `group-${index + 1}`).trim();
+      if (!id || groupIds.has(id)) {
+        return result;
+      }
+      const elementIds = [...new Set(Array.isArray(group?.elementIds) ? group.elementIds.map((item) => String(item || "").trim()) : [])]
+        .filter((elementId) => elementId && knownIds.has(elementId) && !claimedIds.has(elementId));
+      if (elementIds.length < 2) {
+        return result;
+      }
+      groupIds.add(id);
+      elementIds.forEach((elementId) => claimedIds.add(elementId));
+      result.push({ id, name: String(group?.name || `Group ${result.length + 1}`).trim() || `Group ${result.length + 1}`, elementIds });
+      return result;
+    }, []);
+
+    pages.value = pages.value.map((page) => (page.id === pageId ? { ...page, groups: normalizedGroups } : page));
+    markDirty();
+    return normalizedGroups;
+  }
+
+  function prunePageGroups(removedIds = []) {
+    const removed = new Set(removedIds);
+    if (!removed.size) {
+      return;
+    }
+    pages.value = pages.value.map((page) => {
+      const groups = Array.isArray(page.groups) ? page.groups : [];
+      const nextGroups = groups
+        .map((group) => ({ ...group, elementIds: (group.elementIds || []).filter((id) => !removed.has(id)) }))
+        .filter((group) => group.elementIds.length >= 2);
+      return nextGroups.length === groups.length && nextGroups.every((group, index) => group.elementIds.length === groups[index].elementIds.length)
+        ? page
+        : { ...page, groups: nextGroups };
+    });
+  }
+
+  function createPageGroup(pageId, elementIds = [], name = "") {
+    const ids = [...new Set(elementIds)].filter((id) => objectsById.value[id]?.pageId === pageId);
+    if (ids.length < 2) {
+      return null;
+    }
+    const groups = Array.isArray(pages.value.find((page) => page.id === pageId)?.groups) ? pages.value.find((page) => page.id === pageId).groups : [];
+    const group = { id: createId("group"), name: String(name || `Group ${groups.length + 1}`).trim() || `Group ${groups.length + 1}`, elementIds: ids };
+    setPageGroups(pageId, [...groups, group]);
+    return group;
+  }
+
+  function removePageGroup(pageId, groupId) {
+    const page = pages.value.find((item) => item.id === pageId);
+    if (!page || !Array.isArray(page.groups) || !page.groups.some((group) => group.id === groupId)) {
+      return false;
+    }
+    setPageGroups(pageId, page.groups.filter((group) => group.id !== groupId));
     return true;
   }
 
@@ -719,6 +783,7 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     printMarksVisible,
     totalPages,
     currentPage,
+    currentPageGroups,
     currentPageNumber,
     currentPageTitle,
     layers,
@@ -739,6 +804,9 @@ export const useEditorDocumentStore = defineStore("printDesignerDocument", () =>
     restoreObjectSnapshot,
     applyObjectPatches,
     setPageObjectOrder,
+    setPageGroups,
+    createPageGroup,
+    removePageGroup,
     setPaperPreset,
     setPageDimensions,
     setOrientation,

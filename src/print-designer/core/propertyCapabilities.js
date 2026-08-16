@@ -78,6 +78,7 @@ export const ELEMENT_PROPERTY_CAPABILITIES = Object.freeze({
       { source: "props", key: "headerHeight", type: "number", min: 1, max: 200, runtimeEffect: "table" },
       { source: "props", key: "rowHeight", type: "number", min: 1, max: 200, runtimeEffect: "table" },
       { source: "props", key: "footerHeight", type: "number", min: 1, max: 200, runtimeEffect: "table" },
+      { source: "props", key: "rowHeights", type: "table-row-heights", runtimeEffect: "table" },
       { source: "editorHints", key: "omitRows", type: "boolean", editorOnly: true, runtimeEffect: "editor-preview" },
       { source: "editorHints", key: "rowCount", type: "number", min: 1, max: 500, editorOnly: true, runtimeEffect: "editor-preview" },
       { source: "props", key: "transform", type: "table-transform", runtimeEffect: "runtime-data" },
@@ -168,6 +169,23 @@ function validateTableTransform(value) {
   return "";
 }
 
+function validateTableRowHeights(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return "Table row heights must be an object.";
+  }
+  for (const section of ["body", "footer"]) {
+    const heights = value[section];
+    if (heights == null) continue;
+    if (!heights || typeof heights !== "object" || Array.isArray(heights)) {
+      return `Table ${section} row heights must be an object.`;
+    }
+    if (Object.entries(heights).some(([index, height]) => !/^\d+$/.test(index) || !Number.isFinite(Number(height)) || Number(height) < 1 || Number(height) > 200)) {
+      return "Table row heights must use non-negative row indexes and values between 1 and 200.";
+    }
+  }
+  return "";
+}
+
 export function getElementPropertyCapabilities(type) {
   const definition = ELEMENT_PROPERTY_CAPABILITIES[type] || { fields: [] };
   return {
@@ -221,6 +239,9 @@ export function validateElementProperty(type, source, key, value) {
   }
   if (capability.type === "table-transform") {
     return validateTableTransform(value) || null;
+  }
+  if (capability.type === "table-row-heights") {
+    return validateTableRowHeights(value) || null;
   }
   return null;
 }

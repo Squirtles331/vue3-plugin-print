@@ -1,5 +1,5 @@
 <template>
-  <component :is="component" :object="object" />
+  <component :is="component" :object="object" @start-object-drag="emit('start-object-drag', $event)" />
 </template>
 
 <script setup>
@@ -21,6 +21,8 @@ const props = defineProps({
     required: true,
   },
 });
+
+const emit = defineEmits(["start-object-drag"]);
 
 const components = {
   text: TextElement,

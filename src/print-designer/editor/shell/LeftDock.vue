@@ -45,7 +45,12 @@
           </div>
 
           <div class="left-dock__body">
-            <InsertAssetsPanel :panel-key="activeLeftPanel" :search-query="searchQuery" @bind="emit('bind', $event)" />
+            <InsertAssetsPanel
+              :panel-key="activeLeftPanel"
+              :search-query="searchQuery"
+              @bind="emit('bind', $event)"
+              @runtime-data="emit('runtime-data', $event)"
+            />
           </div>
         </div>
       </div>
@@ -66,7 +71,7 @@ import InsertAssetsPanel from "./InsertAssetsPanel.vue";
 import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorShellStore } from "../stores/shellStore";
 
-const emit = defineEmits(["bind"]);
+const emit = defineEmits(["bind", "runtime-data"]);
 const shellStore = useEditorShellStore();
 const documentStore = useEditorDocumentStore();
 const { activeLeftPanel, leftDockCollapsed, leftPanelWidth } = storeToRefs(shellStore);

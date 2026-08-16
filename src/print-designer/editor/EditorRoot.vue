@@ -14,7 +14,7 @@
       />
 
       <div class="editor-root__body">
-        <LeftDock @bind="onBindPath" />
+        <LeftDock @bind="onBindPath" @runtime-data="setRuntimeData" />
         <div class="editor-root__workspace-shell">
           <WorkspaceRoot />
         </div>
@@ -48,9 +48,8 @@
     <RuntimePreviewDialog
       v-model:visible="previewVisible"
       :document="previewDocument"
-      :initial-data="runtimeData"
+      :initial-data="previewRuntimeData"
       :print-policy="activePrintPolicy"
-      @update:runtime-data="setRuntimeData"
       @focus-issue="onFocusIssue"
       @print-error="onPrintError"
     />
@@ -71,14 +70,19 @@ import { useEditorShellStore } from "./stores/shellStore";
 import { useEditorViewportStore } from "./stores/viewportStore";
 import WorkspaceRoot from "./workspace/WorkspaceRoot.vue";
 import { createLocalTemplateRepository } from "../template/templateRepository.js";
+import { createLocalRuntimeDataDraftRepository } from "../template/runtimeDataDraftRepository.js";
 import { createLocalElementPresetRepository, instantiateElementPreset } from "../template/elementPresetRepository.js";
 import { instantiateStarterTemplate, listStarterTemplates } from "../template/templateCatalog.js";
 import { downloadTemplateInterchange, parseTemplateInterchange } from "../template/templateInterchange.js";
 import { createPublishReadyTemplatePayload, serializeTemplateDocument } from "../template/templateDocument.js";
 import { validatePrintRuntime } from "../runtime/preflight.js";
 import { collectRuntimeBindingPaths } from "../runtime/bindingPaths.js";
+import { resolveDataPath } from "../runtime/dataResolver.js";
 import { createRemoveObjectsCommand, createUpdateObjectPropsCommand } from "./commands/documentCommands.js";
 import { executeEditorCommand } from "./commands/executeCommand";
+import { createDuplicateObjects, createPatchTransactionCommand } from "./commands/layoutCommands.js";
+import { createGroupCommand, createUngroupCommand } from "./commands/groupCommands.js";
+import { cloneDeep } from "../core/clone.js";
 import TemplateLibraryDialog from "../template/TemplateLibraryDialog.vue";
 import StarterTemplateDialog from "../template/StarterTemplateDialog.vue";
 import ElementPresetDialog from "../template/ElementPresetDialog.vue";
@@ -90,9 +94,11 @@ const RuntimePreviewDialog = defineAsyncComponent(() => import("../runtime/Runti
 const props = defineProps({
   repository: { type: Object, default: null },
   presetRepository: { type: Object, default: null },
+  runtimeDataRepository: { type: Object, default: null },
+  runtimeData: { type: Object, default: undefined },
   printPolicy: { type: Object, default: () => ({}) },
 });
-const emit = defineEmits(["template-change", "update:runtimeData", "error"]);
+const emit = defineEmits(["template-change", "template-migrated", "update:runtimeData", "error"]);
 
 const editorRootRef = ref(null);
 const shellStore = useEditorShellStore();
@@ -103,6 +109,7 @@ const historyStore = useEditorHistoryStore();
 const selectionStore = useEditorSelectionStore();
 const repository = props.repository || createLocalTemplateRepository();
 const presetRepository = props.presetRepository || createLocalElementPresetRepository();
+const runtimeDataRepository = props.runtimeDataRepository || createLocalRuntimeDataDraftRepository();
 const activePrintPolicy = ref(props.printPolicy);
 const templateLibraryVisible = ref(false);
 const templateLibraryLoading = ref(false);
@@ -113,11 +120,17 @@ const presetLibraryVisible = ref(false);
 const savedPresets = ref([]);
 const previewVisible = ref(false);
 const previewDocument = shallowRef(null);
+const hostRuntimeData = ref(props.runtimeData);
+const hasHostRuntimeData = ref(props.runtimeData !== undefined && props.runtimeData !== null);
+let runtimeDataRevision = 0;
+let runtimeDraftTimer = null;
 
 const { statusbarVisible } = storeToRefs(shellStore);
-const { templateModel, templateId } = storeToRefs(documentStore);
-const { runtimeData } = storeToRefs(previewStore);
+const { templateModel, templateId, objectsById, currentPage, currentPageGroups, pageWidthMm, pageHeightMm } = storeToRefs(documentStore);
+const { runtimeData: previewRuntimeData } = storeToRefs(previewStore);
 const { selectedIds } = storeToRefs(selectionStore);
+const { allowOverflowDrag } = storeToRefs(viewportStore);
+let elementClipboard = null;
 
 function reportError(scope, error, fallback) {
   const message = error?.message || fallback;
@@ -132,6 +145,41 @@ function reportError(scope, error, fallback) {
 
 function currentTemplateResult() {
   return serializeTemplateDocument(templateModel.value, { id: templateId.value });
+}
+
+function emitMigration(result) {
+  if (!result?.document || !Number.isFinite(result.fromVersion) || result.fromVersion >= result.document.schemaVersion) {
+    return;
+  }
+  emit("template-migrated", { fromVersion: result.fromVersion, document: result.document, issues: result.issues || [] });
+}
+
+function scheduleRuntimeDataDraftSave(data) {
+  window.clearTimeout(runtimeDraftTimer);
+  const templateIdForDraft = templateId.value;
+  runtimeDraftTimer = window.setTimeout(async () => {
+    try {
+      await runtimeDataRepository.save(templateIdForDraft, data);
+    } catch (error) {
+      reportError("runtime-data-draft.save", error, "无法保存测试数据草稿");
+    }
+  }, 180);
+}
+
+async function restoreRuntimeDataForTemplate() {
+  const revision = runtimeDataRevision;
+  if (hasHostRuntimeData.value) {
+    setRuntimeData(hostRuntimeData.value, { persist: false, emitChange: false });
+    return;
+  }
+  try {
+    const draft = await runtimeDataRepository.get(templateId.value);
+    if (revision === runtimeDataRevision) {
+      setRuntimeData(draft || {}, { persist: false, emitChange: false });
+    }
+  } catch (error) {
+    reportError("runtime-data-draft.get", error, "无法恢复测试数据草稿");
+  }
 }
 
 watch(templateModel, () => {
@@ -160,7 +208,7 @@ function isEditableTarget(target) {
 }
 
 function deleteSelectedObjects() {
-  const command = createRemoveObjectsCommand(documentStore, selectedIds.value);
+  const command = createRemoveObjectsCommand(documentStore, expandedSelectedIds());
 
   if (!command) {
     return false;
@@ -171,16 +219,188 @@ function deleteSelectedObjects() {
   return true;
 }
 
+function expandedSelectedIds(ids = selectedIds.value) {
+  const expanded = new Set(ids);
+  currentPageGroups.value.forEach((group) => {
+    if (group.elementIds?.some((id) => expanded.has(id))) {
+      group.elementIds.forEach((id) => expanded.add(id));
+    }
+  });
+  return [...expanded];
+}
+
+function selectedCurrentPageObjects({ editable = false } = {}) {
+  const pageId = currentPage.value?.id;
+  return expandedSelectedIds()
+    .map((id) => objectsById.value[id])
+    .filter((object) => object && object.pageId === pageId && (!editable || !object.locked));
+}
+
+function copySelectedObjects() {
+  const objects = selectedCurrentPageObjects();
+  if (!objects.length) {
+    return false;
+  }
+  const selected = new Set(objects.map((object) => object.id));
+  elementClipboard = {
+    objects: cloneDeep(objects),
+    groups: cloneDeep(currentPageGroups.value.filter((group) => group.elementIds?.every((id) => selected.has(id)))),
+  };
+  return true;
+}
+
+function pasteCopiedObjects() {
+  if (!elementClipboard?.objects?.length || !currentPage.value) {
+    return false;
+  }
+  const pageId = currentPage.value.id;
+  const copies = createDuplicateObjects(elementClipboard.objects, {
+    widthMm: pageWidthMm.value,
+    heightMm: pageHeightMm.value,
+  }, { allowOverflow: allowOverflowDrag.value });
+  const originalGroups = cloneDeep(currentPageGroups.value);
+  const copiedIds = new Map(elementClipboard.objects.map((object, index) => [object.id, copies[index]?.id]));
+  const copiedGroups = elementClipboard.groups
+    .map((group, index) => ({
+      id: `${group.id}-copy-${Date.now()}-${index}`,
+      name: `${group.name || "Group"} 副本`,
+      elementIds: group.elementIds.map((id) => copiedIds.get(id)).filter(Boolean),
+    }))
+    .filter((group) => group.elementIds.length >= 2);
+  const command = {
+    id: `paste-elements-${Date.now()}`,
+    label: "Paste elements",
+    execute() {
+      documentStore.addObjects(copies);
+      if (copiedGroups.length) {
+        documentStore.setPageGroups(pageId, [...originalGroups, ...copiedGroups]);
+      }
+    },
+    undo() {
+      documentStore.removeObjects(copies.map((object) => object.id));
+      documentStore.setPageGroups(pageId, originalGroups);
+    },
+  };
+  executeEditorCommand(historyStore, command);
+  selectionStore.select(copies.map((object) => object.id));
+  return true;
+}
+
+function nudgeSelection(event) {
+  const objects = selectedCurrentPageObjects({ editable: true });
+  if (!objects.length) {
+    return false;
+  }
+  const step = event.altKey ? 0.1 : event.shiftKey ? 10 : 1;
+  const deltas = {
+    ArrowLeft: { x: -step, y: 0 },
+    ArrowRight: { x: step, y: 0 },
+    ArrowUp: { x: 0, y: -step },
+    ArrowDown: { x: 0, y: step },
+  };
+  const delta = deltas[event.key];
+  if (!delta) {
+    return false;
+  }
+  const clamp = (value, size, pageSize) => allowOverflowDrag.value
+    ? +value.toFixed(2)
+    : +Math.min(Math.max(0, value), Math.max(0, pageSize - size)).toFixed(2);
+  const patches = objects.map((object) => ({
+    id: object.id,
+    patch: {
+      x: clamp(object.x + delta.x, object.width, pageWidthMm.value),
+      y: clamp(object.y + delta.y, object.height, pageHeightMm.value),
+    },
+  }));
+  executeEditorCommand(historyStore, createPatchTransactionCommand(documentStore, "Nudge selection", patches));
+  return true;
+}
+
+function groupSelectedObjects() {
+  const objects = selectedCurrentPageObjects({ editable: true });
+  const result = createGroupCommand(documentStore, currentPage.value?.id, objects.map((object) => object.id));
+  if (!result) {
+    return false;
+  }
+  executeEditorCommand(historyStore, result.command);
+  selectionStore.selectGroup(result.group);
+  return true;
+}
+
+function ungroupSelectedObjects() {
+  const selected = new Set(expandedSelectedIds());
+  const groupIds = currentPageGroups.value.filter((group) => group.elementIds?.some((id) => selected.has(id))).map((group) => group.id);
+  const command = createUngroupCommand(documentStore, currentPage.value?.id, groupIds);
+  if (!command) {
+    return false;
+  }
+  executeEditorCommand(historyStore, command);
+  return true;
+}
+
 function onWindowKeyDown(event) {
   if (event.defaultPrevented || event.isComposing) {
     return;
   }
 
-  if (event.key !== "Delete" && event.key !== "Backspace") {
+  if (isEditableTarget(event.target)) {
     return;
   }
 
-  if (isEditableTarget(event.target)) {
+  const modifier = event.ctrlKey || event.metaKey;
+  const key = String(event.key || "").toLowerCase();
+  if (modifier && key === "z") {
+    if (event.shiftKey) {
+      historyStore.redo();
+    } else {
+      historyStore.undo();
+    }
+    event.preventDefault();
+    return;
+  }
+  if (modifier && key === "y") {
+    historyStore.redo();
+    event.preventDefault();
+    return;
+  }
+  if (modifier && key === "a") {
+    selectionStore.select((documentStore.pageObjectMap[currentPage.value?.id] || []).filter(Boolean));
+    event.preventDefault();
+    return;
+  }
+  if (modifier && key === "c") {
+    if (copySelectedObjects()) {
+      event.preventDefault();
+    }
+    return;
+  }
+  if (modifier && key === "x") {
+    if (copySelectedObjects() && deleteSelectedObjects()) {
+      event.preventDefault();
+    }
+    return;
+  }
+  if (modifier && key === "v") {
+    if (pasteCopiedObjects()) {
+      event.preventDefault();
+    }
+    return;
+  }
+  if (modifier && key === "g") {
+    const changed = event.shiftKey ? ungroupSelectedObjects() : groupSelectedObjects();
+    if (changed) {
+      event.preventDefault();
+    }
+    return;
+  }
+  if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
+    if (nudgeSelection(event)) {
+      event.preventDefault();
+    }
+    return;
+  }
+
+  if (event.key !== "Delete" && event.key !== "Backspace") {
     return;
   }
 
@@ -207,13 +427,12 @@ async function onCreateStarter(starterId) {
   }
 
   try {
-    documentStore.loadTemplateDocument(instantiateStarterTemplate(starterId), { markAsDirty: true });
+    loadTemplateDocument(instantiateStarterTemplate(starterId), { markAsDirty: true });
   } catch (error) {
     PdMessage.error(error?.message || "无法创建起始模板");
     return;
   }
   historyStore.reset();
-  previewStore.setRuntimeData({});
   starterCatalogVisible.value = false;
   PdMessage.success("已创建新的可编辑模板");
 }
@@ -279,9 +498,8 @@ function onImportTemplate() {
         return;
       }
     }
-    documentStore.loadTemplateDocument(imported.document, { markAsDirty: true });
+    loadTemplateDocument(imported.document, { markAsDirty: true });
     historyStore.reset();
-    previewStore.setRuntimeData({});
     PdMessage.success(imported.issues.length ? "模板已导入，已应用兼容迁移" : "模板已导入");
   }, { once: true });
   input.click();
@@ -363,7 +581,14 @@ async function openTemplate(id) {
       PdMessage.error("模板不存在或已被删除");
       return;
     }
-    const result = documentStore.loadTemplateDocument(document);
+    if (documentStore.dirty) {
+      try {
+        await PdMessageBox.confirm("未保存的修改将丢失，是否继续打开？", "打开模板", { type: "warning" });
+      } catch {
+        return;
+      }
+    }
+    const result = loadTemplateDocument(document);
     if (!result.document) {
       PdMessage.error(result.issues?.[0]?.message || "模板无法加载");
       return;
@@ -385,7 +610,7 @@ async function onSaveTemplate() {
 
   try {
     const saved = await repository.save(result.document);
-    documentStore.loadTemplateDocument(saved);
+    loadTemplateDocument(saved);
     await refreshTemplateLibrary();
     PdMessage.success("模板已保存到本地仓储");
   } catch (error) {
@@ -403,6 +628,14 @@ function onPreview() {
   previewVisible.value = true;
 }
 
+function onBeforeUnload(event) {
+  if (!documentStore.dirty) {
+    return;
+  }
+  event.preventDefault();
+  event.returnValue = "";
+}
+
 function onFocusIssue(issue) {
   const elementId = issue?.elementId;
   const element = elementId ? documentStore.objectsById[elementId] : null;
@@ -410,7 +643,12 @@ function onFocusIssue(issue) {
     return;
   }
   documentStore.setCurrentPage(element.pageId);
-  selectionStore.select(elementId);
+  const group = documentStore.pages.find((page) => page.id === element.pageId)?.groups?.find((candidate) => candidate.elementIds?.includes(elementId));
+  if (group) {
+    selectionStore.selectGroup(group);
+  } else {
+    selectionStore.select(elementId);
+  }
   selectionStore.focusedPageId = element.pageId;
   shellStore.openRightDock("properties");
 }
@@ -421,7 +659,7 @@ async function onPrint() {
     PdMessage.error(result.issues[0]?.message || "模板校验失败");
     return;
   }
-  const preflight = validatePrintRuntime(result.document, runtimeData.value, activePrintPolicy.value);
+  const preflight = validatePrintRuntime(result.document, previewRuntimeData.value, activePrintPolicy.value);
   if (!preflight.valid) {
     const issue = preflight.issues.find((item) => item.severity === "error") || preflight.issues[0];
     const error = new Error(issue?.message || "打印预检失败");
@@ -431,7 +669,7 @@ async function onPrint() {
   }
   try {
     const { printRuntimeDocument } = await import("../runtime/print.js");
-    await printRuntimeDocument({ document: preflight.document, runtimeData: runtimeData.value });
+    await printRuntimeDocument({ document: preflight.document, runtimeData: previewRuntimeData.value });
   } catch (error) {
     onPrintError(error);
   }
@@ -445,10 +683,24 @@ function onExportPdf() {
   PdMessage.info("PDF 导出不在当前首发范围内。");
 }
 
-function setRuntimeData(data) {
+function setRuntimeData(data, { persist = true, emitChange = true } = {}) {
+  runtimeDataRevision += 1;
   previewStore.setRuntimeData(data);
   documentStore.setVariables(collectRuntimeBindingPaths(previewStore.runtimeData));
-  emit("update:runtimeData", previewStore.runtimeData);
+  if (persist) {
+    scheduleRuntimeDataDraftSave(previewStore.runtimeData);
+  }
+  if (emitChange) {
+    emit("update:runtimeData", previewStore.runtimeData);
+  }
+}
+
+function setHostRuntimeData(data) {
+  hasHostRuntimeData.value = data !== undefined && data !== null;
+  hostRuntimeData.value = data;
+  if (hasHostRuntimeData.value) {
+    setRuntimeData(data, { persist: false, emitChange: false });
+  }
 }
 
 function setPrintPolicy(policy) {
@@ -473,6 +725,21 @@ function onBindPath(path) {
   }
 
   const element = documentStore.objectsById[selectedId];
+  const resolved = resolveDataPath(previewRuntimeData.value, path);
+  if (!resolved.found) {
+    PdMessage.warning("字段已不存在，请检查测试数据。");
+    return;
+  }
+  const requiresArray = ["table", "multiLabel"].includes(element?.type);
+  const requiresScalar = ["text", "image", "barcode", "qrcode"].includes(element?.type);
+  if (requiresArray && !Array.isArray(resolved.value)) {
+    PdMessage.warning("表格和标签仅可绑定数组路径。");
+    return;
+  }
+  if (requiresScalar && resolved.value !== null && typeof resolved.value === "object") {
+    PdMessage.warning("文本、图片和码元素仅可绑定标量路径。");
+    return;
+  }
   const patch = bindingPatch(element, path);
   if (!patch) {
     PdMessage.warning("当前元素不支持运行数据绑定。");
@@ -484,13 +751,27 @@ function onBindPath(path) {
   PdMessage.success(`已绑定字段：${path}`);
 }
 
-function loadTemplateDocument(document) {
-  const result = documentStore.loadTemplateDocument(document);
+function loadTemplateDocument(document, options = {}) {
+  const result = documentStore.loadTemplateDocument(document, options);
   if (result.document) {
+    runtimeDataRevision += 1;
     historyStore.reset();
     selectionStore.clearSelection();
+    emitMigration(result);
+    void restoreRuntimeDataForTemplate();
   }
   return result;
+}
+
+async function replaceTemplateDocument(document, options = {}) {
+  if (documentStore.dirty && !options.force) {
+    try {
+      await PdMessageBox.confirm("未保存的修改将丢失，是否继续替换？", "替换模板", { type: "warning" });
+    } catch {
+      return null;
+    }
+  }
+  return loadTemplateDocument(document, options);
 }
 
 function getTemplateDocument() {
@@ -532,14 +813,18 @@ function onWindowWheel(event) {
 onMounted(() => {
   window.addEventListener("wheel", onWindowWheel, { passive: false });
   window.addEventListener("keydown", onWindowKeyDown);
+  window.addEventListener("beforeunload", onBeforeUnload);
+  void restoreRuntimeDataForTemplate();
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("wheel", onWindowWheel);
   window.removeEventListener("keydown", onWindowKeyDown);
+  window.removeEventListener("beforeunload", onBeforeUnload);
+  window.clearTimeout(runtimeDraftTimer);
 });
 
-defineExpose({ setRuntimeData, setPrintPolicy, getTemplateDocument, getPublishReadyTemplatePayload, loadTemplateDocument, print: onPrint });
+defineExpose({ setRuntimeData, setHostRuntimeData, setPrintPolicy, getTemplateDocument, getPublishReadyTemplatePayload, loadTemplateDocument, replaceTemplateDocument, print: onPrint });
 </script>
 
 <style scoped lang="scss">

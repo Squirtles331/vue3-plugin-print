@@ -4,6 +4,7 @@ import { registerPrintDesignerUi } from "../print-designer/ui/index.js";
 
 export { PrintTemplateStudio };
 export { createLocalTemplateRepository, createRestTemplateRepository } from "../print-designer/template/templateRepository.js";
+export { createLocalRuntimeDataDraftRepository } from "../print-designer/template/runtimeDataDraftRepository.js";
 export {
   TEMPLATE_SCHEMA_VERSION,
   createBlankTemplateDocument,

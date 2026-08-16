@@ -103,6 +103,7 @@ export function createDuplicatePageCommand(documentStore, pageId) {
   const sourceObjectIds = [...(before.pageObjectMap[pageId] || [])];
   const clonedObjectMap = {};
   const clonedObjects = {};
+  const clonedIdMap = {};
 
   sourceObjectIds.forEach((objectId, index) => {
     const object = before.objectsById[objectId];
@@ -118,7 +119,15 @@ export function createDuplicatePageCommand(documentStore, pageId) {
     };
     clonedObjectMap[nextId] = nextObject;
     clonedObjects[nextId] = nextObject;
+    clonedIdMap[objectId] = nextId;
   });
+  const clonedGroups = (Array.isArray(sourcePage.groups) ? sourcePage.groups : [])
+    .map((group, index) => ({
+      id: createId("group"),
+      name: `${group.name || `Group ${index + 1}`} 副本`,
+      elementIds: (group.elementIds || []).map((objectId) => clonedIdMap[objectId]).filter(Boolean),
+    }))
+    .filter((group) => group.elementIds.length >= 2);
 
   const after = buildPageSnapshot(documentStore, (state) => {
     const nextPages = [...state.pages];
@@ -126,6 +135,7 @@ export function createDuplicatePageCommand(documentStore, pageId) {
       id: nextPageId,
       title,
       elements: [],
+      groups: clonedGroups,
       isCurrent: false,
     });
     state.pages = nextPages.map((page) => ({

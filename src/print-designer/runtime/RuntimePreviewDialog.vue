@@ -31,13 +31,12 @@
           <header class="runtime-preview__section-head">
             <div>
               <h3>运行数据 JSON</h3>
-              <p>输入一个 JSON 对象，变量、表格和标签网格会按字段路径解析。</p>
+              <p>设计器的数据面板负责编辑；这里使用同一份 JSON 进行预检和输出。</p>
             </div>
             <span class="runtime-preview__field-count">{{ runtimeDataFieldCount }} 字段</span>
           </header>
 
-          <PdInput v-model="runtimeDataText" type="textarea" :rows="14" spellcheck="false" />
-          <p v-if="parseError" class="runtime-preview__error">{{ parseError }}</p>
+          <pre class="runtime-preview__data">{{ runtimeDataText }}</pre>
 
           <ul v-if="issueList.length" class="runtime-preview__issue-list">
             <li v-for="issue in issueList" :key="issue.key" :class="`is-${issue.tone}`">
@@ -70,10 +69,9 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from "vue";
+import { computed } from "vue";
 import PdButton from "../ui/primitives/PdButton.vue";
 import PdDialog from "../ui/primitives/PdDialog.vue";
-import PdInput from "../ui/primitives/PdInput.vue";
 import { validatePrintRuntime } from "./preflight.js";
 import { printRuntimeDocument } from "./print.js";
 import RuntimeDocument from "./RuntimeDocument.vue";
@@ -96,34 +94,11 @@ const props = defineProps({
     default: () => ({}),
   },
 });
-const emit = defineEmits(["update:visible", "update:runtimeData", "print-error", "focus-issue"]);
-const runtimeDataText = ref("{}");
-
-watch(
-  () => props.initialData,
-  (value) => {
-    runtimeDataText.value = JSON.stringify(value || {}, null, 2);
-  },
-  { immediate: true, deep: true }
-);
-
-const parseResult = computed(() => {
-  try {
-    const value = JSON.parse(runtimeDataText.value || "{}");
-    return value && typeof value === "object" && !Array.isArray(value)
-      ? { value, error: "" }
-      : { value: {}, error: "运行数据必须是一个 JSON 对象。" };
-  } catch {
-    return { value: {}, error: "运行数据不是合法 JSON。" };
-  }
-});
-const runtimeData = computed(() => parseResult.value.value);
-const parseError = computed(() => parseResult.value.error);
+const emit = defineEmits(["update:visible", "print-error", "focus-issue"]);
+const runtimeData = computed(() => props.initialData && typeof props.initialData === "object" && !Array.isArray(props.initialData) ? props.initialData : {});
+const runtimeDataText = computed(() => JSON.stringify(runtimeData.value, null, 2));
+const parseError = computed(() => "");
 const preflight = computed(() => {
-  if (parseError.value) {
-    return validatePrintRuntime(props.document, {}, props.printPolicy);
-  }
-
   return validatePrintRuntime(props.document, runtimeData.value, props.printPolicy);
 });
 const documentValid = computed(() => preflight.value.templateIssues.every((issue) => issue.severity !== "error"));
@@ -213,8 +188,6 @@ const canvasTitle = computed(() => (previewReady.value ? "打印版面预览" : 
 const canvasDescription = computed(() => (previewReady.value ? "此处展示运行数据填充后的浏览器打印结果。" : "左侧预检会标出需要先处理的项目。"));
 const previewEmptyTitle = computed(() => (parseError.value ? "运行数据 JSON 有误" : "模板结构未通过"));
 const previewEmptyDescription = computed(() => (parseError.value ? "修复 JSON 格式后即可恢复预览。" : "修复模板结构问题后即可恢复预览。"));
-
-watch(runtimeData, (value) => emit("update:runtimeData", value), { deep: true });
 
 async function print() {
   try {
@@ -408,6 +381,20 @@ function collectBindingStats(document) {
   margin: 0;
   color: #b91c1c;
   font-size: 12px;
+}
+
+.runtime-preview__data {
+  min-height: 180px;
+  max-height: 280px;
+  margin: 0;
+  padding: 10px;
+  overflow: auto;
+  border: 1px solid #dbe4ef;
+  background: #f8fafc;
+  color: #334155;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .runtime-preview__issue-list {

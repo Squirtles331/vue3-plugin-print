@@ -22,6 +22,7 @@ export function createRemoveObjectsCommand(documentStore, objectIds = []) {
 
   const previousObjects = cloneDeep(removableIds.map((id) => documentStore.objectsById[id]));
   const previousOrders = new Map();
+  const previousGroups = new Map();
 
   removableIds.forEach((id) => {
     const object = documentStore.objectsById[id];
@@ -29,6 +30,8 @@ export function createRemoveObjectsCommand(documentStore, objectIds = []) {
 
     if (!previousOrders.has(pageId)) {
       previousOrders.set(pageId, [...(documentStore.pageObjectMap[pageId] || [])]);
+      const page = documentStore.pages.find((item) => item.id === pageId);
+      previousGroups.set(pageId, cloneDeep(page?.groups || []));
     }
   });
 
@@ -42,6 +45,9 @@ export function createRemoveObjectsCommand(documentStore, objectIds = []) {
       documentStore.addObjects(previousObjects);
       previousOrders.forEach((ids, pageId) => {
         documentStore.setPageObjectOrder(pageId, ids);
+      });
+      previousGroups.forEach((groups, pageId) => {
+        documentStore.setPageGroups?.(pageId, groups);
       });
     },
   };

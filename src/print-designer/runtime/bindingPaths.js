@@ -65,3 +65,25 @@ export function collectRuntimeBindingPaths(data, {
   walk(data, "", 0);
   return paths;
 }
+
+/** Returns the runtime shape displayed next to a bindable JSON path. */
+export function getRuntimeBindingValueKind(value) {
+  if (Array.isArray(value)) {
+    return "array";
+  }
+  if (value !== null && typeof value === "object") {
+    return "object";
+  }
+  return "scalar";
+}
+
+export function describeRuntimeBindingPaths(data, options = {}) {
+  return collectRuntimeBindingPaths(data, options).map((path) => {
+    let current = data;
+    const normalizedSegments = path.replace(/\[(\d+)\]/g, ".$1").split(".").filter(Boolean);
+    for (const segment of normalizedSegments) {
+      current = current?.[segment];
+    }
+    return { path, kind: getRuntimeBindingValueKind(current) };
+  });
+}

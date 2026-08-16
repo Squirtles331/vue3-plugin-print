@@ -1,4 +1,4 @@
-import { createBlankTemplateDocument, serializeTemplateDocument } from "./templateDocument.js";
+import { createBlankTemplateDocument, serializeTemplateDocument, validateTemplateDocument } from "./templateDocument.js";
 
 const DEFAULT_STORAGE_KEY = "print-template-studio:templates:v1";
 
@@ -50,6 +50,16 @@ function writeCollection(storage, key, collection) {
   }
 }
 
+function normalizeRepositoryDocument(document) {
+  const result = validateTemplateDocument(document);
+  if (!result.valid) {
+    const error = new Error("Stored template validation failed.");
+    error.issues = result.issues;
+    throw error;
+  }
+  return result.document;
+}
+
 export function createLocalTemplateRepository({ storage = getBrowserStorage(), key = DEFAULT_STORAGE_KEY } = {}) {
   return {
     async create(overrides = {}) {
@@ -68,7 +78,7 @@ export function createLocalTemplateRepository({ storage = getBrowserStorage(), k
 
     async get(id) {
       const document = readCollection(storage, key)[id];
-      return document ? clone(document) : null;
+      return document ? clone(normalizeRepositoryDocument(document)) : null;
     },
 
     async save(document) {
@@ -149,7 +159,8 @@ export function createRestTemplateRepository({ baseUrl, fetchImpl = globalThis.f
       return request("/templates");
     },
     async get(id) {
-      return request(`/templates/${encodeURIComponent(id)}`);
+      const document = await request(`/templates/${encodeURIComponent(id)}`);
+      return document ? normalizeRepositoryDocument(document) : null;
     },
     async save(document) {
       const result = serializeTemplateDocument(document);

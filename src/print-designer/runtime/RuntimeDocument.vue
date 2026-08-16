@@ -38,16 +38,24 @@
         </template>
         <template v-else-if="element.type === 'table'">
           <table class="runtime-table">
-            <thead v-if="element.props?.showHeader !== false" :style="tableHeaderStyle(element)"><tr><th v-for="column in tableColumns(element)" :key="columnKey(column)" :style="tableCellStyle(element, column, 'header')">{{ tableHeaderValue(element, column) }}</th></tr></thead>
+            <colgroup><col v-for="column in tableColumns(element)" :key="columnKey(column)" :style="tableColumnStyle(column)" /></colgroup>
+            <thead v-if="element.props?.showHeader !== false" :style="tableHeaderStyle(element)"><tr :style="tableRowStyle(element, 'header', 0)"><th v-for="column in tableColumns(element)" :key="columnKey(column)" :style="tableCellStyle(element, column, 'header')">{{ tableHeaderValue(element, column) }}</th></tr></thead>
             <tbody>
-              <tr v-for="(row, rowIndex) in tableDisplayRows(element)" :key="rowIndex">
+              <tr v-for="(row, rowIndex) in tableDisplayRows(element)" :key="rowIndex" :style="tableRowStyle(element, 'body', rowIndex)">
                 <td v-if="row == null" class="runtime-table__empty" :colspan="Math.max(1, tableColumns(element).length)">No data</td>
                 <template v-else>
-                  <td v-for="column in tableColumns(element)" :key="columnKey(column)" :style="tableCellStyle(element, column, 'body')">{{ tableCellValue(row, column, element) }}</td>
+                  <template v-for="column in tableColumns(element)" :key="columnKey(column)">
+                    <td
+                      v-if="shouldRenderRuntimeTableCell(row, column)"
+                      :rowspan="runtimeTableCellRowSpan(row, column)"
+                      :colspan="runtimeTableCellColSpan(row, column)"
+                      :style="tableCellStyle(element, column, 'body', row)"
+                    >{{ tableCellValue(row, column, element, 'body') }}</td>
+                  </template>
                 </template>
               </tr>
             </tbody>
-            <tfoot v-if="element.props?.showFooter !== false && tableFooterRows(element).length" :style="tableFooterStyle(element)"><tr v-for="(row, rowIndex) in tableFooterRows(element)" :key="rowIndex"><td v-for="column in tableColumns(element)" :key="columnKey(column)" :style="tableCellStyle(element, column, 'footer')">{{ tableCellValue(row, column, element) }}</td></tr></tfoot>
+            <tfoot v-if="element.props?.showFooter !== false && tableFooterRows(element).length" :style="tableFooterStyle(element)"><tr v-for="(row, rowIndex) in tableFooterRows(element)" :key="rowIndex" :style="tableRowStyle(element, 'footer', rowIndex)"><template v-for="column in tableColumns(element)" :key="columnKey(column)"><td v-if="shouldRenderRuntimeTableCell(row, column)" :rowspan="runtimeTableCellRowSpan(row, column)" :colspan="runtimeTableCellColSpan(row, column)" :style="tableCellStyle(element, column, 'footer', row)">{{ tableCellValue(row, column, element, 'footer') }}</td></template></tr></tfoot>
           </table>
         </template>
         <template v-else-if="element.type === 'multiLabel'">
@@ -66,6 +74,15 @@ import { paginateRuntimeDocument } from "./pagination.js";
 import { resolveRuntimeTemplate } from "./dataResolver.js";
 import { createRuntimePageStyle, hasRuntimePrintMarks } from "./pageStyle.js";
 import { formatTableSummaryCell } from "../core/tableSummary.js";
+import {
+  normalizeTableColumns,
+  shouldRenderTableCell,
+  tableCellColSpan,
+  tableCellDisplayValue,
+  tableCellRowSpan,
+  tableCellStyle as tableDescriptorStyle,
+  tableRowHeight,
+} from "../core/tableModel.js";
 import { formatTableValue, imageObjectPosition, machineCodeOptions, resolveRelativeRecordPath } from "./propertySemantics.js";
 const RuntimeBarcode = defineAsyncComponent(() => import("./RuntimeBarcode.vue"));
 const RuntimeQrCode = defineAsyncComponent(() => import("./RuntimeQrCode.vue"));
@@ -83,15 +100,21 @@ function textValue(value, fallback) { return value?.value || (props.mode === "pr
 function valueClass(value) { return value?.status === 'missing' || value?.status === 'empty' ? 'runtime-placeholder' : ''; }
 function imageSource(element) { return String(element.runtime?.value?.value || '').trim(); }
 function columnKey(column) { return column?.key || column?.field || ''; }
-function tableColumns(element) { return element.runtime?.table?.columns || []; }
+function tableColumns(element) { return normalizeTableColumns(element.runtime?.table?.columns || []); }
 function tableRows(element) { return element.runtime?.table?.rows || []; }
 function tableAllRows(element) { return element.runtime?.table?.allRows || tableRows(element); }
 function tableDisplayRows(element) { const rows = tableRows(element); if (rows.length) return rows; return props.mode === 'print' ? [] : [null]; }
 function tableFooterRows(element) { return element.runtime?.table?.footerRows || []; }
 function hasBlankTableHeaders(element) { if (element.props?.blankHeaders === true) return true; const columns = tableColumns(element); return columns.length > 0 && columns.every((column, index) => { const key = String(column?.key || column?.field || `field${index + 1}`); const title = typeof column?.title === 'string' ? column.title.trim() : typeof column?.header === 'string' ? column.header.trim() : ''; return key === `field${index + 1}` && (!title || title === key || /^列\s*\d+$/.test(title)); }); }
 function tableHeaderValue(element, column) { if (hasBlankTableHeaders(element)) return ''; if (typeof column?.title === 'string') return column.title; if (typeof column?.header === 'string') return column.header; return ''; }
-function tableCellStyle(element, column, section = 'body') { const style = element.style || {}; const props = element.props || {}; const rowHeight = section === 'header' ? props.headerHeight : section === 'footer' ? props.footerHeight : props.rowHeight; return { width: `${Math.max(1, Number(column?.width) || 1)}px`, height: `${Math.max(1, Number(rowHeight) || 1)}mm`, textAlign: column?.align || style.textAlign || 'left', borderColor: style.borderColor || 'currentColor', borderWidth: `${Number(style.borderWidth) || 1}px`, borderStyle: style.borderStyle || 'solid', padding: `${Number(style.padding) || 0}mm` }; }
-function tableCellValue(row, column, element) { if (row == null) return ''; const result = resolveRelativeRecordPath(row, column?.valuePath || columnKey(column)); const value = result.found ? result.value : row?.[columnKey(column)]; return formatTableValue(formatTableSummaryCell(value, { pageRows: tableRows(element), totalRows: tableAllRows(element) }), column?.formatter); }
+function tableColumnStyle(column) { return { width: `${Math.max(1, Number(column?.width) || 1)}px` }; }
+function tableRowStyle(element, section, rowIndex) { const offset = section === 'body' ? Math.max(0, Number(element.runtime?.table?.rowOffset) || 0) : 0; const height = tableRowHeight(element.props, section, rowIndex + offset); return height > 0 ? { height: `${height}mm` } : {}; }
+function runtimeTableRawCell(row, column) { return row?.[columnKey(column)]; }
+function shouldRenderRuntimeTableCell(row, column) { return shouldRenderTableCell(runtimeTableRawCell(row, column)); }
+function runtimeTableCellRowSpan(row, column) { const value = tableCellRowSpan(runtimeTableRawCell(row, column)); return value > 1 ? value : undefined; }
+function runtimeTableCellColSpan(row, column) { const value = tableCellColSpan(runtimeTableRawCell(row, column)); return value > 1 ? value : undefined; }
+function tableCellStyle(element, column, section = 'body', row = null) { const style = element.style || {}; const cellStyle = tableDescriptorStyle(runtimeTableRawCell(row, column)); const textAlign = cellStyle.textAlign || column?.align || (section === 'header' ? style.headerTextAlign : section === 'footer' ? style.footerTextAlign : style.textAlign) || 'left'; const color = cellStyle.color || (section === 'header' ? style.headerColor : section === 'footer' ? style.footerColor : style.color) || 'inherit'; return { textAlign, color, backgroundColor: cellStyle.backgroundColor || undefined, verticalAlign: cellStyle.verticalAlign || style.verticalAlign || 'top', fontSize: cellStyle.fontSize || undefined, fontWeight: cellStyle.fontWeight || undefined, fontStyle: cellStyle.fontStyle || undefined, textDecoration: cellStyle.textDecoration || undefined, borderColor: style.borderColor || 'currentColor', borderWidth: `${Number(style.borderWidth) || 1}px`, borderStyle: style.borderStyle || 'solid', padding: `${Number(style.padding) || 0}mm`, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', ...cellStyle }; }
+function tableCellValue(row, column, element, section = 'body') { if (row == null) return ''; const result = resolveRelativeRecordPath(row, column?.valuePath || columnKey(column)); const value = result.found ? result.value : runtimeTableRawCell(row, column); const sourceRows = section === 'footer' ? tableRows(element) : tableRows(element); const text = tableCellDisplayValue(value, sourceRows); return formatTableValue(formatTableSummaryCell(text, { pageRows: tableRows(element), totalRows: tableAllRows(element) }), column?.formatter); }
 function tableHeaderStyle(element) { const style = element.style || {}; return { background: style.headerBackgroundColor || style.backgroundColor || 'transparent', color: style.headerColor || style.color || 'inherit', fontSize: `${Number(style.headerFontSize) || Number(style.fontSize) || 12}px`, textAlign: style.headerTextAlign || style.textAlign || 'left' }; }
 function tableFooterStyle(element) { const style = element.style || {}; return { background: style.footerBackgroundColor || style.backgroundColor || 'transparent', color: style.footerColor || style.color || 'inherit', fontSize: `${Number(style.footerFontSize) || Number(style.fontSize) || 12}px`, textAlign: style.footerTextAlign || style.textAlign || 'left' }; }
 function multiLabelStyle(element) { return { gridTemplateColumns: `repeat(${Math.max(1, Number(element.props?.cols) || 1)}, 1fr)`, gridTemplateRows: `repeat(${Math.max(1, Number(element.props?.rows) || 1)}, 1fr)`, gridAutoFlow: element.props?.direction === 'column' ? 'column' : 'row', gap: `${Number(element.props?.gapY) || 0}mm ${Number(element.props?.gapX) || 0}mm` }; }

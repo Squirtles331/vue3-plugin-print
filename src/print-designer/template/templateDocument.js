@@ -1,8 +1,9 @@
 import { toRaw } from "vue";
 import { createElement, getElementSizeRule, isElementType } from "../core/elementFactory.js";
 import { validateElementProperties } from "../core/propertyCapabilities.js";
+import { normalizeTableRowHeights, normalizeTableRows } from "../core/tableModel.js";
 
-export const TEMPLATE_SCHEMA_VERSION = 1;
+export const TEMPLATE_SCHEMA_VERSION = 2;
 
 export const TEMPLATE_LIMITS = Object.freeze({
   maxPages: 100,
@@ -65,16 +66,51 @@ function newId(prefix = "tpl") {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function normalizePageGroups(sourceGroups, elements) {
+  if (!Array.isArray(sourceGroups)) {
+    return [];
+  }
+
+  const knownElementIds = new Set(elements.map((element) => element.id));
+  const claimedElementIds = new Set();
+  const groupIds = new Set();
+
+  return sourceGroups.reduce((groups, value, index) => {
+    const source = object(value);
+    const id = text(source.id, `group-${index + 1}`);
+    if (groupIds.has(id)) {
+      return groups;
+    }
+
+    const elementIds = [...new Set(Array.isArray(source.elementIds) ? source.elementIds.map((item) => String(item || "").trim()) : [])]
+      .filter((elementId) => elementId && knownElementIds.has(elementId) && !claimedElementIds.has(elementId));
+    if (elementIds.length < 2) {
+      return groups;
+    }
+
+    groupIds.add(id);
+    elementIds.forEach((elementId) => claimedElementIds.add(elementId));
+    groups.push({
+      id,
+      name: text(source.name, `Group ${groups.length + 1}`),
+      elementIds,
+    });
+    return groups;
+  }, []);
+}
+
 function stripEditorState(page, index) {
   const source = object(page);
-  const { elements = [], isCurrent, size, orientation, thumbnail, selected, hovered, editing, interactionState, ...pageData } = source;
+  const { elements = [], groups = [], isCurrent, size, orientation, thumbnail, selected, hovered, editing, interactionState, ...pageData } = source;
   const id = text(pageData.id, `page-${index + 1}`);
+  const normalizedElements = Array.isArray(elements) ? elements.map((element, elementIndex) => normalizeElement(element, elementIndex, id)) : [];
 
   return {
     ...clone(pageData),
     id,
     title: text(pageData.title, `Page ${index + 1}`),
-    elements: Array.isArray(elements) ? elements.map((element, elementIndex) => normalizeElement(element, elementIndex, id)) : [],
+    elements: normalizedElements,
+    groups: normalizePageGroups(groups, normalizedElements),
   };
 }
 
@@ -97,14 +133,16 @@ function normalizeTableProps(sourceProps) {
   };
 
   const columns = Array.isArray(props.columns) ? props.columns : Array.isArray(headers) ? headers : null;
-  const sampleData = Array.isArray(props.sampleData) ? props.sampleData : Array.isArray(rows) ? rows : null;
+  const sampleData = Array.isArray(props.sampleData) ? props.sampleData : Array.isArray(rows) ? rows : Array.isArray(props.data) ? props.data : null;
   const footerData = Array.isArray(props.footerData) ? props.footerData : Array.isArray(footerRows) ? footerRows : null;
+  const normalizedColumns = columns ? columns.map(normalizeColumn) : [];
 
   return {
     ...props,
-    ...(columns ? { columns: columns.map(normalizeColumn) } : {}),
-    ...(sampleData ? { sampleData } : {}),
-    ...(footerData ? { footerData } : {}),
+    ...(columns ? { columns: normalizedColumns } : {}),
+    ...(sampleData ? { sampleData: normalizedColumns.length ? normalizeTableRows(sampleData, normalizedColumns) : sampleData } : {}),
+    ...(footerData ? { footerData: normalizedColumns.length ? normalizeTableRows(footerData, normalizedColumns) : footerData } : {}),
+    ...(props.rowHeights != null ? { rowHeights: normalizeTableRowHeights(props.rowHeights) } : {}),
     dataVariable: optionalText(props.dataVariable || dataKey),
     footerDataVariable: optionalText(props.footerDataVariable || footerKey),
     transform: object(props.transform || transformConfig),
@@ -333,6 +371,41 @@ function addRawBoundedIssues(rawTemplate, issues) {
   });
 }
 
+function addRawGroupIssues(rawTemplate, issues) {
+  if (Number(rawTemplate?.schemaVersion || 0) < 2) {
+    return;
+  }
+
+  const claimedElementIds = new Set();
+  const groupIds = new Set();
+  (Array.isArray(rawTemplate?.pages) ? rawTemplate.pages : []).forEach((page, pageIndex) => {
+    const elementIds = new Set((Array.isArray(page?.elements) ? page.elements : []).map((element) => String(element?.id || "").trim()).filter(Boolean));
+    const groups = Array.isArray(page?.groups) ? page.groups : [];
+    groups.forEach((group, groupIndex) => {
+      const path = `pages[${pageIndex}].groups[${groupIndex}]`;
+      const id = String(group?.id || "").trim();
+      if (!id || groupIds.has(id)) {
+        issues.push({ path: `${path}.id`, message: "Group id must be unique.", severity: "error" });
+      }
+      groupIds.add(id);
+
+      const ids = Array.isArray(group?.elementIds) ? group.elementIds.map((item) => String(item || "").trim()) : [];
+      if (ids.length < 2 || new Set(ids).size !== ids.length) {
+        issues.push({ path: `${path}.elementIds`, message: "A group must contain at least two unique elements.", severity: "error" });
+      }
+      ids.forEach((elementId) => {
+        if (!elementIds.has(elementId)) {
+          issues.push({ path: `${path}.elementIds`, message: "Group members must belong to the same page.", severity: "error" });
+        }
+        if (claimedElementIds.has(elementId)) {
+          issues.push({ path: `${path}.elementIds`, message: "An element can belong to only one group.", severity: "error" });
+        }
+        claimedElementIds.add(elementId);
+      });
+    });
+  });
+}
+
 function addStringSizeIssues(value, path, issues, visited = new WeakSet()) {
   if (typeof value === "string" && value.length > TEMPLATE_LIMITS.maxStringCharacters) {
     issues.push({ path, message: `Value exceeds ${TEMPLATE_LIMITS.maxStringCharacters} characters.`, severity: "error" });
@@ -350,6 +423,7 @@ export function createBlankPage() {
     id: "page-1",
     title: "Page 1",
     elements: [],
+    groups: [],
   };
 }
 
@@ -378,10 +452,11 @@ export function migrateTemplateDocument(source) {
     return {
       document: null,
       issues: [{ path: "schemaVersion", message: `Template schema version ${version} is newer than this editor supports.`, severity: "error" }],
+      fromVersion: version,
     };
   }
 
-  const issues = version === TEMPLATE_SCHEMA_VERSION ? [] : [{ path: "schemaVersion", message: "A legacy template was normalized to schema version 1.", severity: "warning" }];
+  const issues = version === TEMPLATE_SCHEMA_VERSION ? [] : [{ path: "schemaVersion", message: `A legacy template was normalized to schema version ${TEMPLATE_SCHEMA_VERSION}.`, severity: "warning" }];
   const rawTemplate = source?.template && typeof source.template === "object" ? source.template : source;
   if (rawTemplate?.meta?.unit && rawTemplate.meta.unit !== "mm") {
     issues.push({ path: "meta.unit", message: "Template geometry is stored in millimetres; the legacy unit metadata was normalized to mm.", severity: "warning" });
@@ -390,6 +465,7 @@ export function migrateTemplateDocument(source) {
   return {
     document: normalizeSource(source),
     issues,
+    fromVersion: version,
   };
 }
 
@@ -405,6 +481,7 @@ export function validateTemplateDocument(source) {
   }
   addStringSizeIssues(rawTemplate, "document", issues);
   addRawBoundedIssues(rawTemplate, issues);
+  addRawGroupIssues(rawTemplate, issues);
 
   const { document, issues: migrationIssues } = migrateTemplateDocument(source);
   issues.push(...migrationIssues);

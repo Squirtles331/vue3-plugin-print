@@ -144,9 +144,9 @@ export function createOrderIds(currentIds, objectsById, selectedIds, action) {
   return unlockedOrder(currentIds, objectsById, selectedIds, action);
 }
 
-export function createPatchTransactionCommand(documentStore, label, patches) {
+export function createPatchTransactionCommand(documentStore, label, patches, { previousPatches = null } = {}) {
   const effective = patches.filter(({ id, patch }) => documentStore.objectsById[id] && Object.keys(patch || {}).length);
-  const previous = effective.map(({ id, patch }) => {
+  const previous = Array.isArray(previousPatches) ? cloneDeep(previousPatches) : effective.map(({ id, patch }) => {
     const object = documentStore.objectsById[id];
     return { id, patch: Object.fromEntries(Object.keys(patch).map((key) => [key, object[key]])) };
   });

@@ -1,7 +1,7 @@
 import { TEMPLATE_LIMITS, migrateTemplateDocument, serializeTemplateDocument, validateTemplateDocument } from "./templateDocument.js";
 
 export const TEMPLATE_INTERCHANGE_FORMAT = "print-template-studio/template";
-export const TEMPLATE_INTERCHANGE_VERSION = 1;
+export const TEMPLATE_INTERCHANGE_VERSION = 2;
 
 function clone(value) {
   if (typeof structuredClone === "function") {
@@ -60,7 +60,8 @@ export function parseTemplateInterchange(input) {
   if (!envelope || typeof envelope !== "object" || envelope.format !== TEMPLATE_INTERCHANGE_FORMAT) {
     return error("format", "Template import uses an unsupported format.");
   }
-  if (Number(envelope.formatVersion) !== TEMPLATE_INTERCHANGE_VERSION) {
+  const formatVersion = Number(envelope.formatVersion);
+  if (![1, TEMPLATE_INTERCHANGE_VERSION].includes(formatVersion)) {
     return error("formatVersion", `Template interchange version ${envelope.formatVersion ?? "unknown"} is not supported.`);
   }
 

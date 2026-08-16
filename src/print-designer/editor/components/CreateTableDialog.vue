@@ -50,6 +50,7 @@ import PdRadio from "../../ui/primitives/PdRadio.vue";
 import PdRadioGroup from "../../ui/primitives/PdRadioGroup.vue";
 import {
   DEFAULT_TABLE_INSERT_COLUMN_COUNT,
+  DEFAULT_CUSTOM_TABLE_INSERT_ROW_COUNT,
   DEFAULT_TABLE_INSERT_MODE,
   DEFAULT_TABLE_INSERT_ROW_COUNT,
   TABLE_INSERT_MODES,
@@ -74,6 +75,10 @@ function resetState() {
   rowCount.value = DEFAULT_TABLE_INSERT_ROW_COUNT;
 }
 
+function defaultRowCountForMode(value) {
+  return value === TABLE_INSERT_MODES.CUSTOM ? DEFAULT_CUSTOM_TABLE_INSERT_ROW_COUNT : DEFAULT_TABLE_INSERT_ROW_COUNT;
+}
+
 function normalizeCount(value, fallback) {
   const numeric = Number(value);
 
@@ -85,10 +90,11 @@ function normalizeCount(value, fallback) {
 }
 
 function confirm() {
+  const fallbackRowCount = defaultRowCountForMode(mode.value);
   emit("confirm", {
     mode: mode.value,
     columnCount: normalizeCount(columnCount.value, DEFAULT_TABLE_INSERT_COLUMN_COUNT),
-    rowCount: normalizeCount(rowCount.value, DEFAULT_TABLE_INSERT_ROW_COUNT),
+    rowCount: normalizeCount(rowCount.value, fallbackRowCount),
   });
 }
 
@@ -106,6 +112,10 @@ watch(
     }
   }
 );
+
+watch(mode, (value) => {
+  rowCount.value = defaultRowCountForMode(value);
+});
 </script>
 
 <style scoped lang="scss">

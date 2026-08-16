@@ -1,10 +1,71 @@
 ﻿<template>
   <div class="element-properties-panel" :class="{ 'element-properties-panel--table': isTableObject }">
-    <InspectorEmpty
-      v-if="isMultipleSelection"
-      title="已选中多个元素"
-      description="属性面板暂不支持批量编辑。请选择一个元素后再修改位置、样式或绑定。"
-    />
+    <section v-if="isMultipleSelection" class="element-properties-panel__multi">
+      <header class="element-properties-panel__summary">
+        <div class="element-properties-panel__summary-head">
+          <strong>已选中 {{ multipleSelectedObjects.length }} 个元素</strong>
+          <span class="element-properties-panel__type-tag">批量编辑</span>
+        </div>
+        <p class="element-properties-panel__summary-hint">仅显示所有已选元素共享的基础属性；数据绑定和元素专属配置请单独编辑。</p>
+      </header>
+      <section class="element-properties-panel__section">
+        <header class="element-properties-panel__section-head"><h3>显示与输出</h3></header>
+        <div class="element-properties-panel__section-body is-stack">
+          <PdSwitch :model-value="multipleBooleanValue('visible', true)" active-text="显示" inactive-text="隐藏" @change="setMultipleRootValue('visible', !!$event)" />
+          <PdSwitch :model-value="multipleBooleanValue('printable', true)" active-text="打印" inactive-text="不打印" @change="setMultipleRootValue('printable', !!$event)" />
+          <PdSwitch :model-value="multipleBooleanValue('locked', false)" active-text="锁定" inactive-text="可编辑" @change="setMultipleRootValue('locked', !!$event)" />
+        </div>
+      </section>
+      <section class="element-properties-panel__section">
+        <header class="element-properties-panel__section-head"><h3>位置、尺寸与层级</h3></header>
+        <div class="element-properties-panel__section-body is-grid-2">
+          <label class="element-properties-panel__field">
+            <span>X (mm)</span>
+            <PdInputNumber :model-value="multipleRootValue('x', 0)" :step="0.1" controls-position="right" @change="setMultipleRootValue('x', numberValue($event))" />
+          </label>
+          <label class="element-properties-panel__field">
+            <span>Y (mm)</span>
+            <PdInputNumber :model-value="multipleRootValue('y', 0)" :step="0.1" controls-position="right" @change="setMultipleRootValue('y', numberValue($event))" />
+          </label>
+          <label class="element-properties-panel__field">
+            <span>宽 (mm)</span>
+            <PdInputNumber :model-value="multipleRootValue('width', 1)" :min="0.1" :step="0.1" controls-position="right" @change="setMultipleRootValue('width', numberValue($event))" />
+          </label>
+          <label class="element-properties-panel__field">
+            <span>高 (mm)</span>
+            <PdInputNumber :model-value="multipleRootValue('height', 1)" :min="0.1" :step="0.1" controls-position="right" @change="setMultipleRootValue('height', numberValue($event))" />
+          </label>
+          <div class="element-properties-panel__field">
+            <span>层级</span>
+            <div class="element-properties-panel__action-grid">
+              <button type="button" class="element-properties-panel__section-button" @click="reorderMultipleSelection('front')">置于顶层</button>
+              <button type="button" class="element-properties-panel__section-button" @click="reorderMultipleSelection('back')">置于底层</button>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="element-properties-panel__section">
+        <header class="element-properties-panel__section-head"><h3>通用样式</h3></header>
+        <div class="element-properties-panel__section-body is-grid-2">
+          <label class="element-properties-panel__field">
+            <span>透明度</span>
+            <PdInputNumber :model-value="multipleStyleValue('opacity', 1)" :min="0" :max="1" :step="0.1" controls-position="right" @change="setMultipleStyleValue('opacity', numberValue($event))" />
+          </label>
+          <label class="element-properties-panel__field">
+            <span>背景颜色</span>
+            <input type="color" :value="multipleStyleValue('backgroundColor', '#ffffff')" @input="setMultipleStyleValue('backgroundColor', $event.target.value)" />
+          </label>
+          <label class="element-properties-panel__field">
+            <span>边框颜色</span>
+            <input type="color" :value="multipleStyleValue('borderColor', '#000000')" @input="setMultipleStyleValue('borderColor', $event.target.value)" />
+          </label>
+          <label class="element-properties-panel__field">
+            <span>边框宽度</span>
+            <PdInputNumber :model-value="multipleStyleValue('borderWidth', 0)" :min="0" :step="0.1" controls-position="right" @change="setMultipleStyleValue('borderWidth', numberValue($event))" />
+          </label>
+        </div>
+      </section>
+    </section>
 
     <InspectorEmpty
       v-else-if="!selectedObject"
@@ -86,6 +147,102 @@
                   :min="0"
                   controls-position="right"
                   @change="setRootValue('height', numberValue($event))"
+                />
+              </label>
+            </div>
+          </section>
+
+          <section v-if="selectedTableCells.length" class="element-properties-panel__section">
+            <header class="element-properties-panel__section-head">
+              <h3>已选 {{ selectedTableCells.length }} 个{{ selectedTableSection === 'footer' ? '表脚' : '正文' }}单元格</h3>
+            </header>
+            <div class="element-properties-panel__section-body is-stack">
+              <div class="element-properties-panel__action-grid">
+                <button type="button" class="element-properties-panel__section-button" :disabled="selectedObject.locked" @click="mergeSelectedTableCells">
+                  合并单元格
+                </button>
+                <button type="button" class="element-properties-panel__section-button" :disabled="selectedObject.locked" @click="splitSelectedTableCells">
+                  拆分单元格
+                </button>
+                <button type="button" class="element-properties-panel__section-button" :disabled="selectedObject.locked" @click="insertSelectedTableRow">
+                  插入行
+                </button>
+                <button type="button" class="element-properties-panel__section-button" :disabled="selectedObject.locked" @click="removeSelectedTableRows">
+                  删除行
+                </button>
+                <button type="button" class="element-properties-panel__section-button" :disabled="selectedObject.locked" @click="insertSelectedTableColumn">
+                  插入列
+                </button>
+                <button type="button" class="element-properties-panel__section-button" :disabled="selectedObject.locked" @click="removeSelectedTableColumns">
+                  删除列
+                </button>
+              </div>
+              <template v-if="selectedTableSection === 'footer'">
+                <label class="element-properties-panel__field">
+                  <span>表脚静态文本</span>
+                  <PdInput
+                    :model-value="selectedTableCellTextValue()"
+                    :disabled="selectedObject.locked"
+                    @change="updateSelectedFooterText($event)"
+                  />
+                </label>
+                <label class="element-properties-panel__field element-properties-panel__field--switch">
+                  <span>汇总当前列</span>
+                  <PdSwitch
+                    :model-value="selectedTableCellHasCurrentColumnSummary()"
+                    :disabled="selectedObject.locked"
+                    @change="setSelectedFooterSummary(!!$event)"
+                  />
+                </label>
+              </template>
+              <div class="element-properties-panel__section-body is-grid-2">
+                <label class="element-properties-panel__field">
+                  <span>背景</span>
+                  <input
+                    class="element-properties-panel__color"
+                    type="color"
+                    :value="selectedTableCellStyleValue('backgroundColor', '#ffffff')"
+                    :disabled="selectedObject.locked"
+                    @input="applySelectedTableCellStyle({ backgroundColor: $event.target.value })"
+                  />
+                </label>
+                <label class="element-properties-panel__field">
+                  <span>文字</span>
+                  <input
+                    class="element-properties-panel__color"
+                    type="color"
+                    :value="selectedTableCellStyleValue('color', '#111827')"
+                    :disabled="selectedObject.locked"
+                    @input="applySelectedTableCellStyle({ color: $event.target.value })"
+                  />
+                </label>
+                <label class="element-properties-panel__field">
+                  <span>字号 (px)</span>
+                  <PdInputNumber
+                    :model-value="selectedTableCellNumberStyleValue('fontSize')"
+                    :min="1"
+                    controls-position="right"
+                    :disabled="selectedObject.locked"
+                    @change="applySelectedTableCellStyle({ fontSize: Math.max(1, numberValue($event)) + 'px' })"
+                  />
+                </label>
+                <label class="element-properties-panel__field">
+                  <span>对齐</span>
+                  <PdSelect
+                    :model-value="selectedTableCellStyleValue('textAlign', 'left')"
+                    :disabled="selectedObject.locked"
+                    @change="applySelectedTableCellStyle({ textAlign: $event })"
+                  >
+                    <PdOption v-for="option in TABLE_TEXT_ALIGN_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
+                  </PdSelect>
+                </label>
+              </div>
+              <label class="element-properties-panel__field element-properties-panel__field--switch">
+                <span>加粗</span>
+                <PdSwitch
+                  :model-value="selectedTableCellStyleValue('fontWeight') === 'bold'"
+                  :disabled="selectedObject.locked"
+                  @change="applySelectedTableCellStyle({ fontWeight: $event ? 'bold' : 'normal' })"
                 />
               </label>
             </div>
@@ -1084,10 +1241,25 @@ import PdSwitch from "../../ui/primitives/PdSwitch.vue";
 import InspectorEmpty from "../../components/inspector/InspectorEmpty.vue";
 import TableCodeEditorDialog from "../components/TableCodeEditorDialog.vue";
 import { FIELD_CONTROL, INSPECTOR_TABS, TAB_LABELS, SECTION_LAYOUT } from "../../core/elementInspectorSchemas";
-import { getElementDefinition } from "../../core/elementFactory";
+import { getElementDefinition, getElementSizeRule } from "../../core/elementFactory";
 import { getElementPropertyCapabilities, validateElementProperty } from "../../core/propertyCapabilities.js";
+import {
+  applyTableCellStyle as applyTableCellStylePatch,
+  insertTableColumn as insertTableColumnAt,
+  insertTableRow as insertTableRowAt,
+  mergeTableCells as mergeTableCellsPatch,
+  removeTableColumn as removeTableColumnAt,
+  removeTableRow as removeTableRowAt,
+  renameTableColumn as renameTableColumnPatch,
+  splitTableCell as splitTableCellPatch,
+  tableCellStyle as tableCellStyleValue,
+  tableCellValue as tableCellTextValue,
+  toTableCellDescriptor,
+  updateTableCell as updateTableCellValue,
+} from "../../core/tableModel.js";
 import { MM_TO_CSS_PX } from "../measurement.js";
 import { createRemoveObjectsCommand, createUpdateObjectPropsCommand } from "../commands/documentCommands.js";
+import { createOrderIds, createOrderTransactionCommand, createPatchTransactionCommand } from "../commands/layoutCommands.js";
 import { executeEditorCommand } from "../commands/executeCommand.js";
 import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorHistoryStore } from "../stores/historyStore";
@@ -1101,7 +1273,7 @@ const selectionStore = useEditorSelectionStore();
 const presetRepository = createLocalElementPresetRepository();
 
 const { objectsById } = storeToRefs(documentStore);
-const { selectedIds } = storeToRefs(selectionStore);
+const { selectedIds, tableSelection } = storeToRefs(selectionStore);
 
 const activeTab = ref(INSPECTOR_TABS.PROPERTY);
 const TABLE_ALIGN_OPTIONS = [
@@ -1152,7 +1324,73 @@ const selectedObject = computed(() => {
   return objectId ? objectsById.value[objectId] || null : null;
 });
 const isMultipleSelection = computed(() => selectedIds.value.length > 1);
+const multipleSelectedObjects = computed(() => selectedIds.value.map((id) => objectsById.value[id]).filter(Boolean));
 const isTableObject = computed(() => selectedObject.value?.type === "table");
+const selectedTableCells = computed(() => {
+  const selection = tableSelection.value;
+  if (!isTableObject.value || selection?.tableId !== selectedObject.value?.id) {
+    return [];
+  }
+  return selection.cells || [];
+});
+const selectedTableSection = computed(() => tableSelection.value?.section === "footer" ? "footer" : "body");
+
+function multipleBooleanValue(key, fallback) {
+  const values = multipleSelectedObjects.value.map((object) => object[key]);
+  return values.length && values.every((value) => value === values[0]) ? values[0] : fallback;
+}
+
+function multipleRootValue(key, fallback) {
+  const values = multipleSelectedObjects.value.map((object) => object[key]);
+  return values.length && values.every((value) => value === values[0]) && Number.isFinite(Number(values[0]))
+    ? Number(values[0])
+    : fallback;
+}
+
+function multipleStyleValue(key, fallback) {
+  const values = multipleSelectedObjects.value.map((object) => object.style?.[key]);
+  return values.length && values.every((value) => value === values[0]) && values[0] != null ? values[0] : fallback;
+}
+
+function setMultipleRootValue(key, value) {
+  const patches = multipleSelectedObjects.value
+    .filter((object) => !object.locked || key === "locked")
+    .map((object) => {
+      const rule = getElementSizeRule(object.type);
+      const nextValue = key === "width" && rule
+        ? Math.min(rule.maxWidth, Math.max(rule.minWidth, Number(value) || rule.minWidth))
+        : key === "height" && rule
+          ? Math.min(rule.maxHeight, Math.max(rule.minHeight, Number(value) || rule.minHeight))
+          : value;
+      return { id: object.id, patch: { [key]: nextValue } };
+    });
+  const command = createPatchTransactionCommand(documentStore, `Update ${key} for selection`, patches);
+  if (command) {
+    executeEditorCommand(historyStore, command);
+  }
+}
+
+function setMultipleStyleValue(key, value) {
+  const patches = multipleSelectedObjects.value
+    .filter((object) => !object.locked)
+    .map((object) => ({ id: object.id, patch: { style: { ...(object.style || {}), [key]: value } } }));
+  const command = createPatchTransactionCommand(documentStore, `Update ${key} for selection`, patches);
+  if (command) {
+    executeEditorCommand(historyStore, command);
+  }
+}
+
+function reorderMultipleSelection(action) {
+  const pageId = multipleSelectedObjects.value[0]?.pageId;
+  if (!pageId || multipleSelectedObjects.value.some((object) => object.pageId !== pageId)) {
+    return;
+  }
+  const nextIds = createOrderIds(documentStore.pageObjectMap[pageId] || [], documentStore.objectsById, selectedIds.value, action);
+  const command = createOrderTransactionCommand(documentStore, pageId, nextIds, action === "front" ? "Bring selection to front" : "Send selection to back");
+  if (command) {
+    executeEditorCommand(historyStore, command);
+  }
+}
 
 const selectedDefinition = computed(() => {
   if (!selectedObject.value) {
@@ -2378,6 +2616,191 @@ function setTableObjectProps(patch) {
   });
 }
 
+function selectedTableRows(section = selectedTableSection.value) {
+  const key = section === "footer" ? "footerData" : "sampleData";
+  const fallback = section === "body" ? selectedObject.value?.props?.data : [];
+  const rows = selectedObject.value?.props?.[key];
+  return Array.isArray(rows) ? rows : Array.isArray(fallback) ? fallback : [];
+}
+
+function tableSelectionCell() {
+  const selection = selectedTableCells.value[0];
+  if (!selection) return null;
+  return selectedTableRows(selection.section)?.[selection.rowIndex]?.[selection.colField] ?? null;
+}
+
+function selectedTableCellStyleValue(key, fallback = "") {
+  const value = tableCellStyleValue(tableSelectionCell())[key];
+  return value == null || value === "" ? fallback : value;
+}
+
+function selectedTableCellNumberStyleValue(key) {
+  const raw = selectedTableCellStyleValue(key, "");
+  const numeric = Number.parseFloat(raw);
+  return Number.isFinite(numeric) ? numeric : 12;
+}
+
+function selectedTableCellTextValue() {
+  return String(tableCellTextValue(tableSelectionCell()) ?? "");
+}
+
+function selectedTableCellHasCurrentColumnSummary() {
+  const selection = selectedTableCells.value[0];
+  return Boolean(selection && toTableCellDescriptor(tableSelectionCell()).field === selection.colField);
+}
+
+function updateSelectedFooterText(value) {
+  if (selectedTableSection.value !== "footer") return;
+  let rows = selectedTableRows("footer");
+  selectedTableCells.value.forEach((cell) => {
+    rows = updateTableCellValue(rows, selectedObject.value?.props?.columns, cell.rowIndex, cell.colField, String(value ?? ""));
+  });
+  commitTableOperation({ footerData: rows }, "编辑表脚单元格");
+}
+
+function setSelectedFooterSummary(enabled) {
+  if (selectedTableSection.value !== "footer") return;
+  let rows = selectedTableRows("footer");
+  selectedTableCells.value.forEach((selection) => {
+    rows = updateTableCellValue(rows, selectedObject.value?.props?.columns, selection.rowIndex, selection.colField, tableCellTextValue(rows?.[selection.rowIndex]?.[selection.colField]));
+    const cell = toTableCellDescriptor(rows[selection.rowIndex][selection.colField]);
+    if (enabled) {
+      rows[selection.rowIndex][selection.colField] = { ...cell, field: selection.colField };
+      return;
+    }
+    delete cell.field;
+    rows[selection.rowIndex][selection.colField] = Object.keys(cell).length === 1 && Object.hasOwn(cell, "value") ? cell.value : cell;
+  });
+  commitTableOperation({ footerData: rows }, "设置表脚汇总字段");
+}
+
+function commitTableOperation(patch, label) {
+  const object = selectedObject.value;
+  if (!object || object.locked) {
+    PdMessage.warning("当前表格已锁定，请先解除锁定后再编辑。");
+    return false;
+  }
+  const command = createUpdateObjectPropsCommand(documentStore, object.id, {
+    props: { ...(object.props || {}), ...(patch || {}) },
+  });
+  if (!command) return false;
+  command.label = label;
+  executeEditorCommand(historyStore, command);
+  return true;
+}
+
+function selectionDataKey() {
+  return selectedTableSection.value === "footer" ? "footerData" : "sampleData";
+}
+
+function applySelectedTableCellStyle(style) {
+  if (!selectedTableCells.value.length) return;
+  const key = selectionDataKey();
+  const result = applyTableCellStylePatch(
+    selectedTableRows(),
+    selectedObject.value?.props?.columns,
+    selectedTableCells.value,
+    style,
+  );
+  if (result.changed) commitTableOperation({ [key]: result.rows }, "设置单元格样式");
+}
+
+function mergeSelectedTableCells() {
+  const key = selectionDataKey();
+  const result = mergeTableCellsPatch(selectedTableRows(), selectedObject.value?.props?.columns, selectedTableCells.value);
+  if (!result.changed) {
+    PdMessage.warning(result.reason || "请选择一个连续的单元格区域。");
+    return;
+  }
+  commitTableOperation({ [key]: result.rows }, "合并表格单元格");
+}
+
+function splitSelectedTableCells() {
+  const key = selectionDataKey();
+  let rows = selectedTableRows();
+  let changed = false;
+  const processed = new Set();
+  selectedTableCells.value.forEach((cell) => {
+    const cellKey = `${cell.rowIndex}:${cell.colField}`;
+    if (processed.has(cellKey)) return;
+    processed.add(cellKey);
+    const result = splitTableCellPatch(rows, selectedObject.value?.props?.columns, cell.rowIndex, cell.colField);
+    rows = result.rows;
+    changed ||= result.changed;
+  });
+  if (!changed) {
+    PdMessage.warning("所选单元格没有合并区域可拆分。");
+    return;
+  }
+  commitTableOperation({ [key]: rows }, "拆分表格单元格");
+}
+
+function insertSelectedTableRow() {
+  const key = selectionDataKey();
+  const rowIndex = Math.max(...selectedTableCells.value.map((cell) => cell.rowIndex), -1) + 1;
+  const result = insertTableRowAt(
+    selectedTableRows(),
+    selectedObject.value?.props?.columns,
+    rowIndex,
+    selectedObject.value?.props?.rowHeights,
+    selectedTableSection.value,
+  );
+  commitTableOperation({ [key]: result.rows, rowHeights: result.rowHeights }, "插入表格行");
+}
+
+function removeSelectedTableRows() {
+  const key = selectionDataKey();
+  let rows = selectedTableRows();
+  let rowHeights = selectedObject.value?.props?.rowHeights;
+  const indexes = [...new Set(selectedTableCells.value.map((cell) => cell.rowIndex))].sort((a, b) => b - a);
+  let changed = false;
+  indexes.forEach((rowIndex) => {
+    const result = removeTableRowAt(rows, selectedObject.value?.props?.columns, rowIndex, rowHeights, selectedTableSection.value);
+    rows = result.rows;
+    rowHeights = result.rowHeights;
+    changed ||= result.changed;
+  });
+  if (changed) {
+    selectionStore.clearTableSelection(selectedObject.value?.id);
+    commitTableOperation({ [key]: rows, rowHeights }, "删除表格行");
+  }
+}
+
+function insertSelectedTableColumn() {
+  const columns = selectedObject.value?.props?.columns || [];
+  const indexes = selectedTableCells.value
+    .map((cell) => columns.findIndex((column) => column?.key === cell.colField))
+    .filter((index) => index >= 0);
+  const index = (indexes.length ? Math.max(...indexes) : columns.length - 1) + 1;
+  const result = insertTableColumnAt(columns, selectedTableRows("body"), selectedTableRows("footer"), index);
+  if (commitTableOperation({ columns: result.columns, sampleData: result.sampleData, footerData: result.footerData }, "插入表格列")) {
+    selectionStore.setTableSelection(selectedObject.value?.id, [{ rowIndex: selectedTableCells.value[0]?.rowIndex || 0, colField: result.columns[result.index]?.key, section: selectedTableSection.value }], selectedTableSection.value);
+  }
+}
+
+function removeSelectedTableColumns() {
+  let columns = selectedObject.value?.props?.columns || [];
+  let sampleData = selectedTableRows("body");
+  let footerData = selectedTableRows("footer");
+  const indexes = [...new Set(selectedTableCells.value
+    .map((cell) => columns.findIndex((column) => column?.key === cell.colField))
+    .filter((index) => index >= 0))].sort((a, b) => b - a);
+  let changed = false;
+  indexes.forEach((index) => {
+    const result = removeTableColumnAt(columns, sampleData, footerData, index);
+    columns = result.columns;
+    sampleData = result.sampleData;
+    footerData = result.footerData;
+    changed ||= result.changed;
+  });
+  if (!changed) {
+    PdMessage.warning("表格至少需要保留一列。");
+    return;
+  }
+  selectionStore.clearTableSelection(selectedObject.value?.id);
+  commitTableOperation({ columns, sampleData, footerData }, "删除表格列");
+}
+
 function normalizeTableColumn(column, index) {
   const width = Number(column?.width);
 
@@ -2496,22 +2919,16 @@ function appendTableDataKey(data, key) {
 
 function addTableColumn(field) {
   const columns = tableColumnsValue(field);
-  const nextKey = nextTableColumnKey(columns);
-  const nextColumns = [
-    ...columns,
-    {
-      key: nextKey,
-      valuePath: nextKey,
-      title: `列 ${columns.length + 1}`,
-      width: 100,
-      align: "left",
-    },
-  ];
-
+  const result = insertTableColumnAt(
+    columns,
+    selectedObject.value?.props?.sampleData,
+    selectedObject.value?.props?.footerData,
+    columns.length,
+  );
   setTableObjectProps({
-    columns: nextColumns,
-    sampleData: appendTableDataKey(selectedObject.value?.props?.sampleData, nextKey),
-    footerData: appendTableDataKey(selectedObject.value?.props?.footerData, nextKey),
+    columns: result.columns,
+    sampleData: result.sampleData,
+    footerData: result.footerData,
   });
 }
 
@@ -2554,11 +2971,19 @@ function updateTableColumn(field, index, prop, value) {
   );
 
   if (prop === "key") {
-    setTableObjectProps({
-      columns: nextColumns,
-      sampleData: renameTableDataKey(selectedObject.value?.props?.sampleData, currentColumn.key, nextValue),
-      footerData: renameTableDataKey(selectedObject.value?.props?.footerData, currentColumn.key, nextValue),
-    });
+    const renamed = renameTableColumnPatch(
+      columns,
+      selectedObject.value?.props?.sampleData,
+      selectedObject.value?.props?.footerData,
+      index,
+      nextValue,
+      nextColumns[index].title,
+    );
+    if (renamed?.error) {
+      PdMessage.error(renamed.error);
+      return;
+    }
+    if (renamed) setTableObjectProps(renamed);
     return;
   }
 
@@ -2606,15 +3031,21 @@ function removeTableColumn(field, index) {
   const columns = tableColumnsValue(field);
 
   if (columns.length <= 1) {
+    PdMessage.warning("表格至少需要保留一列。");
     return;
   }
 
-  const removedColumn = columns[index];
+  const result = removeTableColumnAt(
+    columns,
+    selectedObject.value?.props?.sampleData,
+    selectedObject.value?.props?.footerData,
+    index,
+  );
 
   setTableObjectProps({
-    columns: columns.filter((_, columnIndex) => columnIndex !== index),
-    sampleData: removeTableDataKey(selectedObject.value?.props?.sampleData, removedColumn?.key),
-    footerData: removeTableDataKey(selectedObject.value?.props?.footerData, removedColumn?.key),
+    columns: result.columns,
+    sampleData: result.sampleData,
+    footerData: result.footerData,
   });
 }
 
@@ -2622,7 +3053,7 @@ function normalizeTableSampleRow(row, columns) {
   const source = row && typeof row === "object" ? row : {};
 
   return columns.reduce((result, column) => {
-    result[column.key] = source[column.key] == null ? "" : String(source[column.key]);
+    result[column.key] = source[column.key] == null ? "" : source[column.key];
     return result;
   }, {});
 }
@@ -2644,7 +3075,7 @@ function tableSampleRowsValue(field) {
 }
 
 function tableSampleCellValue(row, key) {
-  return row?.[key] == null ? "" : String(row[key]);
+  return String(tableCellTextValue(row?.[key]) ?? "");
 }
 
 function createEmptyTableSampleRow(columns) {
@@ -2665,11 +3096,10 @@ function addTableSampleRow(field) {
 }
 
 function updateTableSampleCell(field, rowIndex, key, value) {
-  const rows = tableSampleRowsValue(field).map((row, index) =>
-    index === rowIndex ? { ...row, [key]: value == null ? "" : String(value) } : row
+  setFieldValue(
+    field,
+    updateTableCellValue(tableSampleRowsValue(field), tableColumnsValue(tableColumnsField), rowIndex, key, value == null ? "" : String(value)),
   );
-
-  setFieldValue(field, rows);
 }
 
 function removeTableSampleRow(field, rowIndex) {
@@ -3140,6 +3570,13 @@ onBeforeUnmount(() => {
   padding: 12px;
   overflow: auto;
   background: #ffffff;
+}
+
+.element-properties-panel__multi {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
 }
 
 .element-properties-panel__summary,

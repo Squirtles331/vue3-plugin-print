@@ -25,3 +25,22 @@ test("imports only supported valid interchange and detaches its document ID", ()
   assert.equal(parseTemplateInterchange("not json").document, null);
   assert.equal(parseTemplateInterchange(JSON.stringify({ format: "other", formatVersion: 1 })).document, null);
 });
+
+test("imports v1 interchange documents as normalized v2 templates", () => {
+  const legacy = {
+    format: TEMPLATE_INTERCHANGE_FORMAT,
+    formatVersion: 1,
+    template: {
+      schemaVersion: 1,
+      id: "legacy-import",
+      meta: { name: "Legacy import", unit: "mm" },
+      pages: [{ id: "page-1", elements: [] }],
+    },
+  };
+  const imported = parseTemplateInterchange(JSON.stringify(legacy));
+
+  assert.ok(imported.document);
+  assert.equal(imported.document.schemaVersion, 2);
+  assert.deepEqual(imported.document.pages[0].groups, []);
+  assert.ok(imported.issues.some((issue) => issue.severity === "warning"));
+});

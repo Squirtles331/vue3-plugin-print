@@ -26,20 +26,20 @@
 
       <div
         v-for="(variable, index) in filteredVariables"
-        :key="variable"
+        :key="variablePath(variable)"
         class="data-panel__card"
-        :title="`绑定路径：${variable}`"
+        :title="`绑定路径：${variablePath(variable)}`"
         role="button"
         tabindex="0"
-        @click="emit('select', variable)"
-        @keydown.enter.prevent="emit('select', variable)"
-        @keydown.space.prevent="emit('select', variable)"
+        @click="emit('select', variablePath(variable))"
+        @keydown.enter.prevent="emit('select', variablePath(variable))"
+        @keydown.space.prevent="emit('select', variablePath(variable))"
       >
         <span class="data-panel__card-head">
           <span class="data-panel__index">#{{ index + 1 }}</span>
-          <span class="data-panel__meta">字段路径</span>
+          <span class="data-panel__meta">{{ variableKind(variable) }}</span>
         </span>
-        <span class="data-panel__path">{{ variable }}</span>
+        <span class="data-panel__path">{{ variablePath(variable) }}</span>
       </div>
     </div>
 
@@ -71,6 +71,11 @@ const emit = defineEmits(["select"]);
 
 const isEmbedded = computed(() => props.variant === "embedded");
 const normalizedQuery = computed(() => String(props.searchQuery || "").trim().toLowerCase());
+const variablePath = (variable) => typeof variable === "string" ? variable : String(variable?.path || "");
+const variableKind = (variable) => {
+  const kind = typeof variable === "object" ? variable?.kind : "";
+  return kind === "array" ? "数组" : kind === "object" ? "对象" : "标量";
+};
 
 const filteredVariables = computed(() => {
   const query = normalizedQuery.value;
@@ -79,7 +84,7 @@ const filteredVariables = computed(() => {
     return props.variables;
   }
 
-  return props.variables.filter((variable) => String(variable).toLowerCase().includes(query));
+  return props.variables.filter((variable) => variablePath(variable).toLowerCase().includes(query));
 });
 
 const searchSummary = computed(() => {

@@ -45,6 +45,7 @@
     </div>
 
     <div class="paper-canvas__content-surface" @pointerdown="onCanvasSurfacePointerDown">
+      <div v-if="selectionMarquee" class="paper-canvas__selection-marquee" :style="selectionMarqueeStyle"></div>
       <div class="paper-canvas__object-layer">
         <div
           v-for="object in pageObjects"
@@ -53,18 +54,24 @@
           :class="{
             'is-selected': selectedIds.includes(object.id),
             'is-hovered': hoverObjectId === object.id,
-            'is-dragging': interactionState?.objectId === object.id,
+            'is-dragging': interactionState?.objectIds?.includes(object.id),
             'is-auto-height': isAutoHeightTextObject(object),
+            'is-outside-safe-area': isOutsideSafeArea(object),
           }"
           :style="objectFrameStyle(object)"
           @pointerenter="hoverObjectId = object.id"
           @pointerleave="onObjectLeave(object.id)"
+          @contextmenu.prevent="openContextMenu(object, $event)"
         >
           <div class="paper-canvas__object-content" :class="`is-${object.type}`" :style="objectContentStyle(object)">
-            <ElementRenderer :object="object" />
+            <ElementRenderer :object="object" @start-object-drag="startObjectDrag(object, $event)" />
           </div>
 
-          <div class="paper-canvas__interaction-layer" @pointerdown.stop="startObjectDrag(object, $event)">
+          <div
+            class="paper-canvas__interaction-layer"
+            :class="{ 'is-content-editing': ['table', 'text'].includes(object.type) && selectedIds.includes(object.id) && !object.locked }"
+            @pointerdown.stop="startObjectDrag(object, $event)"
+          >
             <span v-if="selectedIds.includes(object.id)" class="paper-canvas__selection-chrome" aria-hidden="true">
               <span class="paper-canvas__selection-corner paper-canvas__selection-corner--top-left"></span>
               <span class="paper-canvas__selection-corner paper-canvas__selection-corner--top-right"></span>
@@ -96,6 +103,17 @@
         </div>
       </div>
 
+      <div
+        v-if="contextMenu"
+        class="paper-canvas__context-menu"
+        :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
+        @pointerdown.stop
+      >
+        <button type="button" :disabled="selectedIds.length < 2" @click="groupContextSelection">编组</button>
+        <button type="button" :disabled="!hasContextGroup" @click="ungroupContextSelection">取消编组</button>
+        <button type="button" @click="deleteContextSelection">删除</button>
+      </div>
+
       <div v-if="!pageObjects.length" class="paper-canvas__empty-state">
         <div class="paper-canvas__empty-badge">{{ canvasEmptyState.badge }}</div>
         <h2>{{ canvasEmptyState.title }}</h2>
@@ -114,7 +132,9 @@ import { computed, onBeforeUnmount, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { getElementDefinition } from "../../core/elementFactory";
 import { MM_TO_CSS_PX, mmToCssPx, mmToRoundedCssPx } from "../../editor/measurement.js";
-import { createMoveObjectCommand, createTransformObjectCommand } from "../../editor/commands/documentCommands.js";
+import { createMoveObjectCommand, createRemoveObjectsCommand, createTransformObjectCommand } from "../../editor/commands/documentCommands.js";
+import { createPatchTransactionCommand } from "../../editor/commands/layoutCommands.js";
+import { createGroupCommand, createUngroupCommand } from "../../editor/commands/groupCommands.js";
 import { executeEditorCommand } from "../../editor/commands/executeCommand.js";
 import { useEditorDocumentStore } from "../../editor/stores/documentStore";
 import { useEditorHistoryStore } from "../../editor/stores/historyStore";
@@ -169,6 +189,7 @@ const {
   footerLineVisible,
   headerOffsetMm,
   footerOffsetMm,
+  currentPageGroups,
 } = storeToRefs(documentStore);
 const {
   gridVisible,
@@ -184,6 +205,8 @@ const { selectedIds, hoverObjectId, activeHandle } = storeToRefs(selectionStore)
 
 const paperRef = ref(null);
 const interactionState = ref(null);
+const selectionMarquee = ref(null);
+const contextMenu = ref(null);
 const activeSnap = ref({
   x: null,
   y: null,
@@ -412,6 +435,31 @@ const paperStyle = computed(() => ({
 const safeAreaStyle = computed(() => ({
   inset: `${mmToCssPx(marginTopMm.value)}px ${mmToCssPx(marginRightMm.value)}px ${mmToCssPx(marginBottomMm.value)}px ${mmToCssPx(marginLeftMm.value)}px`,
 }));
+const selectionMarqueeStyle = computed(() => {
+  const marquee = selectionMarquee.value;
+  if (!marquee) {
+    return {};
+  }
+  const left = Math.min(marquee.start.x, marquee.current.x);
+  const top = Math.min(marquee.start.y, marquee.current.y);
+  return {
+    left: `${mmToCssPx(left)}px`,
+    top: `${mmToCssPx(top)}px`,
+    width: `${mmToCssPx(Math.abs(marquee.current.x - marquee.start.x))}px`,
+    height: `${mmToCssPx(Math.abs(marquee.current.y - marquee.start.y))}px`,
+  };
+});
+const hasContextGroup = computed(() => currentPageGroups.value.some((group) => group.elementIds?.some((id) => selectedIds.value.includes(id))));
+
+function isOutsideSafeArea(object) {
+  if (!object || object.printable === false) {
+    return false;
+  }
+  return object.x < marginLeftMm.value
+    || object.y < marginTopMm.value
+    || object.x + object.width > pageWidthMm.value - marginRightMm.value
+    || object.y + object.height > pageHeightMm.value - marginBottomMm.value;
+}
 
 const headerLineStyle = computed(() => ({
   top: `${mmToCssPx(clamp(headerOffsetMm.value, 0, pageHeightMm.value))}px`,
@@ -1408,13 +1456,121 @@ function clearCanvasSelection() {
 }
 
 function onCanvasSurfacePointerDown(event) {
+  closeContextMenu();
   const target = event.target;
 
   if (target instanceof Element && target.closest(".paper-canvas__interaction-layer")) {
     return;
   }
 
-  clearCanvasSelection();
+  if (event.button !== 0) {
+    clearCanvasSelection();
+    return;
+  }
+  const point = getPointerPointMm(event);
+  if (!point) {
+    clearCanvasSelection();
+    return;
+  }
+  selectionMarquee.value = {
+    start: point,
+    current: point,
+    baseIds: event.shiftKey || event.ctrlKey || event.metaKey ? [...selectedIds.value] : [],
+  };
+  if (!selectionMarquee.value.baseIds.length) {
+    clearCanvasSelection();
+  }
+  window.addEventListener("pointermove", onMarqueePointerMove);
+  window.addEventListener("pointerup", onMarqueePointerUp);
+}
+
+function openContextMenu(object, event) {
+  const group = currentPageGroups.value.find((candidate) => candidate.elementIds?.includes(object.id));
+  if (group) {
+    selectionStore.selectGroup(group);
+  } else if (!selectedIds.value.includes(object.id)) {
+    selectionStore.select(object.id);
+  }
+  const point = getPointerPointMm(event);
+  if (!point) {
+    return;
+  }
+  contextMenu.value = {
+    x: Math.max(0, mmToCssPx(point.x)),
+    y: Math.max(0, mmToCssPx(point.y)),
+  };
+}
+
+function closeContextMenu() {
+  contextMenu.value = null;
+}
+
+function groupContextSelection() {
+  const ids = selectedIds.value.filter((id) => objectsById.value[id]?.pageId === currentPage.value?.id && !objectsById.value[id]?.locked);
+  const result = createGroupCommand(documentStore, currentPage.value?.id, ids);
+  if (result) {
+    executeEditorCommand(historyStore, result.command);
+    selectionStore.selectGroup(result.group);
+  }
+  closeContextMenu();
+}
+
+function ungroupContextSelection() {
+  const selected = new Set(selectedIds.value);
+  const groupIds = currentPageGroups.value.filter((group) => group.elementIds?.some((id) => selected.has(id))).map((group) => group.id);
+  const command = createUngroupCommand(documentStore, currentPage.value?.id, groupIds);
+  if (command) {
+    executeEditorCommand(historyStore, command);
+  }
+  closeContextMenu();
+}
+
+function deleteContextSelection() {
+  const command = createRemoveObjectsCommand(documentStore, selectedIds.value);
+  if (command) {
+    executeEditorCommand(historyStore, command);
+    selectionStore.clearSelection();
+  }
+  closeContextMenu();
+}
+
+function marqueeIntersects(object, bounds) {
+  const right = object.x + object.width;
+  const bottom = object.y + object.height;
+  return right >= bounds.left && object.x <= bounds.right && bottom >= bounds.top && object.y <= bounds.bottom;
+}
+
+function includeGroupedMembers(ids = []) {
+  const selected = new Set(ids);
+  currentPageGroups.value.forEach((group) => {
+    if (group.elementIds?.some((id) => selected.has(id))) {
+      group.elementIds.forEach((id) => selected.add(id));
+    }
+  });
+  return [...selected];
+}
+
+function onMarqueePointerMove(event) {
+  const marquee = selectionMarquee.value;
+  const point = getPointerPointMm(event);
+  if (!marquee || !point) {
+    return;
+  }
+  marquee.current = point;
+  const bounds = {
+    left: Math.min(marquee.start.x, point.x),
+    right: Math.max(marquee.start.x, point.x),
+    top: Math.min(marquee.start.y, point.y),
+    bottom: Math.max(marquee.start.y, point.y),
+  };
+  const ids = pageObjects.value.filter((object) => marqueeIntersects(object, bounds)).map((object) => object.id);
+  selectionStore.select(includeGroupedMembers([...marquee.baseIds, ...ids]));
+}
+
+function onMarqueePointerUp() {
+  selectionMarquee.value = null;
+  window.removeEventListener("pointermove", onMarqueePointerMove);
+  window.removeEventListener("pointerup", onMarqueePointerUp);
 }
 
 function stopObjectDrag() {
@@ -1423,7 +1579,7 @@ function stopObjectDrag() {
 }
 
 function onObjectLeave(objectId) {
-  if (interactionState.value?.objectId === objectId) {
+  if (interactionState.value?.objectIds?.includes(objectId)) {
     return;
   }
 
@@ -1453,17 +1609,33 @@ function startObjectDrag(object, event) {
     return;
   }
 
-  selectionStore.select(object.id);
+  const group = currentPageGroups.value.find((candidate) => candidate.elementIds?.includes(object.id));
+  if (group) {
+    selectionStore.selectGroup(group);
+  } else if (!selectedIds.value.includes(object.id)) {
+    selectionStore.select(object.id);
+  }
   selectionStore.hoverObjectId = object.id;
   selectionStore.activeHandle = null;
 
-  if (object.locked) {
+  const objectIds = selectedIds.value.filter((id) => objectsById.value[id]?.pageId === object.pageId && !objectsById.value[id]?.locked);
+  if (!objectIds.length) {
     return;
   }
+
+  const startObjects = objectIds.map((id) => ({
+    id,
+    x: objectsById.value[id].x,
+    y: objectsById.value[id].y,
+    width: objectsById.value[id].width,
+    height: objectsById.value[id].height,
+  }));
 
   interactionState.value = {
     mode: "move",
     objectId: object.id,
+    objectIds,
+    startObjects,
     startPointerX: point.x,
     startPointerY: point.y,
     startObjectX: object.x,
@@ -1487,7 +1659,14 @@ function startObjectResize(object, handle, event) {
     return;
   }
 
-  selectionStore.select(object.id);
+  const group = currentPageGroups.value.find((candidate) => candidate.elementIds?.includes(object.id));
+  const groupObjects = group?.elementIds?.map((id) => objectsById.value[id]).filter(Boolean) || [];
+  const canResizeGroup = groupObjects.length >= 2 && groupObjects.every((item) => !item.locked);
+  if (canResizeGroup) {
+    selectionStore.selectGroup(group);
+  } else {
+    selectionStore.select(object.id);
+  }
   selectionStore.hoverObjectId = object.id;
 
   if (object.locked) {
@@ -1496,10 +1675,17 @@ function startObjectResize(object, handle, event) {
   }
 
   selectionStore.activeHandle = handle;
+  const startObjects = canResizeGroup
+    ? groupObjects.map((item) => ({ id: item.id, x: item.x, y: item.y, width: item.width, height: item.height }))
+    : [];
+  const groupBounds = canResizeGroup ? getObjectBounds(startObjects) : null;
   interactionState.value = {
-    mode: "resize",
+    mode: canResizeGroup ? "resize-group" : "resize",
     handle,
     objectId: object.id,
+    objectIds: canResizeGroup ? startObjects.map((item) => item.id) : [object.id],
+    startObjects,
+    groupBounds,
     startPointerX: point.x,
     startPointerY: point.y,
     startObjectX: object.x,
@@ -1514,6 +1700,14 @@ function startObjectResize(object, handle, event) {
   stopObjectDrag();
   window.addEventListener("pointermove", onObjectPointerMove);
   window.addEventListener("pointerup", onObjectPointerUp);
+}
+
+function getObjectBounds(objects = []) {
+  const left = Math.min(...objects.map((item) => item.x));
+  const top = Math.min(...objects.map((item) => item.y));
+  const right = Math.max(...objects.map((item) => item.x + item.width));
+  const bottom = Math.max(...objects.map((item) => item.y + item.height));
+  return { x: left, y: top, width: right - left, height: bottom - top };
 }
 
 function clampResizeEdges(startRect, handle, deltaX, deltaY) {
@@ -1620,6 +1814,32 @@ function onObjectPointerMove(event) {
   const insidePage =
     point.x >= 0 && point.x <= pageWidthMm.value && point.y >= 0 && point.y <= pageHeightMm.value;
 
+  if (drag.mode === "resize-group") {
+    const nextBounds = clampResizeEdges(
+      drag.groupBounds,
+      drag.handle,
+      point.x - drag.startPointerX,
+      point.y - drag.startPointerY
+    );
+    const scaleX = nextBounds.width / Math.max(0.01, drag.groupBounds.width);
+    const scaleY = nextBounds.height / Math.max(0.01, drag.groupBounds.height);
+    const patches = drag.startObjects.map((item) => ({
+      id: item.id,
+      patch: {
+        x: roundMm(nextBounds.x + (item.x - drag.groupBounds.x) * scaleX),
+        y: roundMm(nextBounds.y + (item.y - drag.groupBounds.y) * scaleY),
+        width: roundMm(Math.max(0.1, item.width * scaleX)),
+        height: roundMm(Math.max(0.1, item.height * scaleY)),
+      },
+    }));
+    documentStore.applyObjectPatches(patches);
+    selectionStore.activeHandle = drag.handle;
+    if (insidePage) {
+      viewportStore.setPointerCoordinate(point.x, point.y, true);
+    }
+    return;
+  }
+
   if (drag.mode === "resize") {
     const rawRect = clampResizeEdges(
       {
@@ -1688,10 +1908,16 @@ function onObjectPointerMove(event) {
   } else {
     viewportStore.clearCoordinateReadout();
   }
-  documentStore.updateObjectProps(drag.objectId, {
-    x: nextX,
-    y: nextY,
-  });
+  const deltaX = nextX - drag.startObjectX;
+  const deltaY = nextY - drag.startObjectY;
+  const patches = drag.startObjects.map((item) => ({
+    id: item.id,
+    patch: {
+      x: clampObjectPosition(item.x + deltaX, item.width, pageWidthMm.value),
+      y: clampObjectPosition(item.y + deltaY, item.height, pageHeightMm.value),
+    },
+  }));
+  documentStore.applyObjectPatches(patches);
 }
 
 function onObjectPointerUp() {
@@ -1705,7 +1931,27 @@ function onObjectPointerUp() {
   const currentObject = objectsById.value[drag.objectId];
 
   if (currentObject) {
-    if (drag.mode === "resize") {
+    if (drag.mode === "resize-group") {
+      const patches = drag.startObjects.map((item) => {
+        const current = objectsById.value[item.id];
+        return current ? { id: item.id, patch: { x: current.x, y: current.y, width: current.width, height: current.height } } : null;
+      }).filter(Boolean);
+      const changed = patches.some(({ id, patch }) => {
+        const previous = drag.startObjects.find((item) => item.id === id);
+        return previous && (previous.x !== patch.x || previous.y !== patch.y || previous.width !== patch.width || previous.height !== patch.height);
+      });
+      if (changed) {
+        executeEditorCommand(
+          historyStore,
+          createPatchTransactionCommand(
+            documentStore,
+            "Resize group",
+            patches,
+            { previousPatches: drag.startObjects.map((item) => ({ id: item.id, patch: { x: item.x, y: item.y, width: item.width, height: item.height } })) }
+          )
+        );
+      }
+    } else if (drag.mode === "resize") {
       const previousPatch = {
         x: drag.startObjectX,
         y: drag.startObjectY,
@@ -1731,17 +1977,29 @@ function onObjectPointerUp() {
         );
       }
     } else {
-      const previousPatch = {
-        x: drag.startObjectX,
-        y: drag.startObjectY,
-      };
-      const nextPatch = {
-        x: currentObject.x,
-        y: currentObject.y,
-      };
-
-      if (previousPatch.x !== nextPatch.x || previousPatch.y !== nextPatch.y) {
-        executeEditorCommand(historyStore, createMoveObjectCommand(documentStore, drag.objectId, previousPatch, nextPatch));
+      const patches = drag.startObjects.map((item) => {
+        const current = objectsById.value[item.id];
+        return current ? { id: item.id, patch: { x: current.x, y: current.y } } : null;
+      }).filter(Boolean);
+      const changed = patches.some(({ id, patch }) => {
+        const previous = drag.startObjects.find((item) => item.id === id);
+        return previous && (previous.x !== patch.x || previous.y !== patch.y);
+      });
+      if (changed) {
+        if (patches.length === 1) {
+          const previous = drag.startObjects[0];
+          executeEditorCommand(historyStore, createMoveObjectCommand(documentStore, previous.id, { x: previous.x, y: previous.y }, patches[0].patch));
+        } else {
+          executeEditorCommand(
+            historyStore,
+            createPatchTransactionCommand(
+              documentStore,
+              "Move selection",
+              patches,
+              { previousPatches: drag.startObjects.map((item) => ({ id: item.id, patch: { x: item.x, y: item.y } })) }
+            )
+          );
+        }
       }
     }
   }
@@ -1757,6 +2015,7 @@ function onObjectPointerUp() {
 
 onBeforeUnmount(() => {
   stopObjectDrag();
+  onMarqueePointerUp();
 });
 </script>
 
@@ -1937,6 +2196,61 @@ onBeforeUnmount(() => {
   border: 1px solid transparent;
   background: transparent;
   cursor: move;
+}
+
+.paper-canvas__selection-marquee {
+  position: absolute;
+  z-index: 20;
+  box-sizing: border-box;
+  border: 1px dashed #2563eb;
+  background: rgba(37, 99, 235, 0.08);
+  pointer-events: none;
+}
+
+.paper-canvas__context-menu {
+  position: absolute;
+  z-index: 30;
+  display: flex;
+  min-width: 112px;
+  flex-direction: column;
+  padding: 4px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.18);
+}
+
+.paper-canvas__context-menu button {
+  padding: 7px 10px;
+  border: 0;
+  background: transparent;
+  color: #1e293b;
+  font-size: 12px;
+  text-align: left;
+}
+
+.paper-canvas__context-menu button:hover:not(:disabled) { background: #eff6ff; color: #1d4ed8; }
+.paper-canvas__context-menu button:disabled { color: #94a3b8; }
+
+.paper-canvas__object-node.is-outside-safe-area:not(.is-selected)::after {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid #ffffff;
+  border-radius: 50%;
+  background: #d97706;
+  content: "";
+  pointer-events: none;
+}
+
+.paper-canvas__interaction-layer.is-content-editing {
+  pointer-events: none;
+  cursor: default;
+}
+
+.paper-canvas__interaction-layer.is-content-editing .paper-canvas__selection-handle {
+  pointer-events: auto;
 }
 
 .paper-canvas__object-node.is-hovered .paper-canvas__interaction-layer {

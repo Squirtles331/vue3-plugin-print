@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "vitest";
 import { reactive } from "vue";
 import { applyConstrainedTableTransform, resolveDataPath, resolveRuntimeTemplate } from "../src/print-designer/runtime/dataResolver.js";
-import { collectRuntimeBindingPaths } from "../src/print-designer/runtime/bindingPaths.js";
+import { collectRuntimeBindingPaths, describeRuntimeBindingPaths } from "../src/print-designer/runtime/bindingPaths.js";
 import { paginateRuntimeDocument } from "../src/print-designer/runtime/pagination.js";
 import { validatePrintRuntime } from "../src/print-designer/runtime/preflight.js";
 import { createBlankTemplateDocument } from "../src/print-designer/template/templateDocument.js";
@@ -178,4 +178,12 @@ test("derives safe binding paths from runtime JSON", () => {
   assert.ok(paths.includes("customer.name"));
   assert.ok(paths.includes("items"));
   assert.ok(paths.includes("items[0].sku"));
+});
+
+test("describes scalar, object, and array paths for safe editor binding", () => {
+  const fields = describeRuntimeBindingPaths({ customer: { name: "Ada" }, items: [{ sku: "A-1" }] });
+
+  assert.equal(fields.find((field) => field.path === "customer").kind, "object");
+  assert.equal(fields.find((field) => field.path === "customer.name").kind, "scalar");
+  assert.equal(fields.find((field) => field.path === "items").kind, "array");
 });
