@@ -1,24 +1,19 @@
-<script setup>
-import { shallowRef } from "vue";
-
+<script setup lang="ts">import { shallowRef } from "vue";
 const props = defineProps({
-  title: { type: String, default: "确认执行此操作？" },
-  confirmButtonText: { type: String, default: "确认" },
-  cancelButtonText: { type: String, default: "取消" },
-  disabled: { type: Boolean, default: false },
-});
-
-const emit = defineEmits(["confirm", "cancel"]);
-const open = shallowRef(false);
-
-function confirm() {
-  open.value = false;
-  emit("confirm");
+    title: { type: String, default: "确认执行此操作？" },
+    confirmButtonText: { type: String, default: "确认" },
+    cancelButtonText: { type: String, default: "取消" },
+    disabled: { type: Boolean, default: false },
+}) as any;
+const emit = defineEmits(["confirm", "cancel"]) as any;
+const open = shallowRef(false) as any;
+function confirm(): any {
+    open.value = false;
+    emit("confirm");
 }
-
-function cancel() {
-  open.value = false;
-  emit("cancel");
+function cancel(): any {
+    open.value = false;
+    emit("cancel");
 }
 </script>
 

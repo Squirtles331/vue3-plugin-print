@@ -1,45 +1,41 @@
-<script setup>
-import { computed, useAttrs } from "vue";
+<script setup lang="ts">import { computed, useAttrs } from "vue";
 import PdIcon from "./PdIcon.vue";
-
 defineOptions({ inheritAttrs: false });
-
 const props = defineProps({
-  modelValue: { type: [String, Number], default: "" },
-  type: { type: String, default: "text" },
-  size: { type: String, default: "default" },
-  rows: { type: [Number, String], default: 3 },
-  clearable: { type: Boolean, default: false },
-  prefixIcon: { type: [String, Object, Function], default: "" },
-  disabled: { type: Boolean, default: false },
-  placeholder: { type: String, default: "" },
-  maxlength: { type: [Number, String], default: undefined },
-});
-
-const emit = defineEmits(["update:modelValue", "input", "change", "clear"]);
-const attrs = useAttrs();
-const isTextarea = computed(() => props.type === "textarea");
-const inputClass = computed(() => [
-  "pd-input",
-  `pd-input--${props.size}`,
-  {
-    "pd-input--textarea": isTextarea.value,
-    "pd-input--with-prefix": props.prefixIcon,
-    "pd-input--clearable": props.clearable,
-  },
-]);
-
-function emitValue(event, eventName) {
-  const value = event.target.value;
-  emit("update:modelValue", value);
-  emit(eventName, value);
+    modelValue: { type: [String, Number], default: "" },
+    type: { type: String, default: "text" },
+    size: { type: String, default: "default" },
+    rows: { type: [Number, String], default: 3 },
+    clearable: { type: Boolean, default: false },
+    prefixIcon: { type: [String, Object, Function], default: "" },
+    disabled: { type: Boolean, default: false },
+    placeholder: { type: String, default: "" },
+    maxlength: { type: [Number, String], default: undefined },
+    spellcheck: { type: [Boolean, String], default: undefined },
+    "aria-label": { type: String, default: undefined },
+}) as any;
+const emit = defineEmits(["update:modelValue", "input", "change", "clear", "click", "blur"]) as any;
+const attrs = useAttrs() as any;
+const isTextarea = computed((): any => props.type === "textarea") as any;
+const inputClass = computed((): any => [
+    "pd-input",
+    `pd-input--${props.size}`,
+    {
+        "pd-input--textarea": isTextarea.value,
+        "pd-input--with-prefix": props.prefixIcon,
+        "pd-input--clearable": props.clearable,
+    },
+]) as any;
+function emitValue(event: any, eventName: any): any {
+    const value = event.target.value;
+    emit("update:modelValue", value);
+    emit(eventName, value);
 }
-
-function clearValue() {
-  emit("update:modelValue", "");
-  emit("input", "");
-  emit("change", "");
-  emit("clear");
+function clearValue(): any {
+    emit("update:modelValue", "");
+    emit("input", "");
+    emit("change", "");
+    emit("clear");
 }
 </script>
 
@@ -58,8 +54,12 @@ function clearValue() {
       :disabled="disabled"
       :placeholder="placeholder"
       :maxlength="maxlength"
+      :spellcheck="spellcheck"
+      :aria-label="props['aria-label']"
       @input="emitValue($event, 'input')"
       @change="emitValue($event, 'change')"
+      @click="emit('click', $event)"
+      @blur="emit('blur', $event)"
     />
     <input
       v-else
@@ -70,8 +70,12 @@ function clearValue() {
       :disabled="disabled"
       :placeholder="placeholder"
       :maxlength="maxlength"
+      :spellcheck="spellcheck"
+      :aria-label="props['aria-label']"
       @input="emitValue($event, 'input')"
       @change="emitValue($event, 'change')"
+      @click="emit('click', $event)"
+      @blur="emit('blur', $event)"
     />
     <button v-if="clearable && modelValue" type="button" class="pd-input__clear" :disabled="disabled" @click="clearValue">x</button>
   </label>

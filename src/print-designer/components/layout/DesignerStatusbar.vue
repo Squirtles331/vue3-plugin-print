@@ -8,32 +8,31 @@
   </footer>
 </template>
 
-<script setup>
-defineProps({
-  currentPage: {
-    type: Number,
-    default: 1,
-  },
-  totalPages: {
-    type: Number,
-    default: 1,
-  },
-  selectedCount: {
-    type: Number,
-    default: 0,
-  },
-  unit: {
-    type: String,
-    default: "px",
-  },
-  zoomLabel: {
-    type: String,
-    default: "100%",
-  },
-  snapEnabled: {
-    type: Boolean,
-    default: true,
-  },
+<script setup lang="ts">defineProps({
+    currentPage: {
+        type: Number,
+        default: 1,
+    },
+    totalPages: {
+        type: Number,
+        default: 1,
+    },
+    selectedCount: {
+        type: Number,
+        default: 0,
+    },
+    unit: {
+        type: String,
+        default: "px",
+    },
+    zoomLabel: {
+        type: String,
+        default: "100%",
+    },
+    snapEnabled: {
+        type: Boolean,
+        default: true,
+    },
 });
 </script>
 

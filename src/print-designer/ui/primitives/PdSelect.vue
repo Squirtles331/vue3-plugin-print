@@ -1,20 +1,16 @@
-<script setup>
-import { computed } from "vue";
-
+<script setup lang="ts">import { computed } from "vue";
 const props = defineProps({
-  modelValue: { type: [String, Number, Boolean], default: "" },
-  size: { type: String, default: "default" },
-  disabled: { type: Boolean, default: false },
-  placeholder: { type: String, default: "" },
-});
-
-const emit = defineEmits(["update:modelValue", "change"]);
-const selectClass = computed(() => ["pd-select", `pd-select--${props.size}`]);
-
-function updateValue(event) {
-  const value = event.target.value;
-  emit("update:modelValue", value);
-  emit("change", value);
+    modelValue: { type: [String, Number, Boolean], default: "" },
+    size: { type: String, default: "default" },
+    disabled: { type: Boolean, default: false },
+    placeholder: { type: String, default: "" },
+}) as any;
+const emit = defineEmits(["update:modelValue", "change"]) as any;
+const selectClass = computed((): any => ["pd-select", `pd-select--${props.size}`]) as any;
+function updateValue(event: any): any {
+    const value = event.target.value;
+    emit("update:modelValue", value);
+    emit("change", value);
 }
 </script>
 

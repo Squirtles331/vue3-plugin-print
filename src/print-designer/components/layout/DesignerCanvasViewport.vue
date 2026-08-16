@@ -9,57 +9,50 @@
   </div>
 </template>
 
-<script setup>
-import { computed, ref } from "vue";
+<script setup lang="ts">import { computed, ref } from "vue";
 import PaperCanvas from "./PaperCanvas.vue";
-
 const props = defineProps({
-  zoom: {
-    type: Number,
-    default: 1,
-  },
-  scaledPaperWidth: {
-    type: Number,
-    default: 0,
-  },
-  scaledPaperHeight: {
-    type: Number,
-    default: 0,
-  },
-  pageWidthPx: {
-    type: Number,
-    default: 0,
-  },
-  pageHeightPx: {
-    type: Number,
-    default: 0,
-  },
-  pagePixelsPerUnit: {
-    type: Number,
-    default: 1,
-  },
-});
-
-const paperShellRef = ref(null);
-
-const paperShellStyle = computed(() => ({
-  width: `${props.scaledPaperWidth}px`,
-  minHeight: `${props.scaledPaperHeight}px`,
-}));
-
-const pageStackStyle = computed(() => ({
-  width: `${props.pageWidthPx}px`,
-  minHeight: `${props.pageHeightPx}px`,
-  transform: `scale(${props.zoom})`,
-  transformOrigin: "top left",
-}));
-
-function getPageStackShellElement() {
-  return paperShellRef.value;
+    zoom: {
+        type: Number,
+        default: 1,
+    },
+    scaledPaperWidth: {
+        type: Number,
+        default: 0,
+    },
+    scaledPaperHeight: {
+        type: Number,
+        default: 0,
+    },
+    pageWidthPx: {
+        type: Number,
+        default: 0,
+    },
+    pageHeightPx: {
+        type: Number,
+        default: 0,
+    },
+    pagePixelsPerUnit: {
+        type: Number,
+        default: 1,
+    },
+}) as any;
+const paperShellRef = ref(null) as any;
+const paperShellStyle = computed((): any => ({
+    width: `${props.scaledPaperWidth}px`,
+    minHeight: `${props.scaledPaperHeight}px`,
+})) as any;
+const pageStackStyle = computed((): any => ({
+    width: `${props.pageWidthPx}px`,
+    minHeight: `${props.pageHeightPx}px`,
+    transform: `scale(${props.zoom})`,
+    transformOrigin: "top left",
+})) as any;
+function getPageStackShellElement(): any {
+    return paperShellRef.value;
 }
-
 defineExpose({
-  getPageStackShellElement,
+    getPageStackShellElement,
 });
 </script>
 

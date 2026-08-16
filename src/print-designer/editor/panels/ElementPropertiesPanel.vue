@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="element-properties-panel" :class="{ 'element-properties-panel--table': isTableObject }">
     <section v-if="isMultipleSelection" class="element-properties-panel__multi">
       <header class="element-properties-panel__summary">
@@ -53,11 +53,11 @@
           </label>
           <label class="element-properties-panel__field">
             <span>背景颜色</span>
-            <input type="color" :value="multipleStyleValue('backgroundColor', '#ffffff')" @input="setMultipleStyleValue('backgroundColor', $event.target.value)" />
+            <input type="color" :value="multipleStyleValue('backgroundColor', '#ffffff')" @input="setMultipleStyleValue('backgroundColor', ($event.target as HTMLInputElement).value)" />
           </label>
           <label class="element-properties-panel__field">
             <span>边框颜色</span>
-            <input type="color" :value="multipleStyleValue('borderColor', '#000000')" @input="setMultipleStyleValue('borderColor', $event.target.value)" />
+            <input type="color" :value="multipleStyleValue('borderColor', '#000000')" @input="setMultipleStyleValue('borderColor', ($event.target as HTMLInputElement).value)" />
           </label>
           <label class="element-properties-panel__field">
             <span>边框宽度</span>
@@ -203,7 +203,7 @@
                     type="color"
                     :value="selectedTableCellStyleValue('backgroundColor', '#ffffff')"
                     :disabled="selectedObject.locked"
-                    @input="applySelectedTableCellStyle({ backgroundColor: $event.target.value })"
+                    @input="applySelectedTableCellStyle({ backgroundColor: ($event.target as HTMLInputElement).value })"
                   />
                 </label>
                 <label class="element-properties-panel__field">
@@ -213,7 +213,7 @@
                     type="color"
                     :value="selectedTableCellStyleValue('color', '#111827')"
                     :disabled="selectedObject.locked"
-                    @input="applySelectedTableCellStyle({ color: $event.target.value })"
+                    @input="applySelectedTableCellStyle({ color: ($event.target as HTMLInputElement).value })"
                   />
                 </label>
                 <label class="element-properties-panel__field">
@@ -488,7 +488,7 @@
                     class="element-properties-panel__color"
                     type="color"
                     :value="colorFieldValue({ source: 'style', key: 'backgroundColor' })"
-                    @input="setTableStyleValue('backgroundColor', $event.target.value)"
+                    @input="setTableStyleValue('backgroundColor', ($event.target as HTMLInputElement).value)"
                   />
                   <button type="button" class="element-properties-panel__mini-button" @click="setTableStyleValue('backgroundColor', 'transparent')">
                     清空
@@ -501,7 +501,7 @@
                   class="element-properties-panel__color"
                   type="color"
                   :value="colorFieldValue({ source: 'style', key: 'color' })"
-                  @input="setTableStyleValue('color', $event.target.value)"
+                  @input="setTableStyleValue('color', ($event.target as HTMLInputElement).value)"
                 />
               </label>
               <label class="element-properties-panel__field">
@@ -538,7 +538,7 @@
                     class="element-properties-panel__color"
                     type="color"
                     :value="colorFieldValue({ source: 'style', key: 'headerBackgroundColor' })"
-                    @input="setTableStyleValue('headerBackgroundColor', $event.target.value)"
+                    @input="setTableStyleValue('headerBackgroundColor', ($event.target as HTMLInputElement).value)"
                   />
                   <button type="button" class="element-properties-panel__mini-button" @click="setTableStyleValue('headerBackgroundColor', '#f3f4f6')">
                     重置
@@ -551,7 +551,7 @@
                   class="element-properties-panel__color"
                   type="color"
                   :value="colorFieldValue({ source: 'style', key: 'headerColor' })"
-                  @input="setTableStyleValue('headerColor', $event.target.value)"
+                  @input="setTableStyleValue('headerColor', ($event.target as HTMLInputElement).value)"
                 />
               </label>
               <label class="element-properties-panel__field">
@@ -588,7 +588,7 @@
                     class="element-properties-panel__color"
                     type="color"
                     :value="colorFieldValue({ source: 'style', key: 'footerBackgroundColor' })"
-                    @input="setTableStyleValue('footerBackgroundColor', $event.target.value)"
+                    @input="setTableStyleValue('footerBackgroundColor', ($event.target as HTMLInputElement).value)"
                   />
                   <button type="button" class="element-properties-panel__mini-button" @click="setTableStyleValue('footerBackgroundColor', '#f9fafb')">
                     重置
@@ -601,7 +601,7 @@
                   class="element-properties-panel__color"
                   type="color"
                   :value="colorFieldValue({ source: 'style', key: 'footerColor' })"
-                  @input="setTableStyleValue('footerColor', $event.target.value)"
+                  @input="setTableStyleValue('footerColor', ($event.target as HTMLInputElement).value)"
                 />
               </label>
               <label class="element-properties-panel__field">
@@ -656,7 +656,7 @@
                   class="element-properties-panel__color"
                   type="color"
                   :value="colorFieldValue({ source: 'style', key: 'borderColor' })"
-                  @input="setTableStyleValue('borderColor', $event.target.value)"
+                  @input="setTableStyleValue('borderColor', ($event.target as HTMLInputElement).value)"
                 />
               </label>
             </div>
@@ -818,7 +818,7 @@
                     class="element-properties-panel__color"
                     type="color"
                     :value="colorFieldValue(field)"
-                    @input="setFieldValue(field, $event.target.value)"
+                    @input="setFieldValue(field, ($event.target as HTMLInputElement).value)"
                   />
 
                   <div v-else-if="field.control === FIELD_CONTROL.IMAGE" class="element-properties-panel__image-field">
@@ -1229,8 +1229,7 @@
   </div>
 </template>
 
-<script setup>
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+<script setup lang="ts">import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { PdMessage, PdMessageBox } from "../../ui/feedback.js";
 import PdInput from "../../ui/primitives/PdInput.vue";
@@ -1243,20 +1242,7 @@ import TableCodeEditorDialog from "../components/TableCodeEditorDialog.vue";
 import { FIELD_CONTROL, INSPECTOR_TABS, TAB_LABELS, SECTION_LAYOUT } from "../../core/elementInspectorSchemas";
 import { getElementDefinition, getElementSizeRule } from "../../core/elementFactory";
 import { getElementPropertyCapabilities, validateElementProperty } from "../../core/propertyCapabilities.js";
-import {
-  applyTableCellStyle as applyTableCellStylePatch,
-  insertTableColumn as insertTableColumnAt,
-  insertTableRow as insertTableRowAt,
-  mergeTableCells as mergeTableCellsPatch,
-  removeTableColumn as removeTableColumnAt,
-  removeTableRow as removeTableRowAt,
-  renameTableColumn as renameTableColumnPatch,
-  splitTableCell as splitTableCellPatch,
-  tableCellStyle as tableCellStyleValue,
-  tableCellValue as tableCellTextValue,
-  toTableCellDescriptor,
-  updateTableCell as updateTableCellValue,
-} from "../../core/tableModel.js";
+import { applyTableCellStyle as applyTableCellStylePatch, insertTableColumn as insertTableColumnAt, insertTableRow as insertTableRowAt, mergeTableCells as mergeTableCellsPatch, removeTableColumn as removeTableColumnAt, removeTableRow as removeTableRowAt, renameTableColumn as renameTableColumnPatch, splitTableCell as splitTableCellPatch, tableCellStyle as tableCellStyleValue, tableCellValue as tableCellTextValue, toTableCellDescriptor, updateTableCell as updateTableCellValue, } from "../../core/tableModel.js";
 import { MM_TO_CSS_PX } from "../measurement.js";
 import { createRemoveObjectsCommand, createUpdateObjectPropsCommand } from "../commands/documentCommands.js";
 import { createOrderIds, createOrderTransactionCommand, createPatchTransactionCommand } from "../commands/layoutCommands.js";
@@ -1266,160 +1252,144 @@ import { useEditorHistoryStore } from "../stores/historyStore";
 import { useEditorSelectionStore } from "../stores/selectionStore";
 import { createLocalElementPresetRepository } from "../../template/elementPresetRepository.js";
 import { fieldErrorKey, getFieldError } from "./fieldErrorState.js";
-
-const documentStore = useEditorDocumentStore();
-const historyStore = useEditorHistoryStore();
-const selectionStore = useEditorSelectionStore();
-const presetRepository = createLocalElementPresetRepository();
-
-const { objectsById } = storeToRefs(documentStore);
-const { selectedIds, tableSelection } = storeToRefs(selectionStore);
-
-const activeTab = ref(INSPECTOR_TABS.PROPERTY);
+const documentStore = useEditorDocumentStore() as any;
+const historyStore = useEditorHistoryStore() as any;
+const selectionStore = useEditorSelectionStore() as any;
+const presetRepository = createLocalElementPresetRepository() as any;
+const { objectsById } = storeToRefs(documentStore) as any;
+const { selectedIds, tableSelection } = storeToRefs(selectionStore) as any;
+const activeTab = ref(INSPECTOR_TABS.PROPERTY) as any;
 const TABLE_ALIGN_OPTIONS = [
-  { label: "Left", value: "left" },
-  { label: "Center", value: "center" },
-  { label: "Right", value: "right" },
-];
+    { label: "Left", value: "left" },
+    { label: "Center", value: "center" },
+    { label: "Right", value: "right" },
+] as any;
 const TABLE_TEXT_ALIGN_OPTIONS = [
-  { label: "左对齐", value: "left" },
-  { label: "居中", value: "center" },
-  { label: "右对齐", value: "right" },
-];
+    { label: "左对齐", value: "left" },
+    { label: "居中", value: "center" },
+    { label: "右对齐", value: "right" },
+] as any;
 const TABLE_FORMATTER_OPTIONS = [
-  { label: "不格式化", value: "" },
-  { label: "数字", value: "number" },
-  { label: "货币", value: "currency" },
-  { label: "日期", value: "date" },
-];
+    { label: "不格式化", value: "" },
+    { label: "数字", value: "number" },
+    { label: "货币", value: "currency" },
+    { label: "日期", value: "date" },
+] as any;
 const TABLE_BORDER_STYLE_OPTIONS = [
-  { label: "实线", value: "solid" },
-  { label: "虚线", value: "dashed" },
-  { label: "点线", value: "dotted" },
-  { label: "双线", value: "double" },
-];
-
+    { label: "实线", value: "solid" },
+    { label: "虚线", value: "dashed" },
+    { label: "点线", value: "dotted" },
+    { label: "双线", value: "double" },
+] as any;
 const STRUCTURED_FIELD_CONTROLS = new Set([
-  FIELD_CONTROL.TABLE_COLUMNS,
-  FIELD_CONTROL.TABLE_SAMPLE_ROWS,
-  FIELD_CONTROL.TABLE_FOOTER,
-  FIELD_CONTROL.MULTI_LABEL_ITEMS,
-  FIELD_CONTROL.ACTIONS,
-  FIELD_CONTROL.BUTTONS,
-]);
-const SQUARE_DIMENSION_TYPES = new Set(["circle", "qrcode"]);
-
+    FIELD_CONTROL.TABLE_COLUMNS,
+    FIELD_CONTROL.TABLE_SAMPLE_ROWS,
+    FIELD_CONTROL.TABLE_FOOTER,
+    FIELD_CONTROL.MULTI_LABEL_ITEMS,
+    FIELD_CONTROL.ACTIONS,
+    FIELD_CONTROL.BUTTONS,
+]) as any;
+const SQUARE_DIMENSION_TYPES = new Set(["circle", "qrcode"]) as any;
 const tableColumnsField = {
-  source: "props",
-  key: "columns",
-  control: FIELD_CONTROL.TABLE_COLUMNS,
-};
-
-const selectedObject = computed(() => {
-  if (selectedIds.value.length !== 1) {
-    return null;
-  }
-
-  const objectId = selectedIds.value[0];
-  return objectId ? objectsById.value[objectId] || null : null;
-});
-const isMultipleSelection = computed(() => selectedIds.value.length > 1);
-const multipleSelectedObjects = computed(() => selectedIds.value.map((id) => objectsById.value[id]).filter(Boolean));
-const isTableObject = computed(() => selectedObject.value?.type === "table");
-const selectedTableCells = computed(() => {
-  const selection = tableSelection.value;
-  if (!isTableObject.value || selection?.tableId !== selectedObject.value?.id) {
-    return [];
-  }
-  return selection.cells || [];
-});
-const selectedTableSection = computed(() => tableSelection.value?.section === "footer" ? "footer" : "body");
-
-function multipleBooleanValue(key, fallback) {
-  const values = multipleSelectedObjects.value.map((object) => object[key]);
-  return values.length && values.every((value) => value === values[0]) ? values[0] : fallback;
+    source: "props",
+    key: "columns",
+    control: FIELD_CONTROL.TABLE_COLUMNS,
+} as any;
+const selectedObject = computed((): any => {
+    if (selectedIds.value.length !== 1) {
+        return null;
+    }
+    const objectId = selectedIds.value[0];
+    return objectId ? objectsById.value[objectId] || null : null;
+}) as any;
+const isMultipleSelection = computed((): any => selectedIds.value.length > 1) as any;
+const multipleSelectedObjects = computed((): any => selectedIds.value.map((id: any): any => objectsById.value[id]).filter(Boolean)) as any;
+const isTableObject = computed((): any => selectedObject.value?.type === "table") as any;
+const selectedTableCells = computed((): any => {
+    const selection = tableSelection.value;
+    if (!isTableObject.value || selection?.tableId !== selectedObject.value?.id) {
+        return [];
+    }
+    return selection.cells || [];
+}) as any;
+const selectedTableSection = computed((): any => tableSelection.value?.section === "footer" ? "footer" : "body") as any;
+function multipleBooleanValue(key: any, fallback: any): any {
+    const values = multipleSelectedObjects.value.map((object: any): any => object[key]);
+    return values.length && values.every((value: any): any => value === values[0]) ? values[0] : fallback;
 }
-
-function multipleRootValue(key, fallback) {
-  const values = multipleSelectedObjects.value.map((object) => object[key]);
-  return values.length && values.every((value) => value === values[0]) && Number.isFinite(Number(values[0]))
-    ? Number(values[0])
-    : fallback;
+function multipleRootValue(key: any, fallback: any): any {
+    const values = multipleSelectedObjects.value.map((object: any): any => object[key]);
+    return values.length && values.every((value: any): any => value === values[0]) && Number.isFinite(Number(values[0]))
+        ? Number(values[0])
+        : fallback;
 }
-
-function multipleStyleValue(key, fallback) {
-  const values = multipleSelectedObjects.value.map((object) => object.style?.[key]);
-  return values.length && values.every((value) => value === values[0]) && values[0] != null ? values[0] : fallback;
+function multipleStyleValue(key: any, fallback: any): any {
+    const values = multipleSelectedObjects.value.map((object: any): any => object.style?.[key]);
+    return values.length && values.every((value: any): any => value === values[0]) && values[0] != null ? values[0] : fallback;
 }
-
-function setMultipleRootValue(key, value) {
-  const patches = multipleSelectedObjects.value
-    .filter((object) => !object.locked || key === "locked")
-    .map((object) => {
-      const rule = getElementSizeRule(object.type);
-      const nextValue = key === "width" && rule
-        ? Math.min(rule.maxWidth, Math.max(rule.minWidth, Number(value) || rule.minWidth))
-        : key === "height" && rule
-          ? Math.min(rule.maxHeight, Math.max(rule.minHeight, Number(value) || rule.minHeight))
-          : value;
-      return { id: object.id, patch: { [key]: nextValue } };
+function setMultipleRootValue(key: any, value: any): any {
+    const patches = multipleSelectedObjects.value
+        .filter((object: any): any => !object.locked || key === "locked")
+        .map((object: any): any => {
+        const rule = getElementSizeRule(object.type);
+        const nextValue = key === "width" && rule
+            ? Math.min(rule.maxWidth, Math.max(rule.minWidth, Number(value) || rule.minWidth))
+            : key === "height" && rule
+                ? Math.min(rule.maxHeight, Math.max(rule.minHeight, Number(value) || rule.minHeight))
+                : value;
+        return { id: object.id, patch: { [key]: nextValue } };
     });
-  const command = createPatchTransactionCommand(documentStore, `Update ${key} for selection`, patches);
-  if (command) {
-    executeEditorCommand(historyStore, command);
-  }
+    const command = createPatchTransactionCommand(documentStore, `Update ${key} for selection`, patches);
+    if (command) {
+        executeEditorCommand(historyStore, command);
+    }
 }
-
-function setMultipleStyleValue(key, value) {
-  const patches = multipleSelectedObjects.value
-    .filter((object) => !object.locked)
-    .map((object) => ({ id: object.id, patch: { style: { ...(object.style || {}), [key]: value } } }));
-  const command = createPatchTransactionCommand(documentStore, `Update ${key} for selection`, patches);
-  if (command) {
-    executeEditorCommand(historyStore, command);
-  }
+function setMultipleStyleValue(key: any, value: any): any {
+    const patches = multipleSelectedObjects.value
+        .filter((object: any): any => !object.locked)
+        .map((object: any): any => ({ id: object.id, patch: { style: { ...(object.style || {}), [key]: value } } }));
+    const command = createPatchTransactionCommand(documentStore, `Update ${key} for selection`, patches);
+    if (command) {
+        executeEditorCommand(historyStore, command);
+    }
 }
-
-function reorderMultipleSelection(action) {
-  const pageId = multipleSelectedObjects.value[0]?.pageId;
-  if (!pageId || multipleSelectedObjects.value.some((object) => object.pageId !== pageId)) {
-    return;
-  }
-  const nextIds = createOrderIds(documentStore.pageObjectMap[pageId] || [], documentStore.objectsById, selectedIds.value, action);
-  const command = createOrderTransactionCommand(documentStore, pageId, nextIds, action === "front" ? "Bring selection to front" : "Send selection to back");
-  if (command) {
-    executeEditorCommand(historyStore, command);
-  }
+function reorderMultipleSelection(action: any): any {
+    const pageId = multipleSelectedObjects.value[0]?.pageId;
+    if (!pageId || multipleSelectedObjects.value.some((object: any): any => object.pageId !== pageId)) {
+        return;
+    }
+    const nextIds = createOrderIds(documentStore.pageObjectMap[pageId] || [], documentStore.objectsById, selectedIds.value, action);
+    const command = createOrderTransactionCommand(documentStore, pageId, nextIds, action === "front" ? "Bring selection to front" : "Send selection to back");
+    if (command) {
+        executeEditorCommand(historyStore, command);
+    }
 }
-
-const selectedDefinition = computed(() => {
-  if (!selectedObject.value) {
-    return null;
-  }
-
-  return getElementDefinition(selectedObject.value.type);
-});
-
-const selectedSchema = computed(() => selectedDefinition.value?.inspectorSchema || null);
-const tabs = computed(() => selectedSchema.value?.tabs || []);
-const activeTabSchema = computed(() => tabs.value.find((tab) => tab.key === activeTab.value) || null);
-const propertyCapabilities = computed(() => getElementPropertyCapabilities(selectedObject.value?.type).fields);
-const activeSections = computed(() => enrichSections(normalizeSections(activeTabSchema.value?.sections || []), propertyCapabilities.value));
-const fieldErrors = ref({});
-const propertyEditSession = ref(null);
-let propertyEditTimer = null;
+const selectedDefinition = computed((): any => {
+    if (!selectedObject.value) {
+        return null;
+    }
+    return getElementDefinition(selectedObject.value.type);
+}) as any;
+const selectedSchema = computed((): any => selectedDefinition.value?.inspectorSchema || null) as any;
+const tabs = computed((): any => selectedSchema.value?.tabs || []) as any;
+const activeTabSchema = computed((): any => tabs.value.find((tab: any): any => tab.key === activeTab.value) || null) as any;
+const propertyCapabilities = computed((): any => getElementPropertyCapabilities(selectedObject.value?.type).fields) as any;
+const activeSections = computed((): any => enrichSections(normalizeSections(activeTabSchema.value?.sections || []), propertyCapabilities.value)) as any;
+const fieldErrors = ref({}) as any;
+const propertyEditSession = ref(null) as any;
+let propertyEditTimer = null as any;
 const tableEditorDrafts = ref({
-  columns: "",
-  sampleData: "",
-  footerData: "",
-  transform: "",
-});
+    columns: "",
+    sampleData: "",
+    footerData: "",
+    transform: "",
+}) as any;
 const activeTableEditor = ref({
-  visible: false,
-  key: "",
-  title: "",
-  language: "json",
-});
+    visible: false,
+    key: "",
+    title: "",
+    language: "json",
+}) as any;
 /*
 
     const sampleDataField = {
@@ -1444,1988 +1414,1646 @@ const activeTableEditor = ref({
   });
 });
 */
-const typeLabel = computed(() => selectedDefinition.value?.label || selectedObject.value?.type || "");
-const panelHint = computed(() => {
-  if (!selectedObject.value) {
-    return "选中元素后，这里会显示位置、样式、绑定和运行时属性。";
-  }
-
-  const label = typeLabel.value || "元素";
-  const status = selectedObject.value.locked ? "已锁定，部分字段只读。" : "可直接编辑。";
-
-  return `正在编辑 ${label}。${status}`;
-});
-
-watch(
-  tabs,
-  (nextTabs) => {
+const typeLabel = computed((): any => selectedDefinition.value?.label || selectedObject.value?.type || "") as any;
+const panelHint = computed((): any => {
+    if (!selectedObject.value) {
+        return "选中元素后，这里会显示位置、样式、绑定和运行时属性。";
+    }
+    const label = typeLabel.value || "元素";
+    const status = selectedObject.value.locked ? "已锁定，部分字段只读。" : "可直接编辑。";
+    return `正在编辑 ${label}。${status}`;
+}) as any;
+watch(tabs, (nextTabs: any): any => {
     if (!nextTabs.length) {
-      activeTab.value = INSPECTOR_TABS.PROPERTY;
-      return;
+        activeTab.value = INSPECTOR_TABS.PROPERTY;
+        return;
     }
-
-    const hasCurrent = nextTabs.some((tab) => tab.key === activeTab.value);
+    const hasCurrent = nextTabs.some((tab: any): any => tab.key === activeTab.value);
     if (!hasCurrent) {
-      activeTab.value = nextTabs[0].key;
+        activeTab.value = nextTabs[0].key;
     }
-  },
-  { immediate: true }
-);
-
-watch(
-  () => selectedObject.value?.id,
-  () => {
+}, { immediate: true });
+watch((): any => selectedObject.value?.id, (): any => {
     fieldErrors.value = {};
     endPropertyEditSession();
-  }
-);
-
-watch(
-  selectedIds,
-  () => {
+});
+watch(selectedIds, (): any => {
     endPropertyEditSession();
-  }
-);
-
-watch(
-  () => [
+});
+watch((): any => [
     selectedObject.value?.id || "",
     selectedObject.value?.props?.columns,
     selectedObject.value?.props?.sampleData,
     selectedObject.value?.props?.footerData,
     selectedObject.value?.props?.transform,
-  ],
-  () => {
+], (): any => {
     if (!isTableObject.value) {
-      tableEditorDrafts.value = {
-        columns: "",
-        sampleData: "",
-        footerData: "",
-        transform: "",
-      };
-      return;
-    }
-
-    tableEditorDrafts.value = {
-      columns: tableJsonPropValue("columns"),
-      sampleData: tableJsonPropValue("sampleData"),
-      footerData: tableJsonPropValue("footerData"),
-      transform: tableJsonPropValue("transform"),
-    };
-  },
-  { immediate: true, deep: true }
-);
-
-function tabLabel(tab) {
-  return TAB_LABELS[tab] || tab;
-}
-
-function fieldControl(field) {
-  if (!field) {
-    return "";
-  }
-
-  return field.control || "";
-}
-
-function normalizeField(field) {
-  return {
-    ...field,
-    control: fieldControl(field),
-  };
-}
-
-function normalizeSection(section) {
-  return {
-    ...section,
-    fields: (section.fields || []).map(normalizeField),
-  };
-}
-
-function normalizeSections(sections) {
-  return regroupSections(sections.map(normalizeSection));
-}
-
-function enrichSections(sections, capabilities) {
-  return sections.map((section) => ({
-    ...section,
-    fields: section.fields.map((field) => {
-      const capability = capabilities.find((item) => item.source === field.source && item.key === field.key);
-      return capability
-        ? { ...field, min: field.min ?? capability.min, max: field.max ?? capability.max, capability }
-        : field;
-    }),
-  }));
-}
-
-function isStructuredField(field) {
-  return STRUCTURED_FIELD_CONTROLS.has(field?.control);
-}
-
-function createRuntimeSection(key, label, layout, fields) {
-  return {
-    key,
-    label,
-    layout,
-    fields,
-  };
-}
-
-function fieldIdentifier(field) {
-  return `${field.source}:${field.key}`;
-}
-
-const GLOBAL_HIDDEN_RUNTIME_FIELDS = new Set();
-const HIDDEN_RUNTIME_FIELDS = {
-  "text:property": new Set(["props:sampleValue"]),
-  "text:style": new Set(["props:textPreset"]),
-  "text:advanced": new Set(["root:zIndex"]),
-  "image:property": new Set(),
-  "image:style": new Set(),
-  "image:advanced": new Set(),
-};
-
-function isHiddenField(field) {
-  if (!field) {
-    return true;
-  }
-
-  const identifier = fieldIdentifier(field);
-  const runtimeKey = `${selectedObject.value?.type || ""}:${activeTab.value || ""}`;
-  const hiddenFields = HIDDEN_RUNTIME_FIELDS[runtimeKey];
-
-  return GLOBAL_HIDDEN_RUNTIME_FIELDS.has(identifier) || hiddenFields?.has(identifier) || false;
-}
-
-function groupRuntimeSections(fields, definitions) {
-  const visibleFields = fields.filter((field) => !isHiddenField(field));
-  const fieldMap = new Map(visibleFields.map((field) => [fieldIdentifier(field), field]));
-  const used = new Set();
-  const sections = [];
-
-  definitions.forEach((definition) => {
-    const sectionFields = (definition.fields || [])
-      .map((id) => fieldMap.get(id))
-      .filter(Boolean);
-
-    if (!sectionFields.length) {
-      return;
-    }
-
-    sectionFields.forEach((field) => used.add(fieldIdentifier(field)));
-    sections.push(createRuntimeSection(definition.key, definition.label, definition.layout, sectionFields));
-  });
-
-  const remainingFields = visibleFields.filter((field) => !used.has(fieldIdentifier(field)));
-
-  if (remainingFields.length) {
-    sections.push(createRuntimeSection("more", "更多", SECTION_LAYOUT.STACK, remainingFields));
-  }
-
-  return sections;
-}
-
-function createGeometryRuntimeSection() {
-  return createRuntimeSection("geometry", "位置与尺寸", SECTION_LAYOUT.GRID_2, [
-    "root:x",
-    "root:y",
-    "root:width",
-    "root:height",
-    "root:rotation",
-  ]);
-}
-
-function createLayerRuntimeSection() {
-  return createRuntimeSection("layer", "层级", SECTION_LAYOUT.STACK, ["root:zIndex", "root:layerActions"]);
-}
-
-function createMetadataRuntimeSection() {
-  return createRuntimeSection("metadata", "元素信息", SECTION_LAYOUT.STACK, ["root:id", "root:type"]);
-}
-
-function createBehaviorRuntimeSection(extraFields = []) {
-  return createRuntimeSection("behavior", "行为", SECTION_LAYOUT.GRID_2, [
-    "root:locked",
-    "root:printable",
-    "root:repeatPerPage",
-    ...extraFields,
-  ]);
-}
-
-function createActionsRuntimeSection() {
-  return createRuntimeSection("actions", "扩展能力", SECTION_LAYOUT.STACK, ["root:saveAsTemplate"]);
-}
-
-function createDangerRuntimeSection() {
-  return createRuntimeSection("danger", "危险操作", SECTION_LAYOUT.STACK, ["root:deleteElement"]);
-}
-
-function runtimeSectionDefinitions(type, tab) {
-  switch (`${type}:${tab}`) {
-    case "text:property":
-      return [
-        createRuntimeSection("geometry", "位置与尺寸", SECTION_LAYOUT.GRID_2, [
-          "root:x",
-          "root:y",
-          "root:width",
-          "root:height",
-        ]),
-        createLayerRuntimeSection(),
-        createRuntimeSection("content", "内容", SECTION_LAYOUT.STACK, [
-          "root:content",
-          "root:variable",
-        ]),
-        createRuntimeSection("behavior", "数据 & 行为", SECTION_LAYOUT.GRID_2, [
-          "root:repeatPerPage",
-          "props:autoHeight",
-          "props:whiteSpace",
-          "root:printable",
-        ]),
-      ];
-    case "text:style":
-      return [
-        createRuntimeSection("layout", "排版", SECTION_LAYOUT.GRID_2, [
-          "props:writingMode",
-          "style:fontSize",
-          "style:color",
-          "style:textAlign",
-          "style:verticalAlign",
-          "style:fontFamily",
-          "style:fontWeight",
-          "style:fontStyle",
-          "style:textDecoration",
-          "style:lineHeight",
-          "style:letterSpacing",
-        ]),
-        createRuntimeSection("border", "边框", SECTION_LAYOUT.GRID_2, [
-          "style:borderStyle",
-          "style:borderWidth",
-          "style:borderColor",
-        ]),
-        createRuntimeSection("appearance", "外观", SECTION_LAYOUT.GRID_2, [
-          "style:backgroundColor",
-        ]),
-      ];
-    case "text:advanced":
-      return [
-        createMetadataRuntimeSection(),
-        createActionsRuntimeSection(),
-        createDangerRuntimeSection(),
-      ];
-    case "image:property":
-      return [
-        createRuntimeSection("geometry", "位置与尺寸", SECTION_LAYOUT.GRID_2, [
-          "root:x",
-          "root:y",
-          "root:width",
-          "root:height",
-        ]),
-        createLayerRuntimeSection(),
-        createRuntimeSection("source", "图片来源", SECTION_LAYOUT.STACK, [
-          "props:src",
-          "root:variable",
-        ]),
-        createRuntimeSection("behavior", "数据 & 行为", SECTION_LAYOUT.STACK, ["root:repeatPerPage", "root:printable"]),
-      ];
-    case "image:style":
-      return [
-        createRuntimeSection("border", "边框", SECTION_LAYOUT.STACK, [
-          "style:borderStyle",
-          "style:borderWidth",
-          "style:borderColor",
-        ]),
-        createRuntimeSection("appearance", "外观", SECTION_LAYOUT.STACK, [
-          "style:backgroundColor",
-          "style:objectFit",
-          "style:objectPosition",
-          "style:opacity",
-        ]),
-      ];
-    case "image:advanced":
-      return [
-        createMetadataRuntimeSection(),
-        createActionsRuntimeSection(),
-        createDangerRuntimeSection(),
-      ];
-    case "barcode:property":
-      return [
-        createGeometryRuntimeSection(),
-        createLayerRuntimeSection(),
-        createRuntimeSection("binding", "数据绑定", SECTION_LAYOUT.STACK, ["root:variable"]),
-        createRuntimeSection("content", "内容", SECTION_LAYOUT.STACK, [
-          "root:content",
-          "props:format",
-          "props:displayValue",
-          "props:margin",
-          "props:textMargin",
-          "props:textFontSize",
-        ]),
-      ];
-    case "barcode:style":
-      return [
-        createRuntimeSection("colors", "颜色", SECTION_LAYOUT.GRID_2, ["style:color", "style:backgroundColor"]),
-        createRuntimeSection("text", "文字", SECTION_LAYOUT.GRID_2, [
-          "style:fontFamily",
-          "style:fontSize",
-          "style:fontWeight",
-          "style:letterSpacing",
-          "style:textAlign",
-        ]),
-        createRuntimeSection("box", "盒模型", SECTION_LAYOUT.GRID_2, [
-          "style:opacity",
-          "style:borderColor",
-          "style:borderWidth",
-          "style:borderStyle",
-          "style:borderRadius",
-          "style:padding",
-        ]),
-      ];
-    case "barcode:advanced":
-      return [
-        createMetadataRuntimeSection(),
-        createBehaviorRuntimeSection(),
-        createActionsRuntimeSection(),
-        createDangerRuntimeSection(),
-      ];
-    case "qrcode:property":
-      return [
-        createGeometryRuntimeSection(),
-        createLayerRuntimeSection(),
-        createRuntimeSection("binding", "数据绑定", SECTION_LAYOUT.STACK, ["root:variable"]),
-        createRuntimeSection("content", "内容", SECTION_LAYOUT.STACK, ["root:content", "props:eccLevel", "props:margin"]),
-      ];
-    case "qrcode:style":
-      return [
-        createRuntimeSection("colors", "颜色", SECTION_LAYOUT.GRID_2, ["style:color", "style:backgroundColor"]),
-        createRuntimeSection("box", "盒模型", SECTION_LAYOUT.GRID_2, [
-          "style:opacity",
-          "style:borderColor",
-          "style:borderWidth",
-          "style:borderStyle",
-          "style:borderRadius",
-          "style:padding",
-        ]),
-      ];
-    case "qrcode:advanced":
-      return [
-        createMetadataRuntimeSection(),
-        createBehaviorRuntimeSection(),
-        createActionsRuntimeSection(),
-        createDangerRuntimeSection(),
-      ];
-    case "pageNumber:property":
-      return [
-        createGeometryRuntimeSection(),
-        createLayerRuntimeSection(),
-        createRuntimeSection("preview", "预览", SECTION_LAYOUT.GRID_2, ["root:content", "props:totalPages"]),
-        createRuntimeSection("format", "格式", SECTION_LAYOUT.STACK, ["props:format"]),
-      ];
-    case "pageNumber:style":
-      return [
-        createRuntimeSection("typography", "文字", SECTION_LAYOUT.GRID_2, [
-          "style:fontFamily",
-          "style:fontSize",
-          "style:fontWeight",
-          "style:fontStyle",
-          "style:color",
-          "style:textAlign",
-          "style:verticalAlign",
-          "style:lineHeight",
-          "style:letterSpacing",
-        ]),
-        createRuntimeSection("box", "盒模型", SECTION_LAYOUT.GRID_2, [
-          "style:opacity",
-          "style:backgroundColor",
-          "style:borderColor",
-          "style:borderWidth",
-          "style:borderStyle",
-          "style:borderRadius",
-          "style:padding",
-        ]),
-      ];
-    case "pageNumber:advanced":
-      return [
-        createMetadataRuntimeSection(),
-        createBehaviorRuntimeSection(),
-        createActionsRuntimeSection(),
-        createDangerRuntimeSection(),
-      ];
-    case "line:property":
-      return [createGeometryRuntimeSection(), createLayerRuntimeSection()];
-    case "line:style":
-      return [
-        createRuntimeSection("stroke", "线条", SECTION_LAYOUT.GRID_2, [
-          "style:borderColor",
-          "style:borderWidth",
-          "style:borderStyle",
-          "style:opacity",
-        ]),
-      ];
-    case "line:advanced":
-      return [
-        createMetadataRuntimeSection(),
-        createBehaviorRuntimeSection(),
-        createActionsRuntimeSection(),
-        createDangerRuntimeSection(),
-      ];
-    case "rect:style":
-    case "circle:style":
-      return [
-        createRuntimeSection("fill", "填充", SECTION_LAYOUT.GRID_2, [
-          "style:opacity",
-          "style:backgroundColor",
-        ]),
-        createRuntimeSection("stroke", "描边", SECTION_LAYOUT.GRID_2, [
-          "style:borderColor",
-          "style:borderWidth",
-          "style:borderStyle",
-          "style:borderRadius",
-        ]),
-        createRuntimeSection("spacing", "内边距", SECTION_LAYOUT.STACK, ["style:padding"]),
-      ];
-    case "rect:property":
-    case "circle:property":
-      return [createGeometryRuntimeSection(), createLayerRuntimeSection()];
-    case "rect:advanced":
-    case "circle:advanced":
-      return [
-        createMetadataRuntimeSection(),
-        createBehaviorRuntimeSection(),
-        createActionsRuntimeSection(),
-        createDangerRuntimeSection(),
-      ];
-    case "table:property":
-      return [
-        createGeometryRuntimeSection(),
-        createLayerRuntimeSection(),
-        createRuntimeSection("bindings", "数据绑定", SECTION_LAYOUT.STACK, [
-          "props:dataVariable",
-          "props:footerDataVariable",
-        ]),
-        createRuntimeSection("structure", "结构", SECTION_LAYOUT.GRID_2, ["props:showHeader", "props:showFooter"]),
-        createRuntimeSection("columns", "列配置", SECTION_LAYOUT.STACK, ["props:columns"]),
-        createRuntimeSection("preview", "预览数据", SECTION_LAYOUT.STACK, ["props:sampleData"]),
-      ];
-    case "table:style":
-      return [
-        createRuntimeSection("text", "文字", SECTION_LAYOUT.GRID_2, [
-          "style:fontFamily",
-          "style:fontSize",
-          "style:fontWeight",
-          "style:fontStyle",
-          "style:color",
-          "style:textAlign",
-          "style:verticalAlign",
-          "style:lineHeight",
-          "style:letterSpacing",
-        ]),
-        createRuntimeSection("box", "盒模型", SECTION_LAYOUT.GRID_2, [
-          "style:opacity",
-          "style:backgroundColor",
-          "style:borderColor",
-          "style:borderWidth",
-          "style:borderStyle",
-          "style:borderRadius",
-          "style:padding",
-        ]),
-      ];
-    case "table:advanced":
-      return [
-        createMetadataRuntimeSection(),
-        createRuntimeSection("pagination", "分页", SECTION_LAYOUT.GRID_2, [
-          "props:autoPaginate",
-          "props:tfootRepeat",
-        ]),
-        createBehaviorRuntimeSection(),
-        createRuntimeSection("footer", "页脚", SECTION_LAYOUT.STACK, ["props:footerData"]),
-        createRuntimeSection("transform", "数据转换", SECTION_LAYOUT.STACK, ["props:transform"]),
-        createActionsRuntimeSection(),
-        createDangerRuntimeSection(),
-      ];
-    case "multiLabel:property":
-      return [
-        createGeometryRuntimeSection(),
-        createLayerRuntimeSection(),
-        createRuntimeSection("binding", "数据绑定", SECTION_LAYOUT.STACK, ["props:dataVariable"]),
-        createRuntimeSection("layout", "布局", SECTION_LAYOUT.GRID_2, [
-          "props:rows",
-          "props:cols",
-          "props:gapX",
-          "props:gapY",
-          "props:direction",
-          "props:cellPadding",
-        ]),
-        createRuntimeSection("mapping", "字段映射", SECTION_LAYOUT.STACK, [
-          "props:primaryPath",
-          "props:secondaryPath",
-          "props:tertiaryPath",
-        ]),
-        createRuntimeSection("preview", "预览数据", SECTION_LAYOUT.STACK, ["props:sampleData"]),
-      ];
-    case "multiLabel:style":
-      return [
-        createRuntimeSection("text", "文字", SECTION_LAYOUT.GRID_2, [
-          "style:fontFamily",
-          "style:fontSize",
-          "style:fontWeight",
-          "style:fontStyle",
-          "style:color",
-          "style:textAlign",
-          "style:verticalAlign",
-          "style:lineHeight",
-          "style:letterSpacing",
-        ]),
-        createRuntimeSection("card", "标签卡片", SECTION_LAYOUT.GRID_2, [
-          "style:opacity",
-          "style:backgroundColor",
-          "style:borderColor",
-          "style:borderWidth",
-          "style:borderStyle",
-          "style:borderRadius",
-          "style:padding",
-        ]),
-      ];
-    case "multiLabel:advanced":
-      return [
-        createMetadataRuntimeSection(),
-        createBehaviorRuntimeSection(),
-        createActionsRuntimeSection(),
-        createDangerRuntimeSection(),
-      ];
-    default:
-      return null;
-  }
-}
-
-function regroupSections(sections) {
-  const definitions = runtimeSectionDefinitions(selectedObject.value?.type, activeTab.value);
-
-  if (!definitions?.length) {
-    return sections;
-  }
-
-  const fields = sections.flatMap((section) => section.fields || []);
-  return groupRuntimeSections(fields, definitions);
-}
-
-function sectionLayoutClass(layout) {
-  switch (layout) {
-    case SECTION_LAYOUT.GRID_2:
-      return "is-grid-2";
-    case SECTION_LAYOUT.ACTIONS_2X2:
-      return "is-actions-2x2";
-    case SECTION_LAYOUT.INLINE_BUTTONS:
-      return "is-inline-buttons";
-    default:
-      return "is-stack";
-  }
-}
-
-function displayNumber(value) {
-  return Number.isFinite(value) ? value.toFixed(1) : "--";
-}
-
-function getFieldValue(field) {
-  if (!selectedObject.value) {
-    return undefined;
-  }
-
-  if (field.source === "root") {
-    return selectedObject.value[field.key];
-  }
-
-  if (field.source === "style") {
-    return selectedObject.value.style?.[field.key];
-  }
-
-  if (field.source === "props") {
-    return selectedObject.value.props?.[field.key];
-  }
-
-  if (field.source === "editorHints") {
-    return selectedObject.value.editorHints?.[field.key];
-  }
-
-  return undefined;
-}
-
-function stringFieldValue(field) {
-  const value = getFieldValue(field);
-
-  if (field.valueType === "json" && value != null) {
-    try {
-      return JSON.stringify(value, null, 2);
-    } catch {
-      return "";
-    }
-  }
-
-  return value == null ? "" : String(value);
-}
-
-function codeFieldValue(field) {
-  return stringFieldValue(field);
-}
-
-const imageFileInputs = new Map();
-
-function imageFieldPlaceholder(field) {
-  if (field?.key === "src") {
-    return "请输入图片地址或 Base64...";
-  }
-
-  return "";
-}
-
-function setImageInputRef(key, element) {
-  if (!key) {
-    return;
-  }
-
-  if (element) {
-    imageFileInputs.set(key, element);
-    return;
-  }
-
-  imageFileInputs.delete(key);
-}
-
-function triggerImageUpload(field) {
-  imageFileInputs.get(fieldIdentifier(field))?.click();
-}
-
-function readImageFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
-    reader.onerror = () => reject(new Error("read-image-failed"));
-    reader.readAsDataURL(file);
-  });
-}
-
-async function onImageFileChange(field, event) {
-  const input = event?.target;
-  const file = input?.files?.[0];
-
-  if (!file) {
-    return;
-  }
-
-  if (!file.type.startsWith("image/")) {
-    PdMessage.error("请选择图片文件");
-    input.value = "";
-    return;
-  }
-
-  if (file.size > 2 * 1024 * 1024) {
-    PdMessage.error("图片大小不能超过 2MB");
-    input.value = "";
-    return;
-  }
-
-  try {
-    const dataUrl = await readImageFileAsDataUrl(file);
-    setFieldValue(field, dataUrl);
-  } catch {
-    PdMessage.error("图片读取失败，请重试");
-  } finally {
-    input.value = "";
-  }
-}
-
-function numberValue(value) {
-  return Number.isFinite(value) ? value : 0;
-}
-
-function roundDimensionValue(value) {
-  return Math.round(value * 1000) / 1000;
-}
-
-function isDimensionKey(key) {
-  return key === "width" || key === "height";
-}
-
-function linkedDimensionKey(key) {
-  return key === "width" ? "height" : "width";
-}
-
-function buildRootUpdatePayload(object, key, value) {
-  const nextPayload = {
-    [key]: value,
-  };
-
-  if (!object || !isDimensionKey(key) || !Number.isFinite(value)) {
-    return nextPayload;
-  }
-
-  if (SQUARE_DIMENSION_TYPES.has(object.type)) {
-    nextPayload[linkedDimensionKey(key)] = value;
-    return nextPayload;
-  }
-
-  if (object.type !== "image" || !object.props?.keepAspectRatio) {
-    return nextPayload;
-  }
-
-  const currentPrimary = Number(object[key]);
-  const currentSecondary = Number(object[linkedDimensionKey(key)]);
-
-  if (currentPrimary <= 0 || currentSecondary <= 0) {
-    return nextPayload;
-  }
-
-  nextPayload[linkedDimensionKey(key)] = roundDimensionValue((value / currentPrimary) * currentSecondary);
-  return nextPayload;
-}
-
-function numberFieldValue(field) {
-  return numberValue(getFieldValue(field));
-}
-
-function colorFieldValue(field) {
-  const value = getFieldValue(field);
-  if (typeof value === "string" && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value)) {
-    return value;
-  }
-
-  return "#000000";
-}
-
-function selectFieldValue(field) {
-  const value = getFieldValue(field);
-
-  if (value != null && value !== "") {
-    return value;
-  }
-
-  return field.options?.[0]?.value;
-}
-
-function textareaRows(field) {
-  if (field.rows) {
-    return field.rows;
-  }
-
-  return field.key === "customScript" ? 8 : 4;
-}
-
-function tableEditorDraft(key) {
-  return tableEditorDrafts.value[key] ?? "";
-}
-
-function updateTableEditorDraft(key, value) {
-  tableEditorDrafts.value = {
-    ...tableEditorDrafts.value,
-    [key]: value == null ? "" : String(value),
-  };
-}
-
-function openTableEditor(key, title, language) {
-  const currentValue = tableJsonPropValue(key);
-  updateTableEditorDraft(key, currentValue);
-  activeTableEditor.value = {
-    visible: true,
-    key,
-    title,
-    language,
-  };
-}
-
-function closeTableEditor(resetDraft = true) {
-  const key = activeTableEditor.value.key;
-
-  if (resetDraft && key) {
-    updateTableEditorDraft(key, tableJsonPropValue(key));
-  }
-
-  activeTableEditor.value = {
-    visible: false,
-    key: "",
-    title: "",
-    language: "json",
-  };
-}
-
-function saveActiveTableEditor() {
-  const { key, title, language } = activeTableEditor.value;
-
-  if (!key) {
-    return;
-  }
-
-  commitTableJsonEditor(key, title);
-
-  closeTableEditor(false);
-}
-
-function tableEditorPreview(key) {
-  const source = tableEditorDraft(key).trim();
-
-  if (!source) {
-    return key === "transform" ? "{}" : "[]";
-  }
-
-  const lines = source.split(/\r?\n/).slice(0, 6);
-  return lines.join("\n");
-}
-
-function tablePropValue(key, fallback = "") {
-  const value = selectedObject.value?.props?.[key];
-  return value == null ? fallback : value;
-}
-
-function tableEditorHintValue(key, fallback = "") {
-  const value = selectedObject.value?.editorHints?.[key];
-  return value == null ? fallback : value;
-}
-
-function tableStyleValue(key, fallback = "") {
-  const value = selectedObject.value?.style?.[key];
-  return value == null ? fallback : value;
-}
-
-function tableNumberPropValue(key, fallback = 0) {
-  const value = Number(tablePropValue(key, fallback));
-  return Number.isFinite(value) ? value : fallback;
-}
-
-function tableDesignRowCountValue() {
-  const explicitValue = Number(selectedObject.value?.editorHints?.rowCount);
-
-  if (Number.isFinite(explicitValue) && explicitValue > 0) {
-    return explicitValue;
-  }
-
-  const sampleRows = selectedObject.value?.props?.sampleData;
-  return Array.isArray(sampleRows) && sampleRows.length ? sampleRows.length : 5;
-}
-
-function tableStringPropValue(key, fallback = "") {
-  const value = tablePropValue(key, fallback);
-  return value == null ? fallback : String(value);
-}
-
-function tableStringStyleValue(key, fallback = "") {
-  const value = tableStyleValue(key, fallback);
-  return value == null ? fallback : String(value);
-}
-
-function setTablePropValue(key, value) {
-  setFieldValue({ source: "props", key }, value);
-}
-
-function setTableEditorHintValue(key, value) {
-  setFieldValue({ source: "editorHints", key }, value);
-}
-
-function setTableStyleValue(key, value) {
-  setFieldValue({ source: "style", key }, value);
-}
-
-function tableJsonPropValue(key) {
-  if (key === "columns") {
-    return JSON.stringify(
-      tableColumnsValue(tableColumnsField).map((column) => {
-        const result = {
-          field: column.key,
-          valuePath: column.valuePath || column.key,
-          header: column.title,
-          width: column.width,
+        tableEditorDrafts.value = {
+            columns: "",
+            sampleData: "",
+            footerData: "",
+            transform: "",
         };
-
-        if (column.align && column.align !== "left") {
-          result.align = column.align;
-        }
-        if (column.formatter && typeof column.formatter === "object") {
-          result.formatter = column.formatter;
-        }
-
-        return result;
-      }),
-      null,
-      2
-    );
-  }
-
-  return stringFieldValue({ source: "props", key, valueType: "json" });
-}
-
-function setTableJsonPropValue(key, value, label) {
-  if (key === "columns") {
-    const source = typeof value === "string" ? value.trim() : "";
-
-    if (!source) {
-      setTableObjectProps({
-        columns: [],
-        sampleData: [],
-        footerData: [],
-      });
-      return true;
+        return;
     }
-
-    try {
-      const parsed = JSON.parse(source);
-
-      if (!Array.isArray(parsed)) {
-        PdMessage.error("列定义必须是数组 JSON");
-        return false;
-      }
-
-      const nextColumns = parsed.map((column, index) => normalizeTableColumn(column, index));
-      setTableObjectProps({
-        columns: nextColumns,
-        sampleData: normalizeTableSampleData(selectedObject.value?.props?.sampleData, nextColumns),
-        footerData: normalizeTableFooterData(selectedObject.value?.props?.footerData, nextColumns),
-      });
-    } catch {
-      PdMessage.error(`${label} 不是有效 JSON`);
-      return false;
+    tableEditorDrafts.value = {
+        columns: tableJsonPropValue("columns"),
+        sampleData: tableJsonPropValue("sampleData"),
+        footerData: tableJsonPropValue("footerData"),
+        transform: tableJsonPropValue("transform"),
+    };
+}, { immediate: true, deep: true });
+function tabLabel(tab: any): any {
+    return TAB_LABELS[tab] || tab;
+}
+function fieldControl(field: any): any {
+    if (!field) {
+        return "";
     }
-
-    return true;
-  }
-
-  const source = typeof value === "string" ? value.trim() : "";
-
-  if (source) {
-    try {
-      JSON.parse(source);
-    } catch {
-      PdMessage.error(`${label} 不是有效 JSON`);
-      return false;
-    }
-  }
-
-  setFieldValue({ source: "props", key, valueType: "json", label }, value);
-  return true;
+    return field.control || "";
 }
-
-function tableCodePropValue(key) {
-  return codeFieldValue({ source: "props", key });
+function normalizeField(field: any): any {
+    return {
+        ...field,
+        control: fieldControl(field),
+    };
 }
-
-function setTableCodePropValue(key, value) {
-  setFieldValue({ source: "props", key, label: key }, value);
-  return true;
+function normalizeSection(section: any): any {
+    return {
+        ...section,
+        fields: (section.fields || []).map(normalizeField),
+    };
 }
-
-function commitTableJsonEditor(key, label) {
-  if (setTableJsonPropValue(key, tableEditorDraft(key), label)) {
-    updateTableEditorDraft(key, tableJsonPropValue(key));
-  }
+function normalizeSections(sections: any): any {
+    return regroupSections(sections.map(normalizeSection));
 }
-
-function commitTableCodeEditor(key) {
-  if (setTableCodePropValue(key, tableEditorDraft(key))) {
-    updateTableEditorDraft(key, tableCodePropValue(key));
-  }
-}
-
-function pxToMmValue(value) {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? Math.round((numeric / MM_TO_CSS_PX) * 100) / 100 : 0;
-}
-
-function mmToPxValue(value) {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? Math.round(numeric * MM_TO_CSS_PX * 100) / 100 : 0;
-}
-
-function tableFontSizeMmValue(key, fallbackKey = "") {
-  const fallback = fallbackKey ? tableStyleValue(fallbackKey, 14) : 14;
-  return pxToMmValue(tableStyleValue(key, fallback));
-}
-
-function setTableFontSizeMmValue(key, value, fallbackKey = "") {
-  const fallback = fallbackKey ? tableStyleValue(fallbackKey, 14) : 14;
-  const mmValue = Number.isFinite(Number(value)) ? Number(value) : pxToMmValue(fallback);
-  setTableStyleValue(key, mmToPxValue(mmValue));
-}
-
-function tableBorderWidthMmValue() {
-  return pxToMmValue(tableStyleValue("borderWidth", 1));
-}
-
-function setTableBorderWidthMmValue(value) {
-  setTableStyleValue("borderWidth", mmToPxValue(value));
-}
-
-function reorderSelectedObject(action) {
-  if (!selectedObject.value) {
-    return;
-  }
-
-  if (!documentStore.reorderObject(selectedObject.value.id, action)) {
-    PdMessage.warning("当前元素已锁定，无法调整层级。");
-  }
-}
-
-async function copySelectedObjectId() {
-  if (!selectedObject.value?.id) {
-    return;
-  }
-
-  try {
-    await navigator.clipboard.writeText(selectedObject.value.id);
-    PdMessage.success("ID 已复制");
-  } catch {
-    PdMessage.error("复制失败");
-  }
-}
-
-function setTableObjectProps(patch) {
-  if (!selectedObject.value) {
-    return;
-  }
-
-  for (const [key, value] of Object.entries(patch || {})) {
-    const field = { source: "props", key };
-    if (!validateFieldChange(field, value)) {
-      return;
-    }
-  }
-  const field = { source: "props", key: Object.keys(patch || {})[0] || "columns" };
-  updateSelectedObject(field, {
-    props: {
-      ...(selectedObject.value.props || {}),
-      ...patch,
-    },
-  });
-}
-
-function selectedTableRows(section = selectedTableSection.value) {
-  const key = section === "footer" ? "footerData" : "sampleData";
-  const rows = selectedObject.value?.props?.[key];
-  return Array.isArray(rows) ? rows : [];
-}
-
-function tableSelectionCell() {
-  const selection = selectedTableCells.value[0];
-  if (!selection) return null;
-  return selectedTableRows(selection.section)?.[selection.rowIndex]?.[selection.colField] ?? null;
-}
-
-function selectedTableCellStyleValue(key, fallback = "") {
-  const value = tableCellStyleValue(tableSelectionCell())[key];
-  return value == null || value === "" ? fallback : value;
-}
-
-function selectedTableCellNumberStyleValue(key) {
-  const raw = selectedTableCellStyleValue(key, "");
-  const numeric = Number.parseFloat(raw);
-  return Number.isFinite(numeric) ? numeric : 12;
-}
-
-function selectedTableCellTextValue() {
-  return String(tableCellTextValue(tableSelectionCell()) ?? "");
-}
-
-function selectedTableCellHasCurrentColumnSummary() {
-  const selection = selectedTableCells.value[0];
-  return Boolean(selection && toTableCellDescriptor(tableSelectionCell()).field === selection.colField);
-}
-
-function updateSelectedFooterText(value) {
-  if (selectedTableSection.value !== "footer") return;
-  let rows = selectedTableRows("footer");
-  selectedTableCells.value.forEach((cell) => {
-    rows = updateTableCellValue(rows, selectedObject.value?.props?.columns, cell.rowIndex, cell.colField, String(value ?? ""));
-  });
-  commitTableOperation({ footerData: rows }, "编辑表脚单元格");
-}
-
-function setSelectedFooterSummary(enabled) {
-  if (selectedTableSection.value !== "footer") return;
-  let rows = selectedTableRows("footer");
-  selectedTableCells.value.forEach((selection) => {
-    rows = updateTableCellValue(rows, selectedObject.value?.props?.columns, selection.rowIndex, selection.colField, tableCellTextValue(rows?.[selection.rowIndex]?.[selection.colField]));
-    const cell = toTableCellDescriptor(rows[selection.rowIndex][selection.colField]);
-    if (enabled) {
-      rows[selection.rowIndex][selection.colField] = { ...cell, field: selection.colField };
-      return;
-    }
-    delete cell.field;
-    rows[selection.rowIndex][selection.colField] = Object.keys(cell).length === 1 && Object.hasOwn(cell, "value") ? cell.value : cell;
-  });
-  commitTableOperation({ footerData: rows }, "设置表脚汇总字段");
-}
-
-function commitTableOperation(patch, label) {
-  const object = selectedObject.value;
-  if (!object || object.locked) {
-    PdMessage.warning("当前表格已锁定，请先解除锁定后再编辑。");
-    return false;
-  }
-  const command = createUpdateObjectPropsCommand(documentStore, object.id, {
-    props: { ...(object.props || {}), ...(patch || {}) },
-  });
-  if (!command) return false;
-  command.label = label;
-  executeEditorCommand(historyStore, command);
-  return true;
-}
-
-function selectionDataKey() {
-  return selectedTableSection.value === "footer" ? "footerData" : "sampleData";
-}
-
-function applySelectedTableCellStyle(style) {
-  if (!selectedTableCells.value.length) return;
-  const key = selectionDataKey();
-  const result = applyTableCellStylePatch(
-    selectedTableRows(),
-    selectedObject.value?.props?.columns,
-    selectedTableCells.value,
-    style,
-  );
-  if (result.changed) commitTableOperation({ [key]: result.rows }, "设置单元格样式");
-}
-
-function mergeSelectedTableCells() {
-  const key = selectionDataKey();
-  const result = mergeTableCellsPatch(selectedTableRows(), selectedObject.value?.props?.columns, selectedTableCells.value);
-  if (!result.changed) {
-    PdMessage.warning(result.reason || "请选择一个连续的单元格区域。");
-    return;
-  }
-  commitTableOperation({ [key]: result.rows }, "合并表格单元格");
-}
-
-function splitSelectedTableCells() {
-  const key = selectionDataKey();
-  let rows = selectedTableRows();
-  let changed = false;
-  const processed = new Set();
-  selectedTableCells.value.forEach((cell) => {
-    const cellKey = `${cell.rowIndex}:${cell.colField}`;
-    if (processed.has(cellKey)) return;
-    processed.add(cellKey);
-    const result = splitTableCellPatch(rows, selectedObject.value?.props?.columns, cell.rowIndex, cell.colField);
-    rows = result.rows;
-    changed ||= result.changed;
-  });
-  if (!changed) {
-    PdMessage.warning("所选单元格没有合并区域可拆分。");
-    return;
-  }
-  commitTableOperation({ [key]: rows }, "拆分表格单元格");
-}
-
-function insertSelectedTableRow() {
-  const key = selectionDataKey();
-  const rowIndex = Math.max(...selectedTableCells.value.map((cell) => cell.rowIndex), -1) + 1;
-  const result = insertTableRowAt(
-    selectedTableRows(),
-    selectedObject.value?.props?.columns,
-    rowIndex,
-    selectedObject.value?.props?.rowHeights,
-    selectedTableSection.value,
-  );
-  commitTableOperation({ [key]: result.rows, rowHeights: result.rowHeights }, "插入表格行");
-}
-
-function removeSelectedTableRows() {
-  const key = selectionDataKey();
-  let rows = selectedTableRows();
-  let rowHeights = selectedObject.value?.props?.rowHeights;
-  const indexes = [...new Set(selectedTableCells.value.map((cell) => cell.rowIndex))].sort((a, b) => b - a);
-  let changed = false;
-  indexes.forEach((rowIndex) => {
-    const result = removeTableRowAt(rows, selectedObject.value?.props?.columns, rowIndex, rowHeights, selectedTableSection.value);
-    rows = result.rows;
-    rowHeights = result.rowHeights;
-    changed ||= result.changed;
-  });
-  if (changed) {
-    selectionStore.clearTableSelection(selectedObject.value?.id);
-    commitTableOperation({ [key]: rows, rowHeights }, "删除表格行");
-  }
-}
-
-function insertSelectedTableColumn() {
-  const columns = selectedObject.value?.props?.columns || [];
-  const indexes = selectedTableCells.value
-    .map((cell) => columns.findIndex((column) => column?.key === cell.colField))
-    .filter((index) => index >= 0);
-  const index = (indexes.length ? Math.max(...indexes) : columns.length - 1) + 1;
-  const result = insertTableColumnAt(columns, selectedTableRows("body"), selectedTableRows("footer"), index);
-  if (commitTableOperation({ columns: result.columns, sampleData: result.sampleData, footerData: result.footerData }, "插入表格列")) {
-    selectionStore.setTableSelection(selectedObject.value?.id, [{ rowIndex: selectedTableCells.value[0]?.rowIndex || 0, colField: result.columns[result.index]?.key, section: selectedTableSection.value }], selectedTableSection.value);
-  }
-}
-
-function removeSelectedTableColumns() {
-  let columns = selectedObject.value?.props?.columns || [];
-  let sampleData = selectedTableRows("body");
-  let footerData = selectedTableRows("footer");
-  const indexes = [...new Set(selectedTableCells.value
-    .map((cell) => columns.findIndex((column) => column?.key === cell.colField))
-    .filter((index) => index >= 0))].sort((a, b) => b - a);
-  let changed = false;
-  indexes.forEach((index) => {
-    const result = removeTableColumnAt(columns, sampleData, footerData, index);
-    columns = result.columns;
-    sampleData = result.sampleData;
-    footerData = result.footerData;
-    changed ||= result.changed;
-  });
-  if (!changed) {
-    PdMessage.warning("表格至少需要保留一列。");
-    return;
-  }
-  selectionStore.clearTableSelection(selectedObject.value?.id);
-  commitTableOperation({ columns, sampleData, footerData }, "删除表格列");
-}
-
-function normalizeTableColumn(column, index) {
-  const width = Number(column?.width);
-
-  return {
-    key:
-      typeof column?.key === "string" && column.key.trim()
-        ? column.key
-        : `field${index + 1}`,
-    valuePath:
-      typeof column?.valuePath === "string" && column.valuePath.trim()
-        ? column.valuePath
-        : typeof column?.key === "string" && column.key.trim()
-          ? column.key
-          : `field${index + 1}`,
-    title:
-      typeof column?.title === "string" && column.title.trim()
-        ? column.title
-        : `列 ${index + 1}`,
-    width: Number.isFinite(width) ? width : 100,
-    align: column?.align === "center" || column?.align === "right" ? column.align : "left",
-    ...(column?.formatter && typeof column.formatter === "object" ? { formatter: column.formatter } : {}),
-  };
-}
-
-function tableColumnsValue(field) {
-  const columns = getFieldValue(field);
-
-  if (!Array.isArray(columns)) {
-    return [];
-  }
-
-  return columns.map((column, index) => normalizeTableColumn(column, index));
-}
-
-function setTableColumns(field, columns) {
-  setTableObjectProps({
-    [field.key]: columns.map((column, index) => normalizeTableColumn(column, index)),
-  });
-}
-
-function nextTableColumnKey(columns) {
-  const existingKeys = new Set(columns.map((column) => column.key));
-  let index = columns.length + 1;
-
-  while (existingKeys.has(`field${index}`)) {
-    index += 1;
-  }
-
-  return `field${index}`;
-}
-
-function mapTableData(data, transform) {
-  if (Array.isArray(data)) {
-    return data.map((item) => (item && typeof item === "object" ? transform(item) : item));
-  }
-
-  if (data && typeof data === "object") {
-    return transform(data);
-  }
-
-  return data;
-}
-
-function renameTableDataKey(data, oldKey, newKey) {
-  if (!oldKey || oldKey === newKey) {
-    return data;
-  }
-
-  return mapTableData(data, (item) => {
-    const nextItem = { ...item };
-    nextItem[newKey] = item[oldKey] ?? "";
-    delete nextItem[oldKey];
-    return nextItem;
-  });
-}
-
-function removeTableDataKey(data, key) {
-  if (!key) {
-    return data;
-  }
-
-  return mapTableData(data, (item) => {
-    const nextItem = { ...item };
-    delete nextItem[key];
-    return nextItem;
-  });
-}
-
-function appendTableDataKey(data, key) {
-  if (!key) {
-    return data;
-  }
-
-  if (Array.isArray(data)) {
-    return data.map((item) => ({
-      ...(item && typeof item === "object" ? item : {}),
-      [key]: item?.[key] ?? "",
+function enrichSections(sections: any, capabilities: any): any {
+    return sections.map((section: any): any => ({
+        ...section,
+        fields: section.fields.map((field: any): any => {
+            const capability = capabilities.find((item: any): any => item.source === field.source && item.key === field.key);
+            return capability
+                ? { ...field, min: field.min ?? capability.min, max: field.max ?? capability.max, capability }
+                : field;
+        }),
     }));
-  }
-
-  if (data && typeof data === "object") {
+}
+function isStructuredField(field: any): any {
+    return STRUCTURED_FIELD_CONTROLS.has(field?.control);
+}
+function createRuntimeSection(key: any, label: any, layout: any, fields: any): any {
     return {
-      ...data,
-      [key]: data[key] ?? "",
+        key,
+        label,
+        layout,
+        fields,
     };
-  }
-
-  return data;
 }
-
-function addTableColumn(field) {
-  const columns = tableColumnsValue(field);
-  const result = insertTableColumnAt(
-    columns,
-    selectedObject.value?.props?.sampleData,
-    selectedObject.value?.props?.footerData,
-    columns.length,
-  );
-  setTableObjectProps({
-    columns: result.columns,
-    sampleData: result.sampleData,
-    footerData: result.footerData,
-  });
+function fieldIdentifier(field: any): any {
+    return `${field.source}:${field.key}`;
 }
-
-function updateTableColumn(field, index, prop, value) {
-  const columns = tableColumnsValue(field);
-  const currentColumn = columns[index];
-
-  if (!currentColumn) {
-    return;
-  }
-
-  let nextValue = value;
-
-  if (prop === "width") {
-    nextValue = Number.isFinite(value) ? value : currentColumn.width;
-  }
-
-  if (prop === "align") {
-    nextValue = value === "center" || value === "right" ? value : "left";
-  }
-
-  if (prop === "key" || prop === "title") {
-    nextValue = value == null ? "" : String(value);
-  }
-
-  if (prop === "key") {
-    const candidateKey = nextValue.trim() || `field${index + 1}`;
-    const duplicated = columns.some((column, columnIndex) => columnIndex !== index && column.key === candidateKey);
-
-    if (duplicated) {
-      PdMessage.error("字段 key 不能重复");
-      return;
+const GLOBAL_HIDDEN_RUNTIME_FIELDS = new Set() as any;
+const HIDDEN_RUNTIME_FIELDS = {
+    "text:property": new Set(["props:sampleValue"]),
+    "text:style": new Set(["props:textPreset"]),
+    "text:advanced": new Set(["root:zIndex"]),
+    "image:property": new Set(),
+    "image:style": new Set(),
+    "image:advanced": new Set(),
+} as any;
+function isHiddenField(field: any): any {
+    if (!field) {
+        return true;
     }
-
-    nextValue = candidateKey;
-  }
-
-  const nextColumns = columns.map((column, columnIndex) =>
-    columnIndex === index ? normalizeTableColumn({ ...column, [prop]: nextValue }, columnIndex) : column
-  );
-
-  if (prop === "key") {
-    const renamed = renameTableColumnPatch(
-      columns,
-      selectedObject.value?.props?.sampleData,
-      selectedObject.value?.props?.footerData,
-      index,
-      nextValue,
-      nextColumns[index].title,
-    );
-    if (renamed?.error) {
-      PdMessage.error(renamed.error);
-      return;
-    }
-    if (renamed) setTableObjectProps(renamed);
-    return;
-  }
-
-  setTableColumns(field, nextColumns);
+    const identifier = fieldIdentifier(field);
+    const runtimeKey = `${selectedObject.value?.type || ""}:${activeTab.value || ""}`;
+    const hiddenFields = HIDDEN_RUNTIME_FIELDS[runtimeKey];
+    return GLOBAL_HIDDEN_RUNTIME_FIELDS.has(identifier) || hiddenFields?.has(identifier) || false;
 }
-
-function updateTableColumnFormatter(field, index, key, value) {
-  const columns = tableColumnsValue(field);
-  const currentColumn = columns[index];
-
-  if (!currentColumn) {
-    return;
-  }
-
-  const currentFormatter = currentColumn.formatter && typeof currentColumn.formatter === "object" ? currentColumn.formatter : {};
-  const nextFormatter = { ...currentFormatter, [key]: value };
-  const nextColumn = { ...currentColumn };
-
-  if (key === "type" && !value) {
-    delete nextColumn.formatter;
-  } else {
-    nextColumn.formatter = nextFormatter;
-  }
-
-  const nextColumns = columns.map((column, columnIndex) =>
-    columnIndex === index ? normalizeTableColumn(nextColumn, columnIndex) : column
-  );
-  setTableColumns(field, nextColumns);
-}
-
-function moveTableColumn(field, index, offset) {
-  const columns = tableColumnsValue(field);
-  const targetIndex = index + offset;
-
-  if (targetIndex < 0 || targetIndex >= columns.length) {
-    return;
-  }
-
-  const nextColumns = [...columns];
-  [nextColumns[index], nextColumns[targetIndex]] = [nextColumns[targetIndex], nextColumns[index]];
-  setTableColumns(field, nextColumns);
-}
-
-function removeTableColumn(field, index) {
-  const columns = tableColumnsValue(field);
-
-  if (columns.length <= 1) {
-    PdMessage.warning("表格至少需要保留一列。");
-    return;
-  }
-
-  const result = removeTableColumnAt(
-    columns,
-    selectedObject.value?.props?.sampleData,
-    selectedObject.value?.props?.footerData,
-    index,
-  );
-
-  setTableObjectProps({
-    columns: result.columns,
-    sampleData: result.sampleData,
-    footerData: result.footerData,
-  });
-}
-
-function normalizeTableSampleRow(row, columns) {
-  const source = row && typeof row === "object" ? row : {};
-
-  return columns.reduce((result, column) => {
-    result[column.key] = source[column.key] == null ? "" : source[column.key];
-    return result;
-  }, {});
-}
-
-function normalizeTableSampleData(data, columns) {
-  const rows = Array.isArray(data) ? data : [];
-  return rows.map((row) => normalizeTableSampleRow(row, columns));
-}
-
-function tableSampleRowsValue(field) {
-  const rows = getFieldValue(field);
-  const columns = tableColumnsValue(tableColumnsField);
-
-  if (!Array.isArray(rows)) {
-    return [];
-  }
-
-  return rows.map((row) => normalizeTableSampleRow(row, columns));
-}
-
-function tableSampleCellValue(row, key) {
-  return String(tableCellTextValue(row?.[key]) ?? "");
-}
-
-function createEmptyTableSampleRow(columns) {
-  return columns.reduce((result, column) => {
-    result[column.key] = "";
-    return result;
-  }, {});
-}
-
-function addTableSampleRow(field) {
-  const columns = tableColumnsValue(tableColumnsField);
-
-  if (!columns.length) {
-    return;
-  }
-
-  setFieldValue(field, [...tableSampleRowsValue(field), createEmptyTableSampleRow(columns)]);
-}
-
-function updateTableSampleCell(field, rowIndex, key, value) {
-  setFieldValue(
-    field,
-    updateTableCellValue(tableSampleRowsValue(field), tableColumnsValue(tableColumnsField), rowIndex, key, value == null ? "" : String(value)),
-  );
-}
-
-function removeTableSampleRow(field, rowIndex) {
-  setFieldValue(
-    field,
-    tableSampleRowsValue(field).filter((_, index) => index !== rowIndex)
-  );
-}
-
-function normalizeTableFooterCell(cell) {
-  if (cell && typeof cell === "object" && !Array.isArray(cell)) {
-    return {
-      ...cell,
-    };
-  }
-
-  return cell == null ? "" : String(cell);
-}
-
-function normalizeTableFooterRow(data, columns) {
-  const source = data && typeof data === "object" ? data : {};
-
-  return columns.reduce((result, column) => {
-    result[column.key] = normalizeTableFooterCell(source[column.key]);
-    return result;
-  }, {});
-}
-
-function normalizeTableFooterData(data, columns) {
-  if (Array.isArray(data)) {
-    return data.map((row) => normalizeTableFooterRow(row, columns));
-  }
-
-  if (data && typeof data === "object" && Object.keys(data).length) {
-    return [normalizeTableFooterRow(data, columns)];
-  }
-
-  return [];
-}
-
-function tableFooterRowsValue(field) {
-  const source = getFieldValue(field);
-  const columns = tableColumnsValue(tableColumnsField);
-
-  if (!columns.length) {
-    return [];
-  }
-
-  if (Array.isArray(source)) {
-    return source.map((row) => normalizeTableFooterRow(row, columns));
-  }
-
-  if (source && typeof source === "object" && Object.keys(source).length) {
-    return [normalizeTableFooterRow(source, columns)];
-  }
-
-  return [];
-}
-
-function tableFooterCellDisplayValue(cell) {
-  if (cell && typeof cell === "object" && !Array.isArray(cell)) {
-    if (cell.result != null && cell.result !== "") {
-      return String(cell.result);
-    }
-
-    if (cell.value != null && cell.value !== "") {
-      return String(cell.value);
-    }
-
-    if (cell.field != null && cell.field !== "") {
-      return String(cell.field);
-    }
-  }
-
-  return cell == null ? "" : String(cell);
-}
-
-function tableFooterCellValue(field, rowIndex, key) {
-  const row = tableFooterRowsValue(field)[rowIndex];
-  return tableFooterCellDisplayValue(row?.[key]);
-}
-
-function tableFooterCellToken(field, rowIndex, key) {
-  const cell = tableFooterRowsValue(field)[rowIndex]?.[key];
-  return cell && typeof cell === "object" && !Array.isArray(cell) && cell.field ? String(cell.field) : "";
-}
-
-function createEmptyTableFooterRow(columns) {
-  return columns.reduce((result, column) => {
-    result[column.key] = "";
-    return result;
-  }, {});
-}
-
-function addTableFooterRow(field) {
-  const columns = tableColumnsValue(tableColumnsField);
-
-  if (!columns.length) {
-    return;
-  }
-
-  setFieldValue(field, [...tableFooterRowsValue(field), createEmptyTableFooterRow(columns)]);
-}
-
-function updateTableFooterCell(field, rowIndex, key, value) {
-  const rows = tableFooterRowsValue(field);
-  const currentCell = rows[rowIndex]?.[key];
-  const nextText = value == null ? "" : String(value);
-  const nextCell =
-    currentCell && typeof currentCell === "object" && !Array.isArray(currentCell)
-      ? {
-          ...currentCell,
-          result: nextText,
-          value: currentCell.field ? currentCell.value ?? "" : nextText,
+function groupRuntimeSections(fields: any, definitions: any): any {
+    const visibleFields = fields.filter((field: any): any => !isHiddenField(field));
+    const fieldMap = new Map(visibleFields.map((field: any): any => [fieldIdentifier(field), field]));
+    const used = new Set();
+    const sections = [];
+    definitions.forEach((definition: any): any => {
+        const sectionFields = (definition.fields || [])
+            .map((id: any): any => fieldMap.get(id))
+            .filter(Boolean);
+        if (!sectionFields.length) {
+            return;
         }
-      : nextText;
-
-  const nextRows = rows.map((row, index) => (index === rowIndex ? { ...row, [key]: nextCell } : row));
-  setFieldValue(field, nextRows);
-}
-
-function removeTableFooterRow(field, rowIndex) {
-  setFieldValue(
-    field,
-    tableFooterRowsValue(field).filter((_, index) => index !== rowIndex)
-  );
-}
-
-function resetTableFooter(field) {
-  setFieldValue(field, []);
-}
-
-function multiLabelCellCount() {
-  if (selectedObject.value?.type !== "multiLabel") {
-    return 0;
-  }
-
-  const rows = Math.max(1, Number(selectedObject.value?.props?.rows) || 1);
-  const cols = Math.max(1, Number(selectedObject.value?.props?.cols) || 1);
-  return rows * cols;
-}
-
-function normalizeMultiLabelSampleItem(item, index) {
-  const source = item && typeof item === "object" ? item : {};
-
-  return {
-    title: source.title == null ? "" : String(source.title),
-    code: source.code == null ? "" : String(source.code),
-    detail: source.detail == null ? "" : String(source.detail),
-  };
-}
-
-function normalizeMultiLabelSampleData(data, total = multiLabelCellCount()) {
-  const source = Array.isArray(data) ? data : [];
-  const count = Math.max(1, total || 1);
-
-  return source.slice(0, count).map((item, index) => normalizeMultiLabelSampleItem(item, index));
-}
-
-function multiLabelSampleDataValue(field) {
-  return normalizeMultiLabelSampleData(getFieldValue(field));
-}
-
-function multiLabelCellCoordinate(index) {
-  const rows = Math.max(1, Number(selectedObject.value?.props?.rows) || 1);
-  const cols = Math.max(1, Number(selectedObject.value?.props?.cols) || 1);
-  const direction = selectedObject.value?.props?.direction === "column" ? "column" : "row";
-
-  if (direction === "column") {
-    const row = (index % rows) + 1;
-    const col = Math.floor(index / rows) + 1;
-    return `R${row} C${col}`;
-  }
-
-  const row = Math.floor(index / cols) + 1;
-  const col = (index % cols) + 1;
-  return `R${row} C${col}`;
-}
-
-function setMultiLabelSampleData(data) {
-  if (selectedObject.value?.type !== "multiLabel") {
-    return;
-  }
-
-  updateSelectedObject({ source: "props", key: "sampleData" }, {
-    props: {
-      ...(selectedObject.value.props || {}),
-      sampleData: normalizeMultiLabelSampleData(data),
-    },
-  });
-}
-
-function updateMultiLabelSampleCell(field, index, key, value) {
-  const nextData = multiLabelSampleDataValue(field).map((item, itemIndex) =>
-    itemIndex === index ? { ...item, [key]: value == null ? "" : String(value) } : item
-  );
-
-  setMultiLabelSampleData(nextData);
-}
-
-function normalizeFieldValue(field, value) {
-  if (field.valueType !== "json") {
-    return value;
-  }
-
-  if (typeof value !== "string") {
-    return value;
-  }
-
-  const source = value.trim();
-
-  if (!source) {
-    return Array.isArray(getFieldValue(field)) ? [] : {};
-  }
-
-  try {
-    return JSON.parse(source);
-  } catch (error) {
-    PdMessage.error(`${field.label} 不是有效 JSON`);
-    return Symbol.for("invalid-json");
-  }
-}
-
-function fieldError(field) {
-  return getFieldError(fieldErrors.value, field);
-}
-
-function setFieldError(field, message = "") {
-  const key = fieldErrorKey(field);
-
-  if (!key) {
-    return;
-  }
-
-  const next = { ...fieldErrors.value };
-  if (message) {
-    next[key] = message;
-  } else {
-    delete next[key];
-  }
-  fieldErrors.value = next;
-}
-
-function validateFieldChange(field, value) {
-  if (!field) {
-    return false;
-  }
-
-  const message = validateElementProperty(selectedObject.value?.type, field.source, field.key, value);
-  setFieldError(field, message || "");
-  return !message;
-}
-
-function endPropertyEditSession() {
-  if (propertyEditTimer) {
-    clearTimeout(propertyEditTimer);
-    propertyEditTimer = null;
-  }
-  propertyEditSession.value = null;
-}
-
-function schedulePropertyEditSessionEnd() {
-  if (propertyEditTimer) {
-    clearTimeout(propertyEditTimer);
-  }
-  propertyEditTimer = setTimeout(endPropertyEditSession, 600);
-}
-
-function propertyEditKey(objectId, field) {
-  return `${objectId}:${field?.source || "root"}:${field?.key || "property"}`;
-}
-
-function isLockSafePatch(patch) {
-  const patchKeys = Object.keys(patch || {});
-  return patchKeys.length > 0 && patchKeys.every((key) => ["locked", "visible", "printable"].includes(key));
-}
-
-function updateSelectedObject(field, patch) {
-  const object = selectedObject.value;
-
-  if (!object) {
-    return false;
-  }
-
-  if (object.locked && !isLockSafePatch(patch)) {
-    setFieldError(field, "当前元素已锁定，请先解除锁定后再编辑。");
-    PdMessage.warning("当前元素已锁定，请先解除锁定后再编辑。");
-    return false;
-  }
-
-  const key = propertyEditKey(object.id, field);
-  const session = propertyEditSession.value;
-
-  if (session?.key === key && historyStore.undoStack.at(-1) === session.command) {
-    const updated = documentStore.updateObjectProps(object.id, patch);
-
-    if (!updated) {
-      setFieldError(field, "当前元素已锁定，请先解除锁定后再编辑。");
-      PdMessage.warning("当前元素已锁定，请先解除锁定后再编辑。");
-      return false;
+        sectionFields.forEach((field: any): any => used.add(fieldIdentifier(field)));
+        sections.push(createRuntimeSection(definition.key, definition.label, definition.layout, sectionFields));
+    });
+    const remainingFields = visibleFields.filter((field: any): any => !used.has(fieldIdentifier(field)));
+    if (remainingFields.length) {
+        sections.push(createRuntimeSection("more", "更多", SECTION_LAYOUT.STACK, remainingFields));
     }
-
-    session.command.setPatch(patch);
+    return sections;
+}
+function createGeometryRuntimeSection(): any {
+    return createRuntimeSection("geometry", "位置与尺寸", SECTION_LAYOUT.GRID_2, [
+        "root:x",
+        "root:y",
+        "root:width",
+        "root:height",
+        "root:rotation",
+    ]);
+}
+function createLayerRuntimeSection(): any {
+    return createRuntimeSection("layer", "层级", SECTION_LAYOUT.STACK, ["root:zIndex", "root:layerActions"]);
+}
+function createMetadataRuntimeSection(): any {
+    return createRuntimeSection("metadata", "元素信息", SECTION_LAYOUT.STACK, ["root:id", "root:type"]);
+}
+function createBehaviorRuntimeSection(extraFields: any = []): any {
+    return createRuntimeSection("behavior", "行为", SECTION_LAYOUT.GRID_2, [
+        "root:locked",
+        "root:printable",
+        "root:repeatPerPage",
+        ...extraFields,
+    ]);
+}
+function createActionsRuntimeSection(): any {
+    return createRuntimeSection("actions", "扩展能力", SECTION_LAYOUT.STACK, ["root:saveAsTemplate"]);
+}
+function createDangerRuntimeSection(): any {
+    return createRuntimeSection("danger", "危险操作", SECTION_LAYOUT.STACK, ["root:deleteElement"]);
+}
+function runtimeSectionDefinitions(type: any, tab: any): any {
+    switch (`${type}:${tab}`) {
+        case "text:property":
+            return [
+                createRuntimeSection("geometry", "位置与尺寸", SECTION_LAYOUT.GRID_2, [
+                    "root:x",
+                    "root:y",
+                    "root:width",
+                    "root:height",
+                ]),
+                createLayerRuntimeSection(),
+                createRuntimeSection("content", "内容", SECTION_LAYOUT.STACK, [
+                    "root:content",
+                    "root:variable",
+                ]),
+                createRuntimeSection("behavior", "数据 & 行为", SECTION_LAYOUT.GRID_2, [
+                    "root:repeatPerPage",
+                    "props:autoHeight",
+                    "props:whiteSpace",
+                    "root:printable",
+                ]),
+            ];
+        case "text:style":
+            return [
+                createRuntimeSection("layout", "排版", SECTION_LAYOUT.GRID_2, [
+                    "props:writingMode",
+                    "style:fontSize",
+                    "style:color",
+                    "style:textAlign",
+                    "style:verticalAlign",
+                    "style:fontFamily",
+                    "style:fontWeight",
+                    "style:fontStyle",
+                    "style:textDecoration",
+                    "style:lineHeight",
+                    "style:letterSpacing",
+                ]),
+                createRuntimeSection("border", "边框", SECTION_LAYOUT.GRID_2, [
+                    "style:borderStyle",
+                    "style:borderWidth",
+                    "style:borderColor",
+                ]),
+                createRuntimeSection("appearance", "外观", SECTION_LAYOUT.GRID_2, [
+                    "style:backgroundColor",
+                ]),
+            ];
+        case "text:advanced":
+            return [
+                createMetadataRuntimeSection(),
+                createActionsRuntimeSection(),
+                createDangerRuntimeSection(),
+            ];
+        case "image:property":
+            return [
+                createRuntimeSection("geometry", "位置与尺寸", SECTION_LAYOUT.GRID_2, [
+                    "root:x",
+                    "root:y",
+                    "root:width",
+                    "root:height",
+                ]),
+                createLayerRuntimeSection(),
+                createRuntimeSection("source", "图片来源", SECTION_LAYOUT.STACK, [
+                    "props:src",
+                    "root:variable",
+                ]),
+                createRuntimeSection("behavior", "数据 & 行为", SECTION_LAYOUT.STACK, ["root:repeatPerPage", "root:printable"]),
+            ];
+        case "image:style":
+            return [
+                createRuntimeSection("border", "边框", SECTION_LAYOUT.STACK, [
+                    "style:borderStyle",
+                    "style:borderWidth",
+                    "style:borderColor",
+                ]),
+                createRuntimeSection("appearance", "外观", SECTION_LAYOUT.STACK, [
+                    "style:backgroundColor",
+                    "style:objectFit",
+                    "style:objectPosition",
+                    "style:opacity",
+                ]),
+            ];
+        case "image:advanced":
+            return [
+                createMetadataRuntimeSection(),
+                createActionsRuntimeSection(),
+                createDangerRuntimeSection(),
+            ];
+        case "barcode:property":
+            return [
+                createGeometryRuntimeSection(),
+                createLayerRuntimeSection(),
+                createRuntimeSection("binding", "数据绑定", SECTION_LAYOUT.STACK, ["root:variable"]),
+                createRuntimeSection("content", "内容", SECTION_LAYOUT.STACK, [
+                    "root:content",
+                    "props:format",
+                    "props:displayValue",
+                    "props:margin",
+                    "props:textMargin",
+                    "props:textFontSize",
+                ]),
+            ];
+        case "barcode:style":
+            return [
+                createRuntimeSection("colors", "颜色", SECTION_LAYOUT.GRID_2, ["style:color", "style:backgroundColor"]),
+                createRuntimeSection("text", "文字", SECTION_LAYOUT.GRID_2, [
+                    "style:fontFamily",
+                    "style:fontSize",
+                    "style:fontWeight",
+                    "style:letterSpacing",
+                    "style:textAlign",
+                ]),
+                createRuntimeSection("box", "盒模型", SECTION_LAYOUT.GRID_2, [
+                    "style:opacity",
+                    "style:borderColor",
+                    "style:borderWidth",
+                    "style:borderStyle",
+                    "style:borderRadius",
+                    "style:padding",
+                ]),
+            ];
+        case "barcode:advanced":
+            return [
+                createMetadataRuntimeSection(),
+                createBehaviorRuntimeSection(),
+                createActionsRuntimeSection(),
+                createDangerRuntimeSection(),
+            ];
+        case "qrcode:property":
+            return [
+                createGeometryRuntimeSection(),
+                createLayerRuntimeSection(),
+                createRuntimeSection("binding", "数据绑定", SECTION_LAYOUT.STACK, ["root:variable"]),
+                createRuntimeSection("content", "内容", SECTION_LAYOUT.STACK, ["root:content", "props:eccLevel", "props:margin"]),
+            ];
+        case "qrcode:style":
+            return [
+                createRuntimeSection("colors", "颜色", SECTION_LAYOUT.GRID_2, ["style:color", "style:backgroundColor"]),
+                createRuntimeSection("box", "盒模型", SECTION_LAYOUT.GRID_2, [
+                    "style:opacity",
+                    "style:borderColor",
+                    "style:borderWidth",
+                    "style:borderStyle",
+                    "style:borderRadius",
+                    "style:padding",
+                ]),
+            ];
+        case "qrcode:advanced":
+            return [
+                createMetadataRuntimeSection(),
+                createBehaviorRuntimeSection(),
+                createActionsRuntimeSection(),
+                createDangerRuntimeSection(),
+            ];
+        case "pageNumber:property":
+            return [
+                createGeometryRuntimeSection(),
+                createLayerRuntimeSection(),
+                createRuntimeSection("preview", "预览", SECTION_LAYOUT.GRID_2, ["root:content", "props:totalPages"]),
+                createRuntimeSection("format", "格式", SECTION_LAYOUT.STACK, ["props:format"]),
+            ];
+        case "pageNumber:style":
+            return [
+                createRuntimeSection("typography", "文字", SECTION_LAYOUT.GRID_2, [
+                    "style:fontFamily",
+                    "style:fontSize",
+                    "style:fontWeight",
+                    "style:fontStyle",
+                    "style:color",
+                    "style:textAlign",
+                    "style:verticalAlign",
+                    "style:lineHeight",
+                    "style:letterSpacing",
+                ]),
+                createRuntimeSection("box", "盒模型", SECTION_LAYOUT.GRID_2, [
+                    "style:opacity",
+                    "style:backgroundColor",
+                    "style:borderColor",
+                    "style:borderWidth",
+                    "style:borderStyle",
+                    "style:borderRadius",
+                    "style:padding",
+                ]),
+            ];
+        case "pageNumber:advanced":
+            return [
+                createMetadataRuntimeSection(),
+                createBehaviorRuntimeSection(),
+                createActionsRuntimeSection(),
+                createDangerRuntimeSection(),
+            ];
+        case "line:property":
+            return [createGeometryRuntimeSection(), createLayerRuntimeSection()];
+        case "line:style":
+            return [
+                createRuntimeSection("stroke", "线条", SECTION_LAYOUT.GRID_2, [
+                    "style:borderColor",
+                    "style:borderWidth",
+                    "style:borderStyle",
+                    "style:opacity",
+                ]),
+            ];
+        case "line:advanced":
+            return [
+                createMetadataRuntimeSection(),
+                createBehaviorRuntimeSection(),
+                createActionsRuntimeSection(),
+                createDangerRuntimeSection(),
+            ];
+        case "rect:style":
+        case "circle:style":
+            return [
+                createRuntimeSection("fill", "填充", SECTION_LAYOUT.GRID_2, [
+                    "style:opacity",
+                    "style:backgroundColor",
+                ]),
+                createRuntimeSection("stroke", "描边", SECTION_LAYOUT.GRID_2, [
+                    "style:borderColor",
+                    "style:borderWidth",
+                    "style:borderStyle",
+                    "style:borderRadius",
+                ]),
+                createRuntimeSection("spacing", "内边距", SECTION_LAYOUT.STACK, ["style:padding"]),
+            ];
+        case "rect:property":
+        case "circle:property":
+            return [createGeometryRuntimeSection(), createLayerRuntimeSection()];
+        case "rect:advanced":
+        case "circle:advanced":
+            return [
+                createMetadataRuntimeSection(),
+                createBehaviorRuntimeSection(),
+                createActionsRuntimeSection(),
+                createDangerRuntimeSection(),
+            ];
+        case "table:property":
+            return [
+                createGeometryRuntimeSection(),
+                createLayerRuntimeSection(),
+                createRuntimeSection("bindings", "数据绑定", SECTION_LAYOUT.STACK, [
+                    "props:dataVariable",
+                    "props:footerDataVariable",
+                ]),
+                createRuntimeSection("structure", "结构", SECTION_LAYOUT.GRID_2, ["props:showHeader", "props:showFooter"]),
+                createRuntimeSection("columns", "列配置", SECTION_LAYOUT.STACK, ["props:columns"]),
+                createRuntimeSection("preview", "预览数据", SECTION_LAYOUT.STACK, ["props:sampleData"]),
+            ];
+        case "table:style":
+            return [
+                createRuntimeSection("text", "文字", SECTION_LAYOUT.GRID_2, [
+                    "style:fontFamily",
+                    "style:fontSize",
+                    "style:fontWeight",
+                    "style:fontStyle",
+                    "style:color",
+                    "style:textAlign",
+                    "style:verticalAlign",
+                    "style:lineHeight",
+                    "style:letterSpacing",
+                ]),
+                createRuntimeSection("box", "盒模型", SECTION_LAYOUT.GRID_2, [
+                    "style:opacity",
+                    "style:backgroundColor",
+                    "style:borderColor",
+                    "style:borderWidth",
+                    "style:borderStyle",
+                    "style:borderRadius",
+                    "style:padding",
+                ]),
+            ];
+        case "table:advanced":
+            return [
+                createMetadataRuntimeSection(),
+                createRuntimeSection("pagination", "分页", SECTION_LAYOUT.GRID_2, [
+                    "props:autoPaginate",
+                    "props:tfootRepeat",
+                ]),
+                createBehaviorRuntimeSection(),
+                createRuntimeSection("footer", "页脚", SECTION_LAYOUT.STACK, ["props:footerData"]),
+                createRuntimeSection("transform", "数据转换", SECTION_LAYOUT.STACK, ["props:transform"]),
+                createActionsRuntimeSection(),
+                createDangerRuntimeSection(),
+            ];
+        case "multiLabel:property":
+            return [
+                createGeometryRuntimeSection(),
+                createLayerRuntimeSection(),
+                createRuntimeSection("binding", "数据绑定", SECTION_LAYOUT.STACK, ["props:dataVariable"]),
+                createRuntimeSection("layout", "布局", SECTION_LAYOUT.GRID_2, [
+                    "props:rows",
+                    "props:cols",
+                    "props:gapX",
+                    "props:gapY",
+                    "props:direction",
+                    "props:cellPadding",
+                ]),
+                createRuntimeSection("mapping", "字段映射", SECTION_LAYOUT.STACK, [
+                    "props:primaryPath",
+                    "props:secondaryPath",
+                    "props:tertiaryPath",
+                ]),
+                createRuntimeSection("preview", "预览数据", SECTION_LAYOUT.STACK, ["props:sampleData"]),
+            ];
+        case "multiLabel:style":
+            return [
+                createRuntimeSection("text", "文字", SECTION_LAYOUT.GRID_2, [
+                    "style:fontFamily",
+                    "style:fontSize",
+                    "style:fontWeight",
+                    "style:fontStyle",
+                    "style:color",
+                    "style:textAlign",
+                    "style:verticalAlign",
+                    "style:lineHeight",
+                    "style:letterSpacing",
+                ]),
+                createRuntimeSection("card", "标签卡片", SECTION_LAYOUT.GRID_2, [
+                    "style:opacity",
+                    "style:backgroundColor",
+                    "style:borderColor",
+                    "style:borderWidth",
+                    "style:borderStyle",
+                    "style:borderRadius",
+                    "style:padding",
+                ]),
+            ];
+        case "multiLabel:advanced":
+            return [
+                createMetadataRuntimeSection(),
+                createBehaviorRuntimeSection(),
+                createActionsRuntimeSection(),
+                createDangerRuntimeSection(),
+            ];
+        default:
+            return null;
+    }
+}
+function regroupSections(sections: any): any {
+    const definitions = runtimeSectionDefinitions(selectedObject.value?.type, activeTab.value);
+    if (!definitions?.length) {
+        return sections;
+    }
+    const fields = sections.flatMap((section: any): any => section.fields || []);
+    return groupRuntimeSections(fields, definitions);
+}
+function sectionLayoutClass(layout: any): any {
+    switch (layout) {
+        case SECTION_LAYOUT.GRID_2:
+            return "is-grid-2";
+        case SECTION_LAYOUT.ACTIONS_2X2:
+            return "is-actions-2x2";
+        case SECTION_LAYOUT.INLINE_BUTTONS:
+            return "is-inline-buttons";
+        default:
+            return "is-stack";
+    }
+}
+function displayNumber(value: any): any {
+    return Number.isFinite(value) ? value.toFixed(1) : "--";
+}
+function getFieldValue(field: any): any {
+    if (!selectedObject.value) {
+        return undefined;
+    }
+    if (field.source === "root") {
+        return selectedObject.value[field.key];
+    }
+    if (field.source === "style") {
+        return selectedObject.value.style?.[field.key];
+    }
+    if (field.source === "props") {
+        return selectedObject.value.props?.[field.key];
+    }
+    if (field.source === "editorHints") {
+        return selectedObject.value.editorHints?.[field.key];
+    }
+    return undefined;
+}
+function stringFieldValue(field: any): any {
+    const value = getFieldValue(field);
+    if (field.valueType === "json" && value != null) {
+        try {
+            return JSON.stringify(value, null, 2);
+        }
+        catch {
+            return "";
+        }
+    }
+    return value == null ? "" : String(value);
+}
+function codeFieldValue(field: any): any {
+    return stringFieldValue(field);
+}
+const imageFileInputs = new Map() as any;
+function imageFieldPlaceholder(field: any): any {
+    if (field?.key === "src") {
+        return "请输入图片地址或 Base64...";
+    }
+    return "";
+}
+function setImageInputRef(key: any, element: any): any {
+    if (!key) {
+        return;
+    }
+    if (element) {
+        imageFileInputs.set(key, element);
+        return;
+    }
+    imageFileInputs.delete(key);
+}
+function triggerImageUpload(field: any): any {
+    imageFileInputs.get(fieldIdentifier(field))?.click();
+}
+function readImageFileAsDataUrl(file: any): any {
+    return new Promise((resolve: any, reject: any): any => {
+        const reader = new FileReader();
+        reader.onload = (): any => resolve(typeof reader.result === "string" ? reader.result : "");
+        reader.onerror = (): any => reject(new Error("read-image-failed"));
+        reader.readAsDataURL(file);
+    });
+}
+async function onImageFileChange(field: any, event: any): Promise<any> {
+    const input = event?.target;
+    const file = input?.files?.[0];
+    if (!file) {
+        return;
+    }
+    if (!file.type.startsWith("image/")) {
+        PdMessage.error("请选择图片文件");
+        input.value = "";
+        return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+        PdMessage.error("图片大小不能超过 2MB");
+        input.value = "";
+        return;
+    }
+    try {
+        const dataUrl = await readImageFileAsDataUrl(file);
+        setFieldValue(field, dataUrl);
+    }
+    catch {
+        PdMessage.error("图片读取失败，请重试");
+    }
+    finally {
+        input.value = "";
+    }
+}
+function numberValue(value: any): any {
+    return Number.isFinite(value) ? value : 0;
+}
+function roundDimensionValue(value: any): any {
+    return Math.round(value * 1000) / 1000;
+}
+function isDimensionKey(key: any): any {
+    return key === "width" || key === "height";
+}
+function linkedDimensionKey(key: any): any {
+    return key === "width" ? "height" : "width";
+}
+function buildRootUpdatePayload(object: any, key: any, value: any): any {
+    const nextPayload = {
+        [key]: value,
+    };
+    if (!object || !isDimensionKey(key) || !Number.isFinite(value)) {
+        return nextPayload;
+    }
+    if (SQUARE_DIMENSION_TYPES.has(object.type)) {
+        nextPayload[linkedDimensionKey(key)] = value;
+        return nextPayload;
+    }
+    if (object.type !== "image" || !object.props?.keepAspectRatio) {
+        return nextPayload;
+    }
+    const currentPrimary = Number(object[key]);
+    const currentSecondary = Number(object[linkedDimensionKey(key)]);
+    if (currentPrimary <= 0 || currentSecondary <= 0) {
+        return nextPayload;
+    }
+    nextPayload[linkedDimensionKey(key)] = roundDimensionValue((value / currentPrimary) * currentSecondary);
+    return nextPayload;
+}
+function numberFieldValue(field: any): any {
+    return numberValue(getFieldValue(field));
+}
+function colorFieldValue(field: any): any {
+    const value = getFieldValue(field);
+    if (typeof value === "string" && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value)) {
+        return value;
+    }
+    return "#000000";
+}
+function selectFieldValue(field: any): any {
+    const value = getFieldValue(field);
+    if (value != null && value !== "") {
+        return value;
+    }
+    return field.options?.[0]?.value;
+}
+function textareaRows(field: any): any {
+    if (field.rows) {
+        return field.rows;
+    }
+    return field.key === "customScript" ? 8 : 4;
+}
+function tableEditorDraft(key: any): any {
+    return tableEditorDrafts.value[key] ?? "";
+}
+function updateTableEditorDraft(key: any, value: any): any {
+    tableEditorDrafts.value = {
+        ...tableEditorDrafts.value,
+        [key]: value == null ? "" : String(value),
+    };
+}
+function openTableEditor(key: any, title: any, language: any): any {
+    const currentValue = tableJsonPropValue(key);
+    updateTableEditorDraft(key, currentValue);
+    activeTableEditor.value = {
+        visible: true,
+        key,
+        title,
+        language,
+    };
+}
+function closeTableEditor(resetDraft: any = true): any {
+    const key = activeTableEditor.value.key;
+    if (resetDraft && key) {
+        updateTableEditorDraft(key, tableJsonPropValue(key));
+    }
+    activeTableEditor.value = {
+        visible: false,
+        key: "",
+        title: "",
+        language: "json",
+    };
+}
+function saveActiveTableEditor(): any {
+    const { key, title, language } = activeTableEditor.value;
+    if (!key) {
+        return;
+    }
+    commitTableJsonEditor(key, title);
+    closeTableEditor(false);
+}
+function tableEditorPreview(key: any): any {
+    const source = tableEditorDraft(key).trim();
+    if (!source) {
+        return key === "transform" ? "{}" : "[]";
+    }
+    const lines = source.split(/\r?\n/).slice(0, 6);
+    return lines.join("\n");
+}
+function tablePropValue(key: any, fallback: any = ""): any {
+    const value = selectedObject.value?.props?.[key];
+    return value == null ? fallback : value;
+}
+function tableEditorHintValue(key: any, fallback: any = ""): any {
+    const value = selectedObject.value?.editorHints?.[key];
+    return value == null ? fallback : value;
+}
+function tableStyleValue(key: any, fallback: any = ""): any {
+    const value = selectedObject.value?.style?.[key];
+    return value == null ? fallback : value;
+}
+function tableNumberPropValue(key: any, fallback: any = 0): any {
+    const value = Number(tablePropValue(key, fallback));
+    return Number.isFinite(value) ? value : fallback;
+}
+function tableDesignRowCountValue(): any {
+    const explicitValue = Number(selectedObject.value?.editorHints?.rowCount);
+    if (Number.isFinite(explicitValue) && explicitValue > 0) {
+        return explicitValue;
+    }
+    const sampleRows = selectedObject.value?.props?.sampleData;
+    return Array.isArray(sampleRows) && sampleRows.length ? sampleRows.length : 5;
+}
+function tableStringPropValue(key: any, fallback: any = ""): any {
+    const value = tablePropValue(key, fallback);
+    return value == null ? fallback : String(value);
+}
+function tableStringStyleValue(key: any, fallback: any = ""): any {
+    const value = tableStyleValue(key, fallback);
+    return value == null ? fallback : String(value);
+}
+function setTablePropValue(key: any, value: any): any {
+    setFieldValue({ source: "props", key }, value);
+}
+function setTableEditorHintValue(key: any, value: any): any {
+    setFieldValue({ source: "editorHints", key }, value);
+}
+function setTableStyleValue(key: any, value: any): any {
+    setFieldValue({ source: "style", key }, value);
+}
+function tableJsonPropValue(key: any): any {
+    if (key === "columns") {
+        return JSON.stringify(tableColumnsValue(tableColumnsField).map((column: any): any => {
+            const result: any = {
+                field: column.key,
+                valuePath: column.valuePath || column.key,
+                header: column.title,
+                width: column.width,
+            };
+            if (column.align && column.align !== "left") {
+                result.align = column.align;
+            }
+            if (column.formatter && typeof column.formatter === "object") {
+                result.formatter = column.formatter;
+            }
+            return result;
+        }), null, 2);
+    }
+    return stringFieldValue({ source: "props", key, valueType: "json" });
+}
+function setTableJsonPropValue(key: any, value: any, label: any): any {
+    if (key === "columns") {
+        const source = typeof value === "string" ? value.trim() : "";
+        if (!source) {
+            setTableObjectProps({
+                columns: [],
+                sampleData: [],
+                footerData: [],
+            });
+            return true;
+        }
+        try {
+            const parsed = JSON.parse(source);
+            if (!Array.isArray(parsed)) {
+                PdMessage.error("列定义必须是数组 JSON");
+                return false;
+            }
+            const nextColumns = parsed.map((column: any, index: any): any => normalizeTableColumn(column, index));
+            setTableObjectProps({
+                columns: nextColumns,
+                sampleData: normalizeTableSampleData(selectedObject.value?.props?.sampleData, nextColumns),
+                footerData: normalizeTableFooterData(selectedObject.value?.props?.footerData, nextColumns),
+            });
+        }
+        catch {
+            PdMessage.error(`${label} 不是有效 JSON`);
+            return false;
+        }
+        return true;
+    }
+    const source = typeof value === "string" ? value.trim() : "";
+    if (source) {
+        try {
+            JSON.parse(source);
+        }
+        catch {
+            PdMessage.error(`${label} 不是有效 JSON`);
+            return false;
+        }
+    }
+    setFieldValue({ source: "props", key, valueType: "json", label }, value);
+    return true;
+}
+function tableCodePropValue(key: any): any {
+    return codeFieldValue({ source: "props", key });
+}
+function setTableCodePropValue(key: any, value: any): any {
+    setFieldValue({ source: "props", key, label: key }, value);
+    return true;
+}
+function commitTableJsonEditor(key: any, label: any): any {
+    if (setTableJsonPropValue(key, tableEditorDraft(key), label)) {
+        updateTableEditorDraft(key, tableJsonPropValue(key));
+    }
+}
+function commitTableCodeEditor(key: any): any {
+    if (setTableCodePropValue(key, tableEditorDraft(key))) {
+        updateTableEditorDraft(key, tableCodePropValue(key));
+    }
+}
+function pxToMmValue(value: any): any {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? Math.round((numeric / MM_TO_CSS_PX) * 100) / 100 : 0;
+}
+function mmToPxValue(value: any): any {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? Math.round(numeric * MM_TO_CSS_PX * 100) / 100 : 0;
+}
+function tableFontSizeMmValue(key: any, fallbackKey: any = ""): any {
+    const fallback = fallbackKey ? tableStyleValue(fallbackKey, 14) : 14;
+    return pxToMmValue(tableStyleValue(key, fallback));
+}
+function setTableFontSizeMmValue(key: any, value: any, fallbackKey: any = ""): any {
+    const fallback = fallbackKey ? tableStyleValue(fallbackKey, 14) : 14;
+    const mmValue = Number.isFinite(Number(value)) ? Number(value) : pxToMmValue(fallback);
+    setTableStyleValue(key, mmToPxValue(mmValue));
+}
+function tableBorderWidthMmValue(): any {
+    return pxToMmValue(tableStyleValue("borderWidth", 1));
+}
+function setTableBorderWidthMmValue(value: any): any {
+    setTableStyleValue("borderWidth", mmToPxValue(value));
+}
+function reorderSelectedObject(action: any): any {
+    if (!selectedObject.value) {
+        return;
+    }
+    if (!documentStore.reorderObject(selectedObject.value.id, action)) {
+        PdMessage.warning("当前元素已锁定，无法调整层级。");
+    }
+}
+async function copySelectedObjectId(): Promise<any> {
+    if (!selectedObject.value?.id) {
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(selectedObject.value.id);
+        PdMessage.success("ID 已复制");
+    }
+    catch {
+        PdMessage.error("复制失败");
+    }
+}
+function setTableObjectProps(patch: any): any {
+    if (!selectedObject.value) {
+        return;
+    }
+    for (const [key, value] of Object.entries(patch || {})) {
+        const field = { source: "props", key };
+        if (!validateFieldChange(field, value)) {
+            return;
+        }
+    }
+    const field = { source: "props", key: Object.keys(patch || {})[0] || "columns" };
+    updateSelectedObject(field, {
+        props: {
+            ...(selectedObject.value.props || {}),
+            ...patch,
+        },
+    });
+}
+function selectedTableRows(section: any = selectedTableSection.value): any {
+    const key = section === "footer" ? "footerData" : "sampleData";
+    const rows = selectedObject.value?.props?.[key];
+    return Array.isArray(rows) ? rows : [];
+}
+function tableSelectionCell(): any {
+    const selection = selectedTableCells.value[0];
+    if (!selection)
+        return null;
+    return selectedTableRows(selection.section)?.[selection.rowIndex]?.[selection.colField] ?? null;
+}
+function selectedTableCellStyleValue(key: any, fallback: any = ""): any {
+    const value = tableCellStyleValue(tableSelectionCell())[key];
+    return value == null || value === "" ? fallback : value;
+}
+function selectedTableCellNumberStyleValue(key: any): any {
+    const raw = selectedTableCellStyleValue(key, "");
+    const numeric = Number.parseFloat(raw);
+    return Number.isFinite(numeric) ? numeric : 12;
+}
+function selectedTableCellTextValue(): any {
+    return String(tableCellTextValue(tableSelectionCell()) ?? "");
+}
+function selectedTableCellHasCurrentColumnSummary(): any {
+    const selection = selectedTableCells.value[0];
+    return Boolean(selection && toTableCellDescriptor(tableSelectionCell()).field === selection.colField);
+}
+function updateSelectedFooterText(value: any): any {
+    if (selectedTableSection.value !== "footer")
+        return;
+    let rows = selectedTableRows("footer");
+    selectedTableCells.value.forEach((cell: any): any => {
+        rows = updateTableCellValue(rows, selectedObject.value?.props?.columns, cell.rowIndex, cell.colField, String(value ?? ""));
+    });
+    commitTableOperation({ footerData: rows }, "编辑表脚单元格");
+}
+function setSelectedFooterSummary(enabled: any): any {
+    if (selectedTableSection.value !== "footer")
+        return;
+    let rows = selectedTableRows("footer");
+    selectedTableCells.value.forEach((selection: any): any => {
+        rows = updateTableCellValue(rows, selectedObject.value?.props?.columns, selection.rowIndex, selection.colField, tableCellTextValue(rows?.[selection.rowIndex]?.[selection.colField]));
+        const cell = toTableCellDescriptor(rows[selection.rowIndex][selection.colField]);
+        if (enabled) {
+            rows[selection.rowIndex][selection.colField] = { ...cell, field: selection.colField };
+            return;
+        }
+        delete cell.field;
+        rows[selection.rowIndex][selection.colField] = Object.keys(cell).length === 1 && Object.hasOwn(cell, "value") ? cell.value : cell;
+    });
+    commitTableOperation({ footerData: rows }, "设置表脚汇总字段");
+}
+function commitTableOperation(patch: any, label: any): any {
+    const object = selectedObject.value;
+    if (!object || object.locked) {
+        PdMessage.warning("当前表格已锁定，请先解除锁定后再编辑。");
+        return false;
+    }
+    const command = createUpdateObjectPropsCommand(documentStore, object.id, {
+        props: { ...(object.props || {}), ...(patch || {}) },
+    });
+    if (!command)
+        return false;
+    command.label = label;
+    executeEditorCommand(historyStore, command);
+    return true;
+}
+function selectionDataKey(): any {
+    return selectedTableSection.value === "footer" ? "footerData" : "sampleData";
+}
+function applySelectedTableCellStyle(style: any): any {
+    if (!selectedTableCells.value.length)
+        return;
+    const key = selectionDataKey();
+    const result = applyTableCellStylePatch(selectedTableRows(), selectedObject.value?.props?.columns, selectedTableCells.value, style);
+    if (result.changed)
+        commitTableOperation({ [key]: result.rows }, "设置单元格样式");
+}
+function mergeSelectedTableCells(): any {
+    const key = selectionDataKey();
+    const result = mergeTableCellsPatch(selectedTableRows(), selectedObject.value?.props?.columns, selectedTableCells.value);
+    if (!result.changed) {
+        PdMessage.warning(result.reason || "请选择一个连续的单元格区域。");
+        return;
+    }
+    commitTableOperation({ [key]: result.rows }, "合并表格单元格");
+}
+function splitSelectedTableCells(): any {
+    const key = selectionDataKey();
+    let rows = selectedTableRows();
+    let changed = false;
+    const processed = new Set();
+    selectedTableCells.value.forEach((cell: any): any => {
+        const cellKey = `${cell.rowIndex}:${cell.colField}`;
+        if (processed.has(cellKey))
+            return;
+        processed.add(cellKey);
+        const result = splitTableCellPatch(rows, selectedObject.value?.props?.columns, cell.rowIndex, cell.colField);
+        rows = result.rows;
+        changed ||= result.changed;
+    });
+    if (!changed) {
+        PdMessage.warning("所选单元格没有合并区域可拆分。");
+        return;
+    }
+    commitTableOperation({ [key]: rows }, "拆分表格单元格");
+}
+function insertSelectedTableRow(): any {
+    const key = selectionDataKey();
+    const rowIndex = Math.max(...selectedTableCells.value.map((cell: any): any => cell.rowIndex), -1) + 1;
+    const result = insertTableRowAt(selectedTableRows(), selectedObject.value?.props?.columns, rowIndex, selectedObject.value?.props?.rowHeights, selectedTableSection.value);
+    commitTableOperation({ [key]: result.rows, rowHeights: result.rowHeights }, "插入表格行");
+}
+function removeSelectedTableRows(): any {
+    const key = selectionDataKey();
+    let rows = selectedTableRows();
+    let rowHeights = selectedObject.value?.props?.rowHeights;
+    const indexes = [...new Set(selectedTableCells.value.map((cell: any): any => cell.rowIndex))].sort((a: any, b: any): any => b - a);
+    let changed = false;
+    indexes.forEach((rowIndex: any): any => {
+        const result = removeTableRowAt(rows, selectedObject.value?.props?.columns, rowIndex, rowHeights, selectedTableSection.value);
+        rows = result.rows;
+        rowHeights = result.rowHeights;
+        changed ||= result.changed;
+    });
+    if (changed) {
+        selectionStore.clearTableSelection(selectedObject.value?.id);
+        commitTableOperation({ [key]: rows, rowHeights }, "删除表格行");
+    }
+}
+function insertSelectedTableColumn(): any {
+    const columns = selectedObject.value?.props?.columns || [];
+    const indexes = selectedTableCells.value
+        .map((cell: any): any => columns.findIndex((column: any): any => column?.key === cell.colField))
+        .filter((index: any): any => index >= 0);
+    const index = (indexes.length ? Math.max(...indexes) : columns.length - 1) + 1;
+    const result = insertTableColumnAt(columns, selectedTableRows("body"), selectedTableRows("footer"), index);
+    if (commitTableOperation({ columns: result.columns, sampleData: result.sampleData, footerData: result.footerData }, "插入表格列")) {
+        selectionStore.setTableSelection(selectedObject.value?.id, [{ rowIndex: selectedTableCells.value[0]?.rowIndex || 0, colField: result.columns[result.index]?.key, section: selectedTableSection.value }], selectedTableSection.value);
+    }
+}
+function removeSelectedTableColumns(): any {
+    let columns = selectedObject.value?.props?.columns || [];
+    let sampleData = selectedTableRows("body");
+    let footerData = selectedTableRows("footer");
+    const indexes = [...new Set(selectedTableCells.value
+            .map((cell: any): any => columns.findIndex((column: any): any => column?.key === cell.colField))
+            .filter((index: any): any => index >= 0))].sort((a: any, b: any): any => b - a);
+    let changed = false;
+    indexes.forEach((index: any): any => {
+        const result = removeTableColumnAt(columns, sampleData, footerData, index);
+        columns = result.columns;
+        sampleData = result.sampleData;
+        footerData = result.footerData;
+        changed ||= result.changed;
+    });
+    if (!changed) {
+        PdMessage.warning("表格至少需要保留一列。");
+        return;
+    }
+    selectionStore.clearTableSelection(selectedObject.value?.id);
+    commitTableOperation({ columns, sampleData, footerData }, "删除表格列");
+}
+function normalizeTableColumn(column: any, index: any): any {
+    const width = Number(column?.width);
+    return {
+        key: typeof column?.key === "string" && column.key.trim()
+            ? column.key
+            : `field${index + 1}`,
+        valuePath: typeof column?.valuePath === "string" && column.valuePath.trim()
+            ? column.valuePath
+            : typeof column?.key === "string" && column.key.trim()
+                ? column.key
+                : `field${index + 1}`,
+        title: typeof column?.title === "string" && column.title.trim()
+            ? column.title
+            : `列 ${index + 1}`,
+        width: Number.isFinite(width) ? width : 100,
+        align: column?.align === "center" || column?.align === "right" ? column.align : "left",
+        ...(column?.formatter && typeof column.formatter === "object" ? { formatter: column.formatter } : {}),
+    };
+}
+function tableColumnsValue(field: any): any {
+    const columns = getFieldValue(field);
+    if (!Array.isArray(columns)) {
+        return [];
+    }
+    return columns.map((column: any, index: any): any => normalizeTableColumn(column, index));
+}
+function setTableColumns(field: any, columns: any): any {
+    setTableObjectProps({
+        [field.key]: columns.map((column: any, index: any): any => normalizeTableColumn(column, index)),
+    });
+}
+function nextTableColumnKey(columns: any): any {
+    const existingKeys = new Set(columns.map((column: any): any => column.key));
+    let index = columns.length + 1;
+    while (existingKeys.has(`field${index}`)) {
+        index += 1;
+    }
+    return `field${index}`;
+}
+function mapTableData(data: any, transform: any): any {
+    if (Array.isArray(data)) {
+        return data.map((item: any): any => (item && typeof item === "object" ? transform(item) : item));
+    }
+    if (data && typeof data === "object") {
+        return transform(data);
+    }
+    return data;
+}
+function renameTableDataKey(data: any, oldKey: any, newKey: any): any {
+    if (!oldKey || oldKey === newKey) {
+        return data;
+    }
+    return mapTableData(data, (item: any): any => {
+        const nextItem = { ...item };
+        nextItem[newKey] = item[oldKey] ?? "";
+        delete nextItem[oldKey];
+        return nextItem;
+    });
+}
+function removeTableDataKey(data: any, key: any): any {
+    if (!key) {
+        return data;
+    }
+    return mapTableData(data, (item: any): any => {
+        const nextItem = { ...item };
+        delete nextItem[key];
+        return nextItem;
+    });
+}
+function appendTableDataKey(data: any, key: any): any {
+    if (!key) {
+        return data;
+    }
+    if (Array.isArray(data)) {
+        return data.map((item: any): any => ({
+            ...(item && typeof item === "object" ? item : {}),
+            [key]: item?.[key] ?? "",
+        }));
+    }
+    if (data && typeof data === "object") {
+        return {
+            ...data,
+            [key]: data[key] ?? "",
+        };
+    }
+    return data;
+}
+function addTableColumn(field: any): any {
+    const columns = tableColumnsValue(field);
+    const result = insertTableColumnAt(columns, selectedObject.value?.props?.sampleData, selectedObject.value?.props?.footerData, columns.length);
+    setTableObjectProps({
+        columns: result.columns,
+        sampleData: result.sampleData,
+        footerData: result.footerData,
+    });
+}
+function updateTableColumn(field: any, index: any, prop: any, value: any): any {
+    const columns = tableColumnsValue(field);
+    const currentColumn = columns[index];
+    if (!currentColumn) {
+        return;
+    }
+    let nextValue = value;
+    if (prop === "width") {
+        nextValue = Number.isFinite(value) ? value : currentColumn.width;
+    }
+    if (prop === "align") {
+        nextValue = value === "center" || value === "right" ? value : "left";
+    }
+    if (prop === "key" || prop === "title") {
+        nextValue = value == null ? "" : String(value);
+    }
+    if (prop === "key") {
+        const candidateKey = nextValue.trim() || `field${index + 1}`;
+        const duplicated = columns.some((column: any, columnIndex: any): any => columnIndex !== index && column.key === candidateKey);
+        if (duplicated) {
+            PdMessage.error("字段 key 不能重复");
+            return;
+        }
+        nextValue = candidateKey;
+    }
+    const nextColumns = columns.map((column: any, columnIndex: any): any => columnIndex === index ? normalizeTableColumn({ ...column, [prop]: nextValue }, columnIndex) : column);
+    if (prop === "key") {
+        const renamed = renameTableColumnPatch(columns, selectedObject.value?.props?.sampleData, selectedObject.value?.props?.footerData, index, nextValue, nextColumns[index].title);
+        if (renamed?.error) {
+            PdMessage.error(renamed.error);
+            return;
+        }
+        if (renamed)
+            setTableObjectProps(renamed);
+        return;
+    }
+    setTableColumns(field, nextColumns);
+}
+function updateTableColumnFormatter(field: any, index: any, key: any, value: any): any {
+    const columns = tableColumnsValue(field);
+    const currentColumn = columns[index];
+    if (!currentColumn) {
+        return;
+    }
+    const currentFormatter = currentColumn.formatter && typeof currentColumn.formatter === "object" ? currentColumn.formatter : {};
+    const nextFormatter = { ...currentFormatter, [key]: value };
+    const nextColumn = { ...currentColumn };
+    if (key === "type" && !value) {
+        delete nextColumn.formatter;
+    }
+    else {
+        nextColumn.formatter = nextFormatter;
+    }
+    const nextColumns = columns.map((column: any, columnIndex: any): any => columnIndex === index ? normalizeTableColumn(nextColumn, columnIndex) : column);
+    setTableColumns(field, nextColumns);
+}
+function moveTableColumn(field: any, index: any, offset: any): any {
+    const columns = tableColumnsValue(field);
+    const targetIndex = index + offset;
+    if (targetIndex < 0 || targetIndex >= columns.length) {
+        return;
+    }
+    const nextColumns = [...columns];
+    [nextColumns[index], nextColumns[targetIndex]] = [nextColumns[targetIndex], nextColumns[index]];
+    setTableColumns(field, nextColumns);
+}
+function removeTableColumn(field: any, index: any): any {
+    const columns = tableColumnsValue(field);
+    if (columns.length <= 1) {
+        PdMessage.warning("表格至少需要保留一列。");
+        return;
+    }
+    const result = removeTableColumnAt(columns, selectedObject.value?.props?.sampleData, selectedObject.value?.props?.footerData, index);
+    setTableObjectProps({
+        columns: result.columns,
+        sampleData: result.sampleData,
+        footerData: result.footerData,
+    });
+}
+function normalizeTableSampleRow(row: any, columns: any): any {
+    const source = row && typeof row === "object" ? row : {};
+    return columns.reduce((result: any, column: any): any => {
+        result[column.key] = source[column.key] == null ? "" : source[column.key];
+        return result;
+    }, {});
+}
+function normalizeTableSampleData(data: any, columns: any): any {
+    const rows = Array.isArray(data) ? data : [];
+    return rows.map((row: any): any => normalizeTableSampleRow(row, columns));
+}
+function tableSampleRowsValue(field: any): any {
+    const rows = getFieldValue(field);
+    const columns = tableColumnsValue(tableColumnsField);
+    if (!Array.isArray(rows)) {
+        return [];
+    }
+    return rows.map((row: any): any => normalizeTableSampleRow(row, columns));
+}
+function tableSampleCellValue(row: any, key: any): any {
+    return String(tableCellTextValue(row?.[key]) ?? "");
+}
+function createEmptyTableSampleRow(columns: any): any {
+    return columns.reduce((result: any, column: any): any => {
+        result[column.key] = "";
+        return result;
+    }, {});
+}
+function addTableSampleRow(field: any): any {
+    const columns = tableColumnsValue(tableColumnsField);
+    if (!columns.length) {
+        return;
+    }
+    setFieldValue(field, [...tableSampleRowsValue(field), createEmptyTableSampleRow(columns)]);
+}
+function updateTableSampleCell(field: any, rowIndex: any, key: any, value: any): any {
+    setFieldValue(field, updateTableCellValue(tableSampleRowsValue(field), tableColumnsValue(tableColumnsField), rowIndex, key, value == null ? "" : String(value)));
+}
+function removeTableSampleRow(field: any, rowIndex: any): any {
+    setFieldValue(field, tableSampleRowsValue(field).filter((_: any, index: any): any => index !== rowIndex));
+}
+function normalizeTableFooterCell(cell: any): any {
+    if (cell && typeof cell === "object" && !Array.isArray(cell)) {
+        return {
+            ...cell,
+        };
+    }
+    return cell == null ? "" : String(cell);
+}
+function normalizeTableFooterRow(data: any, columns: any): any {
+    const source = data && typeof data === "object" ? data : {};
+    return columns.reduce((result: any, column: any): any => {
+        result[column.key] = normalizeTableFooterCell(source[column.key]);
+        return result;
+    }, {});
+}
+function normalizeTableFooterData(data: any, columns: any): any {
+    if (Array.isArray(data)) {
+        return data.map((row: any): any => normalizeTableFooterRow(row, columns));
+    }
+    if (data && typeof data === "object" && Object.keys(data).length) {
+        return [normalizeTableFooterRow(data, columns)];
+    }
+    return [];
+}
+function tableFooterRowsValue(field: any): any {
+    const source = getFieldValue(field);
+    const columns = tableColumnsValue(tableColumnsField);
+    if (!columns.length) {
+        return [];
+    }
+    if (Array.isArray(source)) {
+        return source.map((row: any): any => normalizeTableFooterRow(row, columns));
+    }
+    if (source && typeof source === "object" && Object.keys(source).length) {
+        return [normalizeTableFooterRow(source, columns)];
+    }
+    return [];
+}
+function tableFooterCellDisplayValue(cell: any): any {
+    if (cell && typeof cell === "object" && !Array.isArray(cell)) {
+        if (cell.result != null && cell.result !== "") {
+            return String(cell.result);
+        }
+        if (cell.value != null && cell.value !== "") {
+            return String(cell.value);
+        }
+        if (cell.field != null && cell.field !== "") {
+            return String(cell.field);
+        }
+    }
+    return cell == null ? "" : String(cell);
+}
+function tableFooterCellValue(field: any, rowIndex: any, key: any): any {
+    const row = tableFooterRowsValue(field)[rowIndex];
+    return tableFooterCellDisplayValue(row?.[key]);
+}
+function tableFooterCellToken(field: any, rowIndex: any, key: any): any {
+    const cell = tableFooterRowsValue(field)[rowIndex]?.[key];
+    return cell && typeof cell === "object" && !Array.isArray(cell) && cell.field ? String(cell.field) : "";
+}
+function createEmptyTableFooterRow(columns: any): any {
+    return columns.reduce((result: any, column: any): any => {
+        result[column.key] = "";
+        return result;
+    }, {});
+}
+function addTableFooterRow(field: any): any {
+    const columns = tableColumnsValue(tableColumnsField);
+    if (!columns.length) {
+        return;
+    }
+    setFieldValue(field, [...tableFooterRowsValue(field), createEmptyTableFooterRow(columns)]);
+}
+function updateTableFooterCell(field: any, rowIndex: any, key: any, value: any): any {
+    const rows = tableFooterRowsValue(field);
+    const currentCell = rows[rowIndex]?.[key];
+    const nextText = value == null ? "" : String(value);
+    const nextCell = currentCell && typeof currentCell === "object" && !Array.isArray(currentCell)
+        ? {
+            ...currentCell,
+            result: nextText,
+            value: currentCell.field ? currentCell.value ?? "" : nextText,
+        }
+        : nextText;
+    const nextRows = rows.map((row: any, index: any): any => (index === rowIndex ? { ...row, [key]: nextCell } : row));
+    setFieldValue(field, nextRows);
+}
+function removeTableFooterRow(field: any, rowIndex: any): any {
+    setFieldValue(field, tableFooterRowsValue(field).filter((_: any, index: any): any => index !== rowIndex));
+}
+function resetTableFooter(field: any): any {
+    setFieldValue(field, []);
+}
+function multiLabelCellCount(): any {
+    if (selectedObject.value?.type !== "multiLabel") {
+        return 0;
+    }
+    const rows = Math.max(1, Number(selectedObject.value?.props?.rows) || 1);
+    const cols = Math.max(1, Number(selectedObject.value?.props?.cols) || 1);
+    return rows * cols;
+}
+function normalizeMultiLabelSampleItem(item: any, index: any): any {
+    const source = item && typeof item === "object" ? item : {};
+    return {
+        title: source.title == null ? "" : String(source.title),
+        code: source.code == null ? "" : String(source.code),
+        detail: source.detail == null ? "" : String(source.detail),
+    };
+}
+function normalizeMultiLabelSampleData(data: any, total: any = multiLabelCellCount()): any {
+    const source = Array.isArray(data) ? data : [];
+    const count = Math.max(1, total || 1);
+    return source.slice(0, count).map((item: any, index: any): any => normalizeMultiLabelSampleItem(item, index));
+}
+function multiLabelSampleDataValue(field: any): any {
+    return normalizeMultiLabelSampleData(getFieldValue(field));
+}
+function multiLabelCellCoordinate(index: any): any {
+    const rows = Math.max(1, Number(selectedObject.value?.props?.rows) || 1);
+    const cols = Math.max(1, Number(selectedObject.value?.props?.cols) || 1);
+    const direction = selectedObject.value?.props?.direction === "column" ? "column" : "row";
+    if (direction === "column") {
+        const row = (index % rows) + 1;
+        const col = Math.floor(index / rows) + 1;
+        return `R${row} C${col}`;
+    }
+    const row = Math.floor(index / cols) + 1;
+    const col = (index % cols) + 1;
+    return `R${row} C${col}`;
+}
+function setMultiLabelSampleData(data: any): any {
+    if (selectedObject.value?.type !== "multiLabel") {
+        return;
+    }
+    updateSelectedObject({ source: "props", key: "sampleData" }, {
+        props: {
+            ...(selectedObject.value.props || {}),
+            sampleData: normalizeMultiLabelSampleData(data),
+        },
+    });
+}
+function updateMultiLabelSampleCell(field: any, index: any, key: any, value: any): any {
+    const nextData = multiLabelSampleDataValue(field).map((item: any, itemIndex: any): any => itemIndex === index ? { ...item, [key]: value == null ? "" : String(value) } : item);
+    setMultiLabelSampleData(nextData);
+}
+function normalizeFieldValue(field: any, value: any): any {
+    if (field.valueType !== "json") {
+        return value;
+    }
+    if (typeof value !== "string") {
+        return value;
+    }
+    const source = value.trim();
+    if (!source) {
+        return Array.isArray(getFieldValue(field)) ? [] : {};
+    }
+    try {
+        return JSON.parse(source);
+    }
+    catch (error: any) {
+        PdMessage.error(`${field.label} 不是有效 JSON`);
+        return Symbol.for("invalid-json");
+    }
+}
+function fieldError(field: any): any {
+    return getFieldError(fieldErrors.value, field);
+}
+function setFieldError(field: any, message: any = ""): any {
+    const key = fieldErrorKey(field);
+    if (!key) {
+        return;
+    }
+    const next = { ...fieldErrors.value };
+    if (message) {
+        next[key] = message;
+    }
+    else {
+        delete next[key];
+    }
+    fieldErrors.value = next;
+}
+function validateFieldChange(field: any, value: any): any {
+    if (!field) {
+        return false;
+    }
+    const message = validateElementProperty(selectedObject.value?.type, field.source, field.key, value);
+    setFieldError(field, message || "");
+    return !message;
+}
+function endPropertyEditSession(): any {
+    if (propertyEditTimer) {
+        clearTimeout(propertyEditTimer);
+        propertyEditTimer = null;
+    }
+    propertyEditSession.value = null;
+}
+function schedulePropertyEditSessionEnd(): any {
+    if (propertyEditTimer) {
+        clearTimeout(propertyEditTimer);
+    }
+    propertyEditTimer = setTimeout(endPropertyEditSession, 600);
+}
+function propertyEditKey(objectId: any, field: any): any {
+    return `${objectId}:${field?.source || "root"}:${field?.key || "property"}`;
+}
+function isLockSafePatch(patch: any): any {
+    const patchKeys = Object.keys(patch || {});
+    return patchKeys.length > 0 && patchKeys.every((key: any): any => ["locked", "visible", "printable"].includes(key));
+}
+function updateSelectedObject(field: any, patch: any): any {
+    const object = selectedObject.value;
+    if (!object) {
+        return false;
+    }
+    if (object.locked && !isLockSafePatch(patch)) {
+        setFieldError(field, "当前元素已锁定，请先解除锁定后再编辑。");
+        PdMessage.warning("当前元素已锁定，请先解除锁定后再编辑。");
+        return false;
+    }
+    const key = propertyEditKey(object.id, field);
+    const session = propertyEditSession.value;
+    if (session?.key === key && historyStore.undoStack.at(-1) === session.command) {
+        const updated = documentStore.updateObjectProps(object.id, patch);
+        if (!updated) {
+            setFieldError(field, "当前元素已锁定，请先解除锁定后再编辑。");
+            PdMessage.warning("当前元素已锁定，请先解除锁定后再编辑。");
+            return false;
+        }
+        session.command.setPatch(patch);
+        schedulePropertyEditSessionEnd();
+        return true;
+    }
+    endPropertyEditSession();
+    const command = createUpdateObjectPropsCommand(documentStore, object.id, patch);
+    if (!command) {
+        return false;
+    }
+    executeEditorCommand(historyStore, command);
+    propertyEditSession.value = { key, command };
     schedulePropertyEditSessionEnd();
     return true;
-  }
-
-  endPropertyEditSession();
-  const command = createUpdateObjectPropsCommand(documentStore, object.id, patch);
-
-  if (!command) {
-    return false;
-  }
-
-  executeEditorCommand(historyStore, command);
-  propertyEditSession.value = { key, command };
-  schedulePropertyEditSessionEnd();
-  return true;
 }
-
-function setRootValue(key, value) {
-  if (!selectedObject.value) {
-    return;
-  }
-
-  const field = { source: "root", key };
-  if (!validateFieldChange(field, value)) {
-    return;
-  }
-  updateSelectedObject(field, buildRootUpdatePayload(selectedObject.value, key, value));
-}
-
-function setFieldValue(field, value) {
-  if (!selectedObject.value) {
-    return;
-  }
-
-  const objectId = selectedObject.value.id;
-  const normalizedValue = normalizeFieldValue(field, value);
-
-  if (normalizedValue === Symbol.for("invalid-json")) {
-    return;
-  }
-
-  if (!validateFieldChange(field, normalizedValue)) {
-    return;
-  }
-
-  if (field.source === "root") {
-    updateSelectedObject(field, buildRootUpdatePayload(selectedObject.value, field.key, normalizedValue));
-    return;
-  }
-
-  if (field.source === "style") {
-    updateSelectedObject(field, {
-      style: {
-        ...(selectedObject.value.style || {}),
-        [field.key]: normalizedValue,
-      },
-    });
-    return;
-  }
-
-  if (field.source === "props") {
-    if (selectedObject.value.type === "multiLabel") {
-      const nextProps = {
-        ...(selectedObject.value.props || {}),
-        [field.key]: normalizedValue,
-      };
-
-      if (field.key === "rows" || field.key === "cols") {
-        const total = Math.max(1, Number(nextProps.rows) || 1) * Math.max(1, Number(nextProps.cols) || 1);
-        nextProps.sampleData = normalizeMultiLabelSampleData(nextProps.sampleData, total);
-      } else if (field.key === "sampleData") {
-        nextProps.sampleData = normalizeMultiLabelSampleData(normalizedValue);
-      }
-
-      updateSelectedObject(field, {
-        props: nextProps,
-      });
-      return;
+function setRootValue(key: any, value: any): any {
+    if (!selectedObject.value) {
+        return;
     }
-
-    updateSelectedObject(field, {
-      props: {
-        ...(selectedObject.value.props || {}),
-        [field.key]: normalizedValue,
-      },
-    });
-    return;
-  }
-
-  if (field.source === "editorHints") {
-    updateSelectedObject(field, {
-      editorHints: {
-        ...(selectedObject.value.editorHints || {}),
-        [field.key]: normalizedValue,
-      },
-    });
-  }
+    const field = { source: "root", key };
+    if (!validateFieldChange(field, value)) {
+        return;
+    }
+    updateSelectedObject(field, buildRootUpdatePayload(selectedObject.value, key, value));
 }
-
-async function runFieldAction(action) {
-  if (!selectedObject.value) {
-    return;
-  }
-
-  const objectId = selectedObject.value.id;
-
-  switch (action) {
-    case "bringForward":
-    case "sendBackward":
-    case "bringToFront":
-    case "sendToBack":
-      documentStore.reorderObject(objectId, action);
-      break;
-    case "deleteElement":
-      if (executeDeleteSelectedObjects([objectId])) {
-        selectionStore.clearSelection();
-      } else {
-        PdMessage.warning("当前元素已锁定，无法删除。");
-      }
-      break;
-    case "saveAsTemplate":
-      try {
-        const { value } = await PdMessageBox.prompt("输入元素预设名称", "保存为元素预设", {
-          inputValue: selectedObject.value.name || "元素预设",
-          inputPattern: /\S/,
-          inputErrorMessage: "请输入预设名称",
+function setFieldValue(field: any, value: any): any {
+    if (!selectedObject.value) {
+        return;
+    }
+    const objectId = selectedObject.value.id;
+    const normalizedValue = normalizeFieldValue(field, value);
+    if (normalizedValue === Symbol.for("invalid-json")) {
+        return;
+    }
+    if (!validateFieldChange(field, normalizedValue)) {
+        return;
+    }
+    if (field.source === "root") {
+        updateSelectedObject(field, buildRootUpdatePayload(selectedObject.value, field.key, normalizedValue));
+        return;
+    }
+    if (field.source === "style") {
+        updateSelectedObject(field, {
+            style: {
+                ...(selectedObject.value.style || {}),
+                [field.key]: normalizedValue,
+            },
         });
-        await presetRepository.create({ name: value, element: selectedObject.value });
-        PdMessage.success("元素预设已保存，可从顶部“预设”打开并插入。");
-      } catch (error) {
-        if (error !== "cancel" && error !== "close") {
-          PdMessage.error(error?.message || "保存元素预设失败");
+        return;
+    }
+    if (field.source === "props") {
+        if (selectedObject.value.type === "multiLabel") {
+            const nextProps = {
+                ...(selectedObject.value.props || {}),
+                [field.key]: normalizedValue,
+            };
+            if (field.key === "rows" || field.key === "cols") {
+                const total = Math.max(1, Number(nextProps.rows) || 1) * Math.max(1, Number(nextProps.cols) || 1);
+                nextProps.sampleData = normalizeMultiLabelSampleData(nextProps.sampleData, total);
+            }
+            else if (field.key === "sampleData") {
+                nextProps.sampleData = normalizeMultiLabelSampleData(normalizedValue);
+            }
+            updateSelectedObject(field, {
+                props: nextProps,
+            });
+            return;
         }
-      }
-      break;
-    default:
-      break;
-  }
+        updateSelectedObject(field, {
+            props: {
+                ...(selectedObject.value.props || {}),
+                [field.key]: normalizedValue,
+            },
+        });
+        return;
+    }
+    if (field.source === "editorHints") {
+        updateSelectedObject(field, {
+            editorHints: {
+                ...(selectedObject.value.editorHints || {}),
+                [field.key]: normalizedValue,
+            },
+        });
+    }
 }
-
-function executeDeleteSelectedObjects(objectIds) {
-  const command = createRemoveObjectsCommand(documentStore, objectIds);
-
-  if (!command) {
-    return false;
-  }
-
-  executeEditorCommand(historyStore, command);
-  return true;
+async function runFieldAction(action: any): Promise<any> {
+    if (!selectedObject.value) {
+        return;
+    }
+    const objectId = selectedObject.value.id;
+    switch (action) {
+        case "bringForward":
+        case "sendBackward":
+        case "bringToFront":
+        case "sendToBack":
+            documentStore.reorderObject(objectId, action);
+            break;
+        case "deleteElement":
+            if (executeDeleteSelectedObjects([objectId])) {
+                selectionStore.clearSelection();
+            }
+            else {
+                PdMessage.warning("当前元素已锁定，无法删除。");
+            }
+            break;
+        case "saveAsTemplate":
+            try {
+                const { value } = await PdMessageBox.prompt("输入元素预设名称", "保存为元素预设", {
+                    inputValue: selectedObject.value.name || "元素预设",
+                    inputPattern: /\S/,
+                    inputErrorMessage: "请输入预设名称",
+                });
+                await presetRepository.create({ name: value, element: selectedObject.value });
+                PdMessage.success("元素预设已保存，可从顶部“预设”打开并插入。");
+            }
+            catch (error: any) {
+                if (error !== "cancel" && error !== "close") {
+                    PdMessage.error(error?.message || "保存元素预设失败");
+                }
+            }
+            break;
+        default:
+            break;
+    }
 }
-
-onBeforeUnmount(() => {
-  endPropertyEditSession();
+function executeDeleteSelectedObjects(objectIds: any): any {
+    const command = createRemoveObjectsCommand(documentStore, objectIds);
+    if (!command) {
+        return false;
+    }
+    executeEditorCommand(historyStore, command);
+    return true;
+}
+onBeforeUnmount((): any => {
+    endPropertyEditSession();
 });
 </script>
 

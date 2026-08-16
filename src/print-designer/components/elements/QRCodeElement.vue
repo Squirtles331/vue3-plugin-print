@@ -7,64 +7,59 @@
   </div>
 </template>
 
-<script setup>
-import { computed } from "vue";
+<script setup lang="ts">import { computed } from "vue";
 import { machineCodeOptions } from "../../runtime/propertySemantics.js";
 import { encodedPreviewValue, hashPreviewSeed, previewBackground, previewForeground, previewPanelStyle } from "./elementPreview.js";
-
 const props = defineProps({
-  object: {
-    type: Object,
-    required: true,
-  },
-});
-
-const value = computed(() => encodedPreviewValue(props.object));
-const size = computed(() => {
-  switch (props.object.props?.eccLevel || "M") {
-    case "L": return 21;
-    case "Q": return 25;
-    case "H": return 29;
-    default: return 23;
-  }
-});
-const frameStyle = computed(() => ({
-  ...previewPanelStyle(props.object, "#ffffff"),
-  padding: `${machineCodeOptions(props.object.props).margin}px`,
-}));
-const gridStyle = computed(() => ({
-  gridTemplateColumns: `repeat(${size.value}, minmax(0, 1fr))`,
-  gridTemplateRows: `repeat(${size.value}, minmax(0, 1fr))`,
-  borderColor: previewForeground(props.object),
-}));
-const darkCellStyle = computed(() => ({ background: previewForeground(props.object) }));
-const lightCellStyle = computed(() => ({ background: previewBackground(props.object) }));
-const cells = computed(() => {
-  const matrixSize = size.value;
-  const seed = hashPreviewSeed(`${value.value}:${props.object.props?.eccLevel || "M"}`);
-  const anchors = [
-    { row: 0, column: 0 },
-    { row: 0, column: matrixSize - 7 },
-    { row: matrixSize - 7, column: 0 },
-  ];
-
-  return Array.from({ length: matrixSize * matrixSize }, (_, index) => {
-    const row = Math.floor(index / matrixSize);
-    const column = index % matrixSize;
-    const finder = anchors.find((anchor) => row >= anchor.row && row < anchor.row + 7 && column >= anchor.column && column < anchor.column + 7);
-    let dark;
-
-    if (finder) {
-      const finderRow = row - finder.row;
-      const finderColumn = column - finder.column;
-      dark = finderRow === 0 || finderRow === 6 || finderColumn === 0 || finderColumn === 6 || (finderRow >= 2 && finderRow <= 4 && finderColumn >= 2 && finderColumn <= 4);
-    } else {
-      dark = (((seed >>> ((row * 7 + column * 3) % 24)) & 1) ^ ((row * 5 + column * 3 + seed) % 7 < 3 ? 1 : 0)) === 1;
+    object: {
+        type: Object,
+        required: true,
+    },
+}) as any;
+const value = computed((): any => encodedPreviewValue(props.object)) as any;
+const size = computed((): any => {
+    switch (props.object.props?.eccLevel || "M") {
+        case "L": return 21;
+        case "Q": return 25;
+        case "H": return 29;
+        default: return 23;
     }
-
-    return { key: `${row}-${column}`, dark };
-  });
-});
+}) as any;
+const frameStyle = computed((): any => ({
+    ...previewPanelStyle(props.object, "#ffffff"),
+    padding: `${machineCodeOptions(props.object.props).margin}px`,
+})) as any;
+const gridStyle = computed((): any => ({
+    gridTemplateColumns: `repeat(${size.value}, minmax(0, 1fr))`,
+    gridTemplateRows: `repeat(${size.value}, minmax(0, 1fr))`,
+    borderColor: previewForeground(props.object),
+})) as any;
+const darkCellStyle = computed((): any => ({ background: previewForeground(props.object) })) as any;
+const lightCellStyle = computed((): any => ({ background: previewBackground(props.object) })) as any;
+const cells = computed((): any => {
+    const matrixSize = size.value;
+    const seed = hashPreviewSeed(`${value.value}:${props.object.props?.eccLevel || "M"}`);
+    const anchors = [
+        { row: 0, column: 0 },
+        { row: 0, column: matrixSize - 7 },
+        { row: matrixSize - 7, column: 0 },
+    ];
+    return Array.from({ length: matrixSize * matrixSize }, (_: any, index: any): any => {
+        const row = Math.floor(index / matrixSize);
+        const column = index % matrixSize;
+        const finder = anchors.find((anchor: any): any => row >= anchor.row && row < anchor.row + 7 && column >= anchor.column && column < anchor.column + 7);
+        let dark;
+        if (finder) {
+            const finderRow = row - finder.row;
+            const finderColumn = column - finder.column;
+            dark = finderRow === 0 || finderRow === 6 || finderColumn === 0 || finderColumn === 6 || (finderRow >= 2 && finderRow <= 4 && finderColumn >= 2 && finderColumn <= 4);
+        }
+        else {
+            dark = (((seed >>> ((row * 7 + column * 3) % 24)) & 1) ^ ((row * 5 + column * 3 + seed) % 7 < 3 ? 1 : 0)) === 1;
+        }
+        return { key: `${row}-${column}`, dark };
+    });
+}) as any;
 </script>
 
 <style scoped lang="scss">

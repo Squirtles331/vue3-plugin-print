@@ -49,24 +49,20 @@
   </section>
 </template>
 
-<script setup>
-import { computed } from "vue";
-
+<script setup lang="ts">import { computed } from "vue";
 const props = defineProps({
-  layers: {
-    type: Array,
-    default: () => [],
-  },
-  selectedIds: {
-    type: Array,
-    default: () => [],
-  },
-});
-
-const emit = defineEmits(["select"]);
-
-const visibleCount = computed(() => props.layers.filter((layer) => layer.visible !== false).length);
-const lockedCount = computed(() => props.layers.filter((layer) => layer.locked).length);
+    layers: {
+        type: Array as any,
+        default: (): any => [],
+    },
+    selectedIds: {
+        type: Array as any,
+        default: (): any => [],
+    },
+}) as any;
+const emit = defineEmits(["select"]) as any;
+const visibleCount = computed((): any => props.layers.filter((layer: any): any => layer.visible !== false).length) as any;
+const lockedCount = computed((): any => props.layers.filter((layer: any): any => layer.locked).length) as any;
 </script>
 
 <style scoped lang="scss">

@@ -17,25 +17,22 @@
   </aside>
 </template>
 
-<script setup>
-import { ref } from "vue";
+<script setup lang="ts">import { ref } from "vue";
 import PdTabPane from "../../ui/primitives/PdTabPane.vue";
 import PdTabs from "../../ui/primitives/PdTabs.vue";
 import PropertiesPanel from "../inspector/PropertiesPanel.vue";
 import StructurePanel from "../inspector/StructurePanel.vue";
-
 defineProps({
-  layers: {
-    type: Array,
-    default: () => [],
-  },
-  variables: {
-    type: Array,
-    default: () => [],
-  },
+    layers: {
+        type: Array as any,
+        default: (): any => [],
+    },
+    variables: {
+        type: Array as any,
+        default: (): any => [],
+    },
 });
-
-const activeTab = ref("properties");
+const activeTab = ref("properties") as any;
 </script>
 
 <style scoped lang="scss">

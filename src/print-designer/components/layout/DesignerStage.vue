@@ -2,6 +2,5 @@
   <WorkspaceRoot />
 </template>
 
-<script setup>
-import WorkspaceRoot from "../../editor/workspace/WorkspaceRoot.vue";
+<script setup lang="ts">import WorkspaceRoot from "../../editor/workspace/WorkspaceRoot.vue";
 </script>

@@ -9,8 +9,7 @@
   </div>
 </template>
 
-<script setup>
-import PageSettingsPanel from "./PageSettingsPanel.vue";
+<script setup lang="ts">import PageSettingsPanel from "./PageSettingsPanel.vue";
 </script>
 
 <style scoped lang="scss">

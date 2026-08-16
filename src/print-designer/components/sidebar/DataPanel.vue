@@ -50,52 +50,42 @@
   </section>
 </template>
 
-<script setup>
-import { computed } from "vue";
-
+<script setup lang="ts">import { computed } from "vue";
 const props = defineProps({
-  variables: {
-    type: Array,
-    default: () => [],
-  },
-  searchQuery: {
-    type: String,
-    default: "",
-  },
-  variant: {
-    type: String,
-    default: "panel",
-  },
-});
-const emit = defineEmits(["select"]);
-
-const isEmbedded = computed(() => props.variant === "embedded");
-const normalizedQuery = computed(() => String(props.searchQuery || "").trim().toLowerCase());
-const variablePath = (variable) => typeof variable === "string" ? variable : String(variable?.path || "");
-const variableKind = (variable) => {
-  const kind = typeof variable === "object" ? variable?.kind : "";
-  return kind === "array" ? "数组" : kind === "object" ? "对象" : "标量";
-};
-
-const filteredVariables = computed(() => {
-  const query = normalizedQuery.value;
-
-  if (!query) {
-    return props.variables;
-  }
-
-  return props.variables.filter((variable) => variablePath(variable).toLowerCase().includes(query));
-});
-
-const searchSummary = computed(() => {
-  const query = String(props.searchQuery || "").trim();
-  return query ? `筛选 “${query}”` : "全部路径";
-});
-
-const emptyTitle = computed(() => (props.variables.length ? "没有匹配的字段" : "当前还没有可绑定字段"));
-const emptyDescription = computed(() =>
-  props.variables.length ? "清空筛选条件后可以查看全部路径。" : "导入或生成业务数据后，这里会显示可绑定路径。"
-);
+    variables: {
+        type: Array as any,
+        default: (): any => [],
+    },
+    searchQuery: {
+        type: String,
+        default: "",
+    },
+    variant: {
+        type: String,
+        default: "panel",
+    },
+}) as any;
+const emit = defineEmits(["select"]) as any;
+const isEmbedded = computed((): any => props.variant === "embedded") as any;
+const normalizedQuery = computed((): any => String(props.searchQuery || "").trim().toLowerCase()) as any;
+const variablePath = (variable: any): any => typeof variable === "string" ? variable : String(variable?.path || "") as any;
+const variableKind = ((variable: any): any => {
+    const kind = typeof variable === "object" ? variable?.kind : "";
+    return kind === "array" ? "数组" : kind === "object" ? "对象" : "标量";
+}) as any;
+const filteredVariables = computed((): any => {
+    const query = normalizedQuery.value;
+    if (!query) {
+        return props.variables;
+    }
+    return props.variables.filter((variable: any): any => variablePath(variable).toLowerCase().includes(query));
+}) as any;
+const searchSummary = computed((): any => {
+    const query = String(props.searchQuery || "").trim();
+    return query ? `筛选 “${query}”` : "全部路径";
+}) as any;
+const emptyTitle = computed((): any => (props.variables.length ? "没有匹配的字段" : "当前还没有可绑定字段")) as any;
+const emptyDescription = computed((): any => props.variables.length ? "清空筛选条件后可以查看全部路径。" : "导入或生成业务数据后，这里会显示可绑定路径。") as any;
 </script>
 
 <style scoped lang="scss">

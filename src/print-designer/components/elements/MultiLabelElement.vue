@@ -12,93 +12,89 @@
   </div>
 </template>
 
-<script setup>
-import { computed } from "vue";
+<script setup lang="ts">import { computed } from "vue";
 import { mmToCssPx } from "../../editor/measurement.js";
 import { resolveRelativeRecordPath } from "../../runtime/propertySemantics.js";
 import { previewForeground } from "./elementPreview.js";
-
 const props = defineProps({
-  object: {
-    type: Object,
-    required: true,
-  },
-});
-
-const config = computed(() => ({
-  rows: Math.max(1, Number(props.object.props?.rows) || 1),
-  cols: Math.max(1, Number(props.object.props?.cols) || 1),
-  gapX: Math.max(0, Number(props.object.props?.gapX) || 0),
-  gapY: Math.max(0, Number(props.object.props?.gapY) || 0),
-  direction: props.object.props?.direction === "column" ? "column" : "row",
-}));
-const binding = computed(() => props.object.props?.dataVariable ? `数据：{{${props.object.props.dataVariable}}}` : "");
-const gridStyle = computed(() => ({
-  gridTemplateColumns: `repeat(${config.value.cols}, minmax(0, 1fr))`,
-  gridTemplateRows: `repeat(${config.value.rows}, minmax(0, 1fr))`,
-  columnGap: `${mmToCssPx(config.value.gapX)}px`,
-  rowGap: `${mmToCssPx(config.value.gapY)}px`,
-}));
-const cells = computed(() => {
-  const total = config.value.rows * config.value.cols;
-  const sampleData = Array.isArray(props.object.props?.sampleData) ? props.object.props.sampleData : [];
-
-  return Array.from({ length: total }, (_, index) => {
-    const row = config.value.direction === "column" ? (index % config.value.rows) + 1 : Math.floor(index / config.value.cols) + 1;
-    const column = config.value.direction === "column" ? Math.floor(index / config.value.rows) + 1 : (index % config.value.cols) + 1;
-    const item = sampleData[index];
-    const paths = {
-      primary: props.object.props?.primaryPath || "title",
-      secondary: props.object.props?.secondaryPath || "",
-      tertiary: props.object.props?.tertiaryPath || "",
-    };
-    const getValue = (path) => {
-      if (item && typeof item === "object") {
-        const result = resolveRelativeRecordPath(item, path);
-        if (result.found && result.value != null) return String(result.value);
-      }
-      if (item != null && (typeof item === "string" || typeof item === "number") && path === paths.primary) return String(item);
-      return props.object.props?.dataVariable && path ? `{{${props.object.props.dataVariable}[${index}].${path}}}` : "";
-    };
-
+    object: {
+        type: Object,
+        required: true,
+    },
+}) as any;
+const config = computed((): any => ({
+    rows: Math.max(1, Number(props.object.props?.rows) || 1),
+    cols: Math.max(1, Number(props.object.props?.cols) || 1),
+    gapX: Math.max(0, Number(props.object.props?.gapX) || 0),
+    gapY: Math.max(0, Number(props.object.props?.gapY) || 0),
+    direction: props.object.props?.direction === "column" ? "column" : "row",
+})) as any;
+const binding = computed((): any => props.object.props?.dataVariable ? `数据：{{${props.object.props.dataVariable}}}` : "") as any;
+const gridStyle = computed((): any => ({
+    gridTemplateColumns: `repeat(${config.value.cols}, minmax(0, 1fr))`,
+    gridTemplateRows: `repeat(${config.value.rows}, minmax(0, 1fr))`,
+    columnGap: `${mmToCssPx(config.value.gapX)}px`,
+    rowGap: `${mmToCssPx(config.value.gapY)}px`,
+})) as any;
+const cells = computed((): any => {
+    const total = config.value.rows * config.value.cols;
+    const sampleData = Array.isArray(props.object.props?.sampleData) ? props.object.props.sampleData : [];
+    return Array.from({ length: total }, (_: any, index: any): any => {
+        const row = config.value.direction === "column" ? (index % config.value.rows) + 1 : Math.floor(index / config.value.cols) + 1;
+        const column = config.value.direction === "column" ? Math.floor(index / config.value.rows) + 1 : (index % config.value.cols) + 1;
+        const item = sampleData[index];
+        const paths = {
+            primary: props.object.props?.primaryPath || "title",
+            secondary: props.object.props?.secondaryPath || "",
+            tertiary: props.object.props?.tertiaryPath || "",
+        };
+        const getValue = (path: any): any => {
+            if (item && typeof item === "object") {
+                const result = resolveRelativeRecordPath(item, path);
+                if (result.found && result.value != null)
+                    return String(result.value);
+            }
+            if (item != null && (typeof item === "string" || typeof item === "number") && path === paths.primary)
+                return String(item);
+            return props.object.props?.dataVariable && path ? `{{${props.object.props.dataVariable}[${index}].${path}}}` : "";
+        };
+        return {
+            key: `${props.object.id}-${index}`,
+            row,
+            column,
+            index: `#${index + 1}`,
+            primary: getValue(paths.primary) || "标签内容",
+            secondary: getValue(paths.secondary),
+            tertiary: getValue(paths.tertiary),
+        };
+    });
+}) as any;
+function cellStyle(cell: any): any {
+    const style = props.object.style || {};
+    const borderWidth = Math.max(0, Number(style.borderWidth) || 0);
+    const padding = Math.max(0, Number(props.object.props?.cellPadding ?? style.padding) || 0);
+    const color = previewForeground(props.object);
+    const fontSize = Math.max(8, Number(style.fontSize) || 10);
+    const alignment = style.textAlign || "left";
+    const verticalAlignment = style.verticalAlign || "top";
     return {
-      key: `${props.object.id}-${index}`,
-      row,
-      column,
-      index: `#${index + 1}`,
-      primary: getValue(paths.primary) || "标签内容",
-      secondary: getValue(paths.secondary),
-      tertiary: getValue(paths.tertiary),
+        gridRow: String(cell.row),
+        gridColumn: String(cell.column),
+        alignItems: alignment === "center" ? "center" : alignment === "right" ? "flex-end" : "flex-start",
+        justifyContent: verticalAlignment === "middle" ? "center" : verticalAlignment === "bottom" ? "flex-end" : "flex-start",
+        padding: `${mmToCssPx(padding)}px`,
+        border: `${borderWidth}px ${style.borderStyle || "solid"} ${borderWidth ? style.borderColor || color : "transparent"}`,
+        borderRadius: `${Math.max(0, Number(style.borderRadius) || 0)}px`,
+        background: style.backgroundColor && style.backgroundColor !== "transparent" ? style.backgroundColor : "#ffffff",
+        color,
+        fontFamily: style.fontFamily || undefined,
+        fontSize: `${fontSize}px`,
+        fontStyle: style.fontStyle || "normal",
+        fontWeight: style.fontWeight || "normal",
+        lineHeight: style.lineHeight || 1.35,
+        letterSpacing: `${Number(style.letterSpacing) || 0}px`,
+        textAlign: alignment,
     };
-  });
-});
-function cellStyle(cell) {
-  const style = props.object.style || {};
-  const borderWidth = Math.max(0, Number(style.borderWidth) || 0);
-  const padding = Math.max(0, Number(props.object.props?.cellPadding ?? style.padding) || 0);
-  const color = previewForeground(props.object);
-  const fontSize = Math.max(8, Number(style.fontSize) || 10);
-  const alignment = style.textAlign || "left";
-  const verticalAlignment = style.verticalAlign || "top";
-
-  return {
-    gridRow: String(cell.row),
-    gridColumn: String(cell.column),
-    alignItems: alignment === "center" ? "center" : alignment === "right" ? "flex-end" : "flex-start",
-    justifyContent: verticalAlignment === "middle" ? "center" : verticalAlignment === "bottom" ? "flex-end" : "flex-start",
-    padding: `${mmToCssPx(padding)}px`,
-    border: `${borderWidth}px ${style.borderStyle || "solid"} ${borderWidth ? style.borderColor || color : "transparent"}`,
-    borderRadius: `${Math.max(0, Number(style.borderRadius) || 0)}px`,
-    background: style.backgroundColor && style.backgroundColor !== "transparent" ? style.backgroundColor : "#ffffff",
-    color,
-    fontFamily: style.fontFamily || undefined,
-    fontSize: `${fontSize}px`,
-    fontStyle: style.fontStyle || "normal",
-    fontWeight: style.fontWeight || "normal",
-    lineHeight: style.lineHeight || 1.35,
-    letterSpacing: `${Number(style.letterSpacing) || 0}px`,
-    textAlign: alignment,
-  };
 }
 </script>
 

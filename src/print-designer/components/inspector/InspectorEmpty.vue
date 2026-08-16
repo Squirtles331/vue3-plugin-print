@@ -5,16 +5,15 @@
   </div>
 </template>
 
-<script setup>
-defineProps({
-  title: {
-    type: String,
-    default: "未选中元素",
-  },
-  description: {
-    type: String,
-    default: "选中画布中的元素后，这里会显示位置、尺寸、样式和数据绑定等配置。",
-  },
+<script setup lang="ts">defineProps({
+    title: {
+        type: String,
+        default: "未选中元素",
+    },
+    description: {
+        type: String,
+        default: "选中画布中的元素后，这里会显示位置、尺寸、样式和数据绑定等配置。",
+    },
 });
 </script>
 

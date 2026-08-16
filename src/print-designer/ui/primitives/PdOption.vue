@@ -1,8 +1,7 @@
-<script setup>
-defineProps({
-  label: { type: String, default: "" },
-  value: { type: [String, Number, Boolean], required: true },
-  disabled: { type: Boolean, default: false },
+<script setup lang="ts">defineProps({
+    label: { type: String, default: "" },
+    value: { type: [String, Number, Boolean], required: true },
+    disabled: { type: Boolean, default: false },
 });
 </script>
 

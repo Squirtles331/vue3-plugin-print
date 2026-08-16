@@ -28,19 +28,17 @@
   </aside>
 </template>
 
-<script setup>
-import PropertiesPanel from "../inspector/PropertiesPanel.vue";
+<script setup lang="ts">import PropertiesPanel from "../inspector/PropertiesPanel.vue";
 import StructurePanel from "../inspector/StructurePanel.vue";
-
 defineProps({
-  layers: {
-    type: Array,
-    default: () => [],
-  },
-  variables: {
-    type: Array,
-    default: () => [],
-  },
+    layers: {
+        type: Array as any,
+        default: (): any => [],
+    },
+    variables: {
+        type: Array as any,
+        default: (): any => [],
+    },
 });
 </script>
 

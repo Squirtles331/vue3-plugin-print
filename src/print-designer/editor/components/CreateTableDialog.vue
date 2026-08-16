@@ -41,80 +41,58 @@
   </PdDialog>
 </template>
 
-<script setup>
-import { ref, watch } from "vue";
+<script setup lang="ts">import { ref, watch } from "vue";
 import PdButton from "../../ui/primitives/PdButton.vue";
 import PdDialog from "../../ui/primitives/PdDialog.vue";
 import PdInputNumber from "../../ui/primitives/PdInputNumber.vue";
 import PdRadio from "../../ui/primitives/PdRadio.vue";
 import PdRadioGroup from "../../ui/primitives/PdRadioGroup.vue";
-import {
-  DEFAULT_TABLE_INSERT_COLUMN_COUNT,
-  DEFAULT_CUSTOM_TABLE_INSERT_ROW_COUNT,
-  DEFAULT_TABLE_INSERT_MODE,
-  DEFAULT_TABLE_INSERT_ROW_COUNT,
-  TABLE_INSERT_MODES,
-} from "../../core/tableInsertBuilder.js";
-
+import { DEFAULT_TABLE_INSERT_COLUMN_COUNT, DEFAULT_CUSTOM_TABLE_INSERT_ROW_COUNT, DEFAULT_TABLE_INSERT_MODE, DEFAULT_TABLE_INSERT_ROW_COUNT, TABLE_INSERT_MODES, } from "../../core/tableInsertBuilder.js";
 const props = defineProps({
-  visible: {
-    type: Boolean,
-    default: false,
-  },
-});
-
-const emit = defineEmits(["confirm", "cancel"]);
-
-const mode = ref(DEFAULT_TABLE_INSERT_MODE);
-const columnCount = ref(DEFAULT_TABLE_INSERT_COLUMN_COUNT);
-const rowCount = ref(DEFAULT_TABLE_INSERT_ROW_COUNT);
-
-function resetState() {
-  mode.value = DEFAULT_TABLE_INSERT_MODE;
-  columnCount.value = DEFAULT_TABLE_INSERT_COLUMN_COUNT;
-  rowCount.value = DEFAULT_TABLE_INSERT_ROW_COUNT;
+    visible: {
+        type: Boolean,
+        default: false,
+    },
+}) as any;
+const emit = defineEmits(["confirm", "cancel"]) as any;
+const mode = ref(DEFAULT_TABLE_INSERT_MODE) as any;
+const columnCount = ref(DEFAULT_TABLE_INSERT_COLUMN_COUNT) as any;
+const rowCount = ref(DEFAULT_TABLE_INSERT_ROW_COUNT) as any;
+function resetState(): any {
+    mode.value = DEFAULT_TABLE_INSERT_MODE;
+    columnCount.value = DEFAULT_TABLE_INSERT_COLUMN_COUNT;
+    rowCount.value = DEFAULT_TABLE_INSERT_ROW_COUNT;
 }
-
-function defaultRowCountForMode(value) {
-  return value === TABLE_INSERT_MODES.CUSTOM ? DEFAULT_CUSTOM_TABLE_INSERT_ROW_COUNT : DEFAULT_TABLE_INSERT_ROW_COUNT;
+function defaultRowCountForMode(value: any): any {
+    return value === TABLE_INSERT_MODES.CUSTOM ? DEFAULT_CUSTOM_TABLE_INSERT_ROW_COUNT : DEFAULT_TABLE_INSERT_ROW_COUNT;
 }
-
-function normalizeCount(value, fallback) {
-  const numeric = Number(value);
-
-  if (!Number.isFinite(numeric)) {
-    return fallback;
-  }
-
-  return Math.max(1, Math.round(numeric));
-}
-
-function confirm() {
-  const fallbackRowCount = defaultRowCountForMode(mode.value);
-  emit("confirm", {
-    mode: mode.value,
-    columnCount: normalizeCount(columnCount.value, DEFAULT_TABLE_INSERT_COLUMN_COUNT),
-    rowCount: normalizeCount(rowCount.value, fallbackRowCount),
-  });
-}
-
-function onDialogVisibleChange(value) {
-  if (!value) {
-    emit("cancel");
-  }
-}
-
-watch(
-  () => props.visible,
-  (visible) => {
-    if (visible) {
-      resetState();
+function normalizeCount(value: any, fallback: any): any {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+        return fallback;
     }
-  }
-);
-
-watch(mode, (value) => {
-  rowCount.value = defaultRowCountForMode(value);
+    return Math.max(1, Math.round(numeric));
+}
+function confirm(): any {
+    const fallbackRowCount = defaultRowCountForMode(mode.value);
+    emit("confirm", {
+        mode: mode.value,
+        columnCount: normalizeCount(columnCount.value, DEFAULT_TABLE_INSERT_COLUMN_COUNT),
+        rowCount: normalizeCount(rowCount.value, fallbackRowCount),
+    });
+}
+function onDialogVisibleChange(value: any): any {
+    if (!value) {
+        emit("cancel");
+    }
+}
+watch((): any => props.visible, (visible: any): any => {
+    if (visible) {
+        resetState();
+    }
+});
+watch(mode, (value: any): any => {
+    rowCount.value = defaultRowCountForMode(value);
 });
 </script>
 

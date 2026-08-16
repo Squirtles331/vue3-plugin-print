@@ -4,19 +4,16 @@
   </div>
 </template>
 
-<script setup>
-import { computed } from "vue";
+<script setup lang="ts">import { computed } from "vue";
 import { pageNumberValue, textStyle } from "./elementPreview.js";
-
 const props = defineProps({
-  object: {
-    type: Object,
-    required: true,
-  },
-});
-
-const value = computed(() => pageNumberValue(props.object));
-const contentStyle = computed(() => textStyle(props.object));
+    object: {
+        type: Object,
+        required: true,
+    },
+}) as any;
+const value = computed((): any => pageNumberValue(props.object)) as any;
+const contentStyle = computed((): any => textStyle(props.object)) as any;
 </script>
 
 <style scoped lang="scss">

@@ -1,28 +1,22 @@
-<script setup>
-import { computed, provide, shallowRef } from "vue";
-
+<script setup lang="ts">import { computed, provide, shallowRef } from "vue";
 const props = defineProps({
-  modelValue: { type: String, default: "" },
-  stretch: { type: Boolean, default: false },
-});
-
-const emit = defineEmits(["update:modelValue", "change"]);
-const tabs = shallowRef([]);
-const tabsClass = computed(() => ["pd-tabs", { "pd-tabs--stretch": props.stretch }]);
-
-function setActive(name) {
-  emit("update:modelValue", name);
-  emit("change", name);
+    modelValue: { type: String, default: "" },
+    stretch: { type: Boolean, default: false },
+}) as any;
+const emit = defineEmits(["update:modelValue", "change"]) as any;
+const tabs = shallowRef([]) as any;
+const tabsClass = computed((): any => ["pd-tabs", { "pd-tabs--stretch": props.stretch }]) as any;
+function setActive(name: any): any {
+    emit("update:modelValue", name);
+    emit("change", name);
 }
-
-function registerTab(tab) {
-  if (tabs.value.some((item) => item.name === tab.name)) {
-    return;
-  }
-  tabs.value = [...tabs.value, tab];
+function registerTab(tab: any): any {
+    if (tabs.value.some((item: any): any => item.name === tab.name)) {
+        return;
+    }
+    tabs.value = [...tabs.value, tab];
 }
-
-provide("pdTabs", { activeName: computed(() => props.modelValue), registerTab });
+provide("pdTabs", { activeName: computed((): any => props.modelValue), registerTab });
 </script>
 
 <template>

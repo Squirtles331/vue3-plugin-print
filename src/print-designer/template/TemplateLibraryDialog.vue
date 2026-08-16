@@ -26,74 +26,61 @@
   </PdDialog>
 </template>
 
-<script setup>
-import { computed, shallowRef } from "vue";
+<script setup lang="ts">import { computed, shallowRef } from "vue";
 import { PdMessageBox } from "../ui/feedback.js";
 import { Search } from "../ui/icons.js";
 import PdButton from "../ui/primitives/PdButton.vue";
 import PdDialog from "../ui/primitives/PdDialog.vue";
 import PdInput from "../ui/primitives/PdInput.vue";
-
-const props = defineProps({ visible: { type: Boolean, default: false }, templates: { type: Array, default: () => [] }, loading: { type: Boolean, default: false } });
-const emit = defineEmits(["update:visible", "refresh", "select", "remove", "clear"]);
-const searchQuery = shallowRef("");
-
-const filteredTemplates = computed(() => {
-  const query = String(searchQuery.value || "").trim().toLowerCase();
-  const list = [...props.templates].sort((left, right) => {
-    const leftTime = new Date(left.updatedAt || 0).getTime();
-    const rightTime = new Date(right.updatedAt || 0).getTime();
-    return rightTime - leftTime;
-  });
-
-  if (!query) {
-    return list;
-  }
-
-  return list.filter((template) => `${template.name || ""} ${template.id || ""}`.toLowerCase().includes(query));
-});
-
-const summaryText = computed(() => {
-  if (props.loading) {
-    return "正在加载模板库...";
-  }
-
-  return `共 ${props.templates.length} 个模板`;
-});
-
-const emptyText = computed(() =>
-  props.templates.length ? "没有匹配的模板，清空搜索后可查看全部。" : "本地模板库还是空的，先新建或导入一个模板。"
-);
-
-async function confirmRemove(template) {
-  try {
-    await PdMessageBox.confirm(`Delete “${template.name}” from this browser? This cannot be undone.`, "Delete saved template", { type: "warning" });
-  } catch {
-    return;
-  }
-  emit("remove", template.id);
+const props = defineProps({ visible: { type: Boolean, default: false }, templates: { type: Array as any, default: (): any => [] }, loading: { type: Boolean, default: false } }) as any;
+const emit = defineEmits(["update:visible", "refresh", "select", "remove", "clear"]) as any;
+const searchQuery = shallowRef("") as any;
+const filteredTemplates = computed((): any => {
+    const query = String(searchQuery.value || "").trim().toLowerCase();
+    const list = [...props.templates].sort((left: any, right: any): any => {
+        const leftTime = new Date(left.updatedAt || 0).getTime();
+        const rightTime = new Date(right.updatedAt || 0).getTime();
+        return rightTime - leftTime;
+    });
+    if (!query) {
+        return list;
+    }
+    return list.filter((template: any): any => `${template.name || ""} ${template.id || ""}`.toLowerCase().includes(query));
+}) as any;
+const summaryText = computed((): any => {
+    if (props.loading) {
+        return "正在加载模板库...";
+    }
+    return `共 ${props.templates.length} 个模板`;
+}) as any;
+const emptyText = computed((): any => props.templates.length ? "没有匹配的模板，清空搜索后可查看全部。" : "本地模板库还是空的，先新建或导入一个模板。") as any;
+async function confirmRemove(template: any): Promise<any> {
+    try {
+        await PdMessageBox.confirm(`Delete “${template.name}” from this browser? This cannot be undone.`, "Delete saved template", { type: "warning" });
+    }
+    catch {
+        return;
+    }
+    emit("remove", template.id);
 }
-
-async function confirmClear() {
-  try {
-    await PdMessageBox.confirm("Remove every saved template from this browser? This cannot be undone.", "Clear local template library", { type: "warning" });
-  } catch {
-    return;
-  }
-  emit("clear");
+async function confirmClear(): Promise<any> {
+    try {
+        await PdMessageBox.confirm("Remove every saved template from this browser? This cannot be undone.", "Clear local template library", { type: "warning" });
+    }
+    catch {
+        return;
+    }
+    emit("clear");
 }
-
-function formatUpdatedAt(value) {
-  if (!value) {
-    return "未保存到本地";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return String(value);
-  }
-
-  return date.toLocaleString();
+function formatUpdatedAt(value: any): any {
+    if (!value) {
+        return "未保存到本地";
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return String(value);
+    }
+    return date.toLocaleString();
 }
 </script>
 

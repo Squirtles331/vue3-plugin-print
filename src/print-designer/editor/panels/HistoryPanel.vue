@@ -48,32 +48,26 @@
   </div>
 </template>
 
-<script setup>
-import { computed } from "vue";
+<script setup lang="ts">import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { RefreshLeft, RefreshRight } from "../../ui/icons.js";
 import PdButton from "../../ui/primitives/PdButton.vue";
 import PdIcon from "../../ui/primitives/PdIcon.vue";
 import { useEditorHistoryStore } from "../stores/historyStore";
-
-const historyStore = useEditorHistoryStore();
-const { canRedo, canUndo, historyEntries, lastCommandName } = storeToRefs(historyStore);
-
-const historyHint = computed(() => {
-  if (canUndo.value && canRedo.value) {
-    return "当前有前后两侧可回退步骤";
-  }
-
-  if (canUndo.value) {
-    return "可以撤销最近一步";
-  }
-
-  if (canRedo.value) {
-    return "可以重做已撤销步骤";
-  }
-
-  return "暂无可用历史";
-});
+const historyStore = useEditorHistoryStore() as any;
+const { canRedo, canUndo, historyEntries, lastCommandName } = storeToRefs(historyStore) as any;
+const historyHint = computed((): any => {
+    if (canUndo.value && canRedo.value) {
+        return "当前有前后两侧可回退步骤";
+    }
+    if (canUndo.value) {
+        return "可以撤销最近一步";
+    }
+    if (canRedo.value) {
+        return "可以重做已撤销步骤";
+    }
+    return "暂无可用历史";
+}) as any;
 </script>
 
 <style scoped lang="scss">

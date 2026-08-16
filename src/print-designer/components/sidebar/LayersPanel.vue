@@ -87,62 +87,51 @@
   </div>
 </template>
 
-<script setup>
-import { computed } from "vue";
+<script setup lang="ts">import { computed } from "vue";
 import { Bottom, CopyDocument, Delete, Hide, Lock, Top, Unlock, View } from "../../ui/icons.js";
 import PdButton from "../../ui/primitives/PdButton.vue";
 import PdConfirm from "../../ui/primitives/PdConfirm.vue";
 import PdIcon from "../../ui/primitives/PdIcon.vue";
-
 const props = defineProps({
-  layers: {
-    type: Array,
-    default: () => [],
-  },
-  selectedIds: {
-    type: Array,
-    default: () => [],
-  },
-  searchQuery: {
-    type: String,
-    default: "",
-  },
-  showActions: {
-    type: Boolean,
-    default: false,
-  },
-});
-
-const emit = defineEmits(["select", "toggle-visible", "toggle-lock", "move", "duplicate", "remove"]);
-
-const normalizedQuery = computed(() => String(props.searchQuery || "").trim().toLowerCase());
-const filteredLayers = computed(() => {
-  const query = normalizedQuery.value;
-
-  if (!query) {
-    return props.layers;
-  }
-
-  return props.layers.filter((layer) => {
-    const haystack = `${layer.name || ""} ${layer.type || ""}`.toLowerCase();
-    return haystack.includes(query);
-  });
-});
-
-const visibleCount = computed(() => props.layers.filter((layer) => layer.visible !== false).length);
-const lockedCount = computed(() => props.layers.filter((layer) => layer.locked).length);
-const emptyTitle = computed(() => (props.layers.length ? "没有匹配的图层" : "当前页面还没有元素"));
-const emptyDescription = computed(() =>
-  props.layers.length ? "清空搜索条件后可查看全部图层。" : "从左侧插入元素后，这里会显示结构、状态和排序入口。"
-);
-
-function isSelected(layerId) {
-  return props.selectedIds.includes(layerId);
+    layers: {
+        type: Array as any,
+        default: (): any => [],
+    },
+    selectedIds: {
+        type: Array as any,
+        default: (): any => [],
+    },
+    searchQuery: {
+        type: String,
+        default: "",
+    },
+    showActions: {
+        type: Boolean,
+        default: false,
+    },
+}) as any;
+const emit = defineEmits(["select", "toggle-visible", "toggle-lock", "move", "duplicate", "remove"]) as any;
+const normalizedQuery = computed((): any => String(props.searchQuery || "").trim().toLowerCase()) as any;
+const filteredLayers = computed((): any => {
+    const query = normalizedQuery.value;
+    if (!query) {
+        return props.layers;
+    }
+    return props.layers.filter((layer: any): any => {
+        const haystack = `${layer.name || ""} ${layer.type || ""}`.toLowerCase();
+        return haystack.includes(query);
+    });
+}) as any;
+const visibleCount = computed((): any => props.layers.filter((layer: any): any => layer.visible !== false).length) as any;
+const lockedCount = computed((): any => props.layers.filter((layer: any): any => layer.locked).length) as any;
+const emptyTitle = computed((): any => (props.layers.length ? "没有匹配的图层" : "当前页面还没有元素")) as any;
+const emptyDescription = computed((): any => props.layers.length ? "清空搜索条件后可查看全部图层。" : "从左侧插入元素后，这里会显示结构、状态和排序入口。") as any;
+function isSelected(layerId: any): any {
+    return props.selectedIds.includes(layerId);
 }
-
-function layerRank(layerId) {
-  const index = props.layers.findIndex((layer) => layer.id === layerId);
-  return index >= 0 ? props.layers.length - index : 0;
+function layerRank(layerId: any): any {
+    const index = props.layers.findIndex((layer: any): any => layer.id === layerId);
+    return index >= 0 ? props.layers.length - index : 0;
 }
 </script>
 

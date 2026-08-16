@@ -1,17 +1,12 @@
-<script setup>
-import { provide } from "vue";
-
+<script setup lang="ts">import { provide } from "vue";
 const props = defineProps({
-  modelValue: { type: [String, Number, Boolean], default: "" },
-});
-
-const emit = defineEmits(["update:modelValue", "change"]);
-
-function setValue(value) {
-  emit("update:modelValue", value);
-  emit("change", value);
+    modelValue: { type: [String, Number, Boolean], default: "" },
+}) as any;
+const emit = defineEmits(["update:modelValue", "change"]) as any;
+function setValue(value: any): any {
+    emit("update:modelValue", value);
+    emit("change", value);
 }
-
 provide("pdRadioGroup", { props, setValue });
 </script>
 

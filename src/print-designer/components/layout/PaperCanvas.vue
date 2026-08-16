@@ -127,8 +127,7 @@
   </article>
 </template>
 
-<script setup>
-import { computed, onBeforeUnmount, ref } from "vue";
+<script setup lang="ts">import { computed, onBeforeUnmount, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { getElementDefinition } from "../../core/elementFactory";
 import { MM_TO_CSS_PX, mmToCssPx, mmToRoundedCssPx } from "../../editor/measurement.js";
@@ -144,1867 +143,1547 @@ import { createGridDefinition } from "../../editor/workspace/workspaceGrid.js";
 import { buildAxisSnapReferences, resolveObjectSnap } from "../../editor/workspace/workspaceSnapping.js";
 import { formatTableValue, imageObjectPosition, machineCodeOptions, resolveRelativeRecordPath } from "../../runtime/propertySemantics.js";
 import ElementRenderer from "../elements/ElementRenderer.vue";
-
 const props = defineProps({
-  pixelsPerUnit: {
-    type: Number,
-    default: MM_TO_CSS_PX,
-  },
-  zoom: {
-    type: Number,
-    default: 1,
-  },
-});
-
-const documentStore = useEditorDocumentStore();
-const historyStore = useEditorHistoryStore();
-const selectionStore = useEditorSelectionStore();
-const viewportStore = useEditorViewportStore();
+    pixelsPerUnit: {
+        type: Number,
+        default: MM_TO_CSS_PX,
+    },
+    zoom: {
+        type: Number,
+        default: 1,
+    },
+}) as any;
+const documentStore = useEditorDocumentStore() as any;
+const historyStore = useEditorHistoryStore() as any;
+const selectionStore = useEditorSelectionStore() as any;
+const viewportStore = useEditorViewportStore() as any;
 const resizeHandles = [
-  { key: "nw", label: "左上缩放" },
-  { key: "n", label: "上边缩放" },
-  { key: "ne", label: "右上缩放" },
-  { key: "e", label: "右边缩放" },
-  { key: "se", label: "右下缩放" },
-  { key: "s", label: "下边缩放" },
-  { key: "sw", label: "左下缩放" },
-  { key: "w", label: "左边缩放" },
-];
-
-const {
-  currentPage,
-  pageObjectMap,
-  objectsById,
-  pageWidthMm,
-  pageHeightMm,
-  pageWidthPx,
-  pageHeightPx,
-  marginTopMm,
-  marginRightMm,
-  marginBottomMm,
-  marginLeftMm,
-  pageBackground,
-  pageCornerVisible,
-  headerLineVisible,
-  footerLineVisible,
-  headerOffsetMm,
-  footerOffsetMm,
-  currentPageGroups,
-} = storeToRefs(documentStore);
-const {
-  gridVisible,
-  safeAreaVisible,
-  guidesVisible,
-  horizontalGuides,
-  verticalGuides,
-  snapEnabled,
-  pageOutlineVisible,
-  allowOverflowDrag,
-} = storeToRefs(viewportStore);
-const { selectedIds, hoverObjectId, activeHandle } = storeToRefs(selectionStore);
-
-const paperRef = ref(null);
-const interactionState = ref(null);
-const selectionMarquee = ref(null);
-const contextMenu = ref(null);
+    { key: "nw", label: "左上缩放" },
+    { key: "n", label: "上边缩放" },
+    { key: "ne", label: "右上缩放" },
+    { key: "e", label: "右边缩放" },
+    { key: "se", label: "右下缩放" },
+    { key: "s", label: "下边缩放" },
+    { key: "sw", label: "左下缩放" },
+    { key: "w", label: "左边缩放" },
+] as any;
+const { currentPage, pageObjectMap, objectsById, pageWidthMm, pageHeightMm, pageWidthPx, pageHeightPx, marginTopMm, marginRightMm, marginBottomMm, marginLeftMm, pageBackground, pageCornerVisible, headerLineVisible, footerLineVisible, headerOffsetMm, footerOffsetMm, currentPageGroups, } = storeToRefs(documentStore) as any;
+const { gridVisible, safeAreaVisible, guidesVisible, horizontalGuides, verticalGuides, snapEnabled, pageOutlineVisible, allowOverflowDrag, } = storeToRefs(viewportStore) as any;
+const { selectedIds, hoverObjectId, activeHandle } = storeToRefs(selectionStore) as any;
+const paperRef = ref(null) as any;
+const interactionState = ref(null) as any;
+const selectionMarquee = ref(null) as any;
+const contextMenu = ref(null) as any;
 const activeSnap = ref({
-  x: null,
-  y: null,
-});
-
-function roundMm(value) {
-  return +value.toFixed(2);
+    x: null,
+    y: null,
+}) as any;
+function roundMm(value: any): any {
+    return +value.toFixed(2);
 }
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
+function clamp(value: any, min: any, max: any): any {
+    return Math.min(max, Math.max(min, value));
 }
-
-function clampObjectPosition(position, size, pageSize) {
-  if (allowOverflowDrag.value) {
-    return roundMm(position);
-  }
-
-  return clamp(roundMm(position), 0, Math.max(0, roundMm(pageSize - size)));
-}
-
-function isCornerHandle(handle = "") {
-  return handle.length === 2;
-}
-
-function isAspectRatioLocked(object, handle) {
-  if (!object || !isCornerHandle(handle)) {
-    return false;
-  }
-
-  if (object.type === "qrcode" || object.type === "circle") {
-    return true;
-  }
-
-  return !!object.props?.keepAspectRatio;
-}
-
-function isAutoHeightTextObject(object) {
-  return object?.type === "text" && !!object?.props?.autoHeight;
-}
-
-function visibleResizeHandles(object) {
-  if (!isAutoHeightTextObject(object)) {
-    return resizeHandles;
-  }
-
-  return resizeHandles.filter((handle) => handle.key === "e" || handle.key === "w");
-}
-
-function resolveEdgeSnap(position, references, pixelsPerUnit, tolerancePx = 6) {
-  if (!Number.isFinite(position)) {
-    return null;
-  }
-
-  let best = null;
-
-  references.forEach((reference) => {
-    const distancePx = Math.abs(reference.position - position) * pixelsPerUnit;
-
-    if (distancePx > tolerancePx) {
-      return;
+function clampObjectPosition(position: any, size: any, pageSize: any): any {
+    if (allowOverflowDrag.value) {
+        return roundMm(position);
     }
-
-    if (!best || distancePx < best.distancePx) {
-      best = {
-        position: reference.position,
-        source: reference.source,
-        distancePx,
-      };
-    }
-  });
-
-  return best;
+    return clamp(roundMm(position), 0, Math.max(0, roundMm(pageSize - size)));
 }
-
-function resolveResizeSnap(rect, startRect, handle) {
-  const pixelsPerUnit = props.pixelsPerUnit * props.zoom;
-  const gridSpacingMm = gridVisible.value ? gridDefinition.value.minorMm : null;
-  const xReferences = buildAxisSnapReferences(pageWidthMm.value, guidesVisible.value ? verticalGuides.value : [], gridSpacingMm);
-  const yReferences = buildAxisSnapReferences(pageHeightMm.value, guidesVisible.value ? horizontalGuides.value : [], gridSpacingMm);
-  const xEdge = handle.includes("w") ? rect.x : handle.includes("e") ? rect.x + rect.width : null;
-  const yEdge = handle.includes("n") ? rect.y : handle.includes("s") ? rect.y + rect.height : null;
-  const xSnap = resolveEdgeSnap(xEdge, xReferences, pixelsPerUnit);
-  const ySnap = resolveEdgeSnap(yEdge, yReferences, pixelsPerUnit);
-  const lockAspectRatio = isAspectRatioLocked(startRect, handle);
-
-  if (lockAspectRatio && isCornerHandle(handle)) {
-    const useXAxis = xSnap && (!ySnap || xSnap.distancePx <= ySnap.distancePx);
-    const useYAxis = ySnap && (!xSnap || ySnap.distancePx < xSnap.distancePx);
-
-    if (useXAxis) {
-      const aspectRatio = startRect.width / startRect.height || 1;
-      const nextWidth = handle.includes("w") ? rect.x + rect.width - xSnap.position : xSnap.position - rect.x;
-      const nextHeight = nextWidth / aspectRatio;
-      const nextRect = {
-        x: handle.includes("w") ? xSnap.position : rect.x,
-        y: handle.includes("n") ? rect.y + rect.height - nextHeight : rect.y,
-        width: nextWidth,
-        height: nextHeight,
-      };
-
-      return {
-        rect: {
-          x: roundMm(nextRect.x),
-          y: roundMm(nextRect.y),
-          width: roundMm(nextRect.width),
-          height: roundMm(nextRect.height),
-        },
-        activeSnap: {
-          x: {
-            position: xSnap.position,
-            edge: handle.includes("w") ? "start" : "end",
-            source: xSnap.source,
-          },
-          y: null,
-        },
-      };
-    }
-
-    if (useYAxis) {
-      const aspectRatio = startRect.width / startRect.height || 1;
-      const nextHeight = handle.includes("n") ? rect.y + rect.height - ySnap.position : ySnap.position - rect.y;
-      const nextWidth = nextHeight * aspectRatio;
-      const nextRect = {
-        x: handle.includes("w") ? rect.x + rect.width - nextWidth : rect.x,
-        y: handle.includes("n") ? ySnap.position : rect.y,
-        width: nextWidth,
-        height: nextHeight,
-      };
-
-      return {
-        rect: {
-          x: roundMm(nextRect.x),
-          y: roundMm(nextRect.y),
-          width: roundMm(nextRect.width),
-          height: roundMm(nextRect.height),
-        },
-        activeSnap: {
-          x: null,
-          y: {
-            position: ySnap.position,
-            edge: handle.includes("n") ? "start" : "end",
-            source: ySnap.source,
-          },
-        },
-      };
-    }
-  }
-
-  const nextRect = { ...rect };
-
-  if (xSnap) {
-    if (handle.includes("w")) {
-      nextRect.width = roundMm(nextRect.width + (nextRect.x - xSnap.position));
-      nextRect.x = roundMm(xSnap.position);
-    } else if (handle.includes("e")) {
-      nextRect.width = roundMm(xSnap.position - nextRect.x);
-    }
-  }
-
-  if (ySnap) {
-    if (handle.includes("n")) {
-      nextRect.height = roundMm(nextRect.height + (nextRect.y - ySnap.position));
-      nextRect.y = roundMm(ySnap.position);
-    } else if (handle.includes("s")) {
-      nextRect.height = roundMm(ySnap.position - nextRect.y);
-    }
-  }
-
-  return {
-    rect: nextRect,
-    activeSnap: {
-      x: xSnap
-        ? {
-            position: xSnap.position,
-            edge: handle.includes("w") ? "start" : "end",
-            source: xSnap.source,
-          }
-        : null,
-      y: ySnap
-        ? {
-            position: ySnap.position,
-            edge: handle.includes("n") ? "start" : "end",
-            source: ySnap.source,
-          }
-        : null,
-    },
-  };
+function isCornerHandle(handle: any = ""): any {
+    return handle.length === 2;
 }
-
-const allPageObjects = computed(() => {
-  const pageId = currentPage.value?.id || "page-1";
-  const objectIds = pageObjectMap.value[pageId] || [];
-  return objectIds.map((objectId) => objectsById.value[objectId]).filter(Boolean);
-});
-const pageObjects = computed(() => allPageObjects.value.filter((object) => object.visible !== false));
-const hiddenObjectCount = computed(() => allPageObjects.value.length - pageObjects.value.length);
-const canvasEmptyState = computed(() => {
-  if (hiddenObjectCount.value > 0) {
+function isAspectRatioLocked(object: any, handle: any): any {
+    if (!object || !isCornerHandle(handle)) {
+        return false;
+    }
+    if (object.type === "qrcode" || object.type === "circle") {
+        return true;
+    }
+    return !!object.props?.keepAspectRatio;
+}
+function isAutoHeightTextObject(object: any): any {
+    return object?.type === "text" && !!object?.props?.autoHeight;
+}
+function visibleResizeHandles(object: any): any {
+    if (!isAutoHeightTextObject(object)) {
+        return resizeHandles;
+    }
+    return resizeHandles.filter((handle: any): any => handle.key === "e" || handle.key === "w");
+}
+function resolveEdgeSnap(position: any, references: any, pixelsPerUnit: any, tolerancePx: any = 6): any {
+    if (!Number.isFinite(position)) {
+        return null;
+    }
+    let best: any = null;
+    references.forEach((reference: any): any => {
+        const distancePx = Math.abs(reference.position - position) * pixelsPerUnit;
+        if (distancePx > tolerancePx) {
+            return;
+        }
+        if (!best || distancePx < best.distancePx) {
+            best = {
+                position: reference.position,
+                source: reference.source,
+                distancePx,
+            };
+        }
+    });
+    return best;
+}
+function resolveResizeSnap(rect: any, startRect: any, handle: any): any {
+    const pixelsPerUnit = props.pixelsPerUnit * props.zoom;
+    const gridSpacingMm = gridVisible.value ? gridDefinition.value.minorMm : null;
+    const xReferences = buildAxisSnapReferences(pageWidthMm.value, guidesVisible.value ? verticalGuides.value : [], gridSpacingMm);
+    const yReferences = buildAxisSnapReferences(pageHeightMm.value, guidesVisible.value ? horizontalGuides.value : [], gridSpacingMm);
+    const xEdge = handle.includes("w") ? rect.x : handle.includes("e") ? rect.x + rect.width : null;
+    const yEdge = handle.includes("n") ? rect.y : handle.includes("s") ? rect.y + rect.height : null;
+    const xSnap = resolveEdgeSnap(xEdge, xReferences, pixelsPerUnit);
+    const ySnap = resolveEdgeSnap(yEdge, yReferences, pixelsPerUnit);
+    const lockAspectRatio = isAspectRatioLocked(startRect, handle);
+    if (lockAspectRatio && isCornerHandle(handle)) {
+        const useXAxis = xSnap && (!ySnap || xSnap.distancePx <= ySnap.distancePx);
+        const useYAxis = ySnap && (!xSnap || ySnap.distancePx < xSnap.distancePx);
+        if (useXAxis) {
+            const aspectRatio = startRect.width / startRect.height || 1;
+            const nextWidth = handle.includes("w") ? rect.x + rect.width - xSnap.position : xSnap.position - rect.x;
+            const nextHeight = nextWidth / aspectRatio;
+            const nextRect = {
+                x: handle.includes("w") ? xSnap.position : rect.x,
+                y: handle.includes("n") ? rect.y + rect.height - nextHeight : rect.y,
+                width: nextWidth,
+                height: nextHeight,
+            };
+            return {
+                rect: {
+                    x: roundMm(nextRect.x),
+                    y: roundMm(nextRect.y),
+                    width: roundMm(nextRect.width),
+                    height: roundMm(nextRect.height),
+                },
+                activeSnap: {
+                    x: {
+                        position: xSnap.position,
+                        edge: handle.includes("w") ? "start" : "end",
+                        source: xSnap.source,
+                    },
+                    y: null,
+                },
+            };
+        }
+        if (useYAxis) {
+            const aspectRatio = startRect.width / startRect.height || 1;
+            const nextHeight = handle.includes("n") ? rect.y + rect.height - ySnap.position : ySnap.position - rect.y;
+            const nextWidth = nextHeight * aspectRatio;
+            const nextRect = {
+                x: handle.includes("w") ? rect.x + rect.width - nextWidth : rect.x,
+                y: handle.includes("n") ? ySnap.position : rect.y,
+                width: nextWidth,
+                height: nextHeight,
+            };
+            return {
+                rect: {
+                    x: roundMm(nextRect.x),
+                    y: roundMm(nextRect.y),
+                    width: roundMm(nextRect.width),
+                    height: roundMm(nextRect.height),
+                },
+                activeSnap: {
+                    x: null,
+                    y: {
+                        position: ySnap.position,
+                        edge: handle.includes("n") ? "start" : "end",
+                        source: ySnap.source,
+                    },
+                },
+            };
+        }
+    }
+    const nextRect = { ...rect };
+    if (xSnap) {
+        if (handle.includes("w")) {
+            nextRect.width = roundMm(nextRect.width + (nextRect.x - xSnap.position));
+            nextRect.x = roundMm(xSnap.position);
+        }
+        else if (handle.includes("e")) {
+            nextRect.width = roundMm(xSnap.position - nextRect.x);
+        }
+    }
+    if (ySnap) {
+        if (handle.includes("n")) {
+            nextRect.height = roundMm(nextRect.height + (nextRect.y - ySnap.position));
+            nextRect.y = roundMm(ySnap.position);
+        }
+        else if (handle.includes("s")) {
+            nextRect.height = roundMm(ySnap.position - nextRect.y);
+        }
+    }
     return {
-      badge: "全部隐藏",
-      title: "当前页元素已隐藏",
-      description: "页面里有元素，但它们都被图层面板隐藏了。恢复显示后即可继续在画布中编辑。",
-      helper: "可在图层面板处理",
-      chips: ["显示", "锁定", "排序"],
+        rect: nextRect,
+        activeSnap: {
+            x: xSnap
+                ? {
+                    position: xSnap.position,
+                    edge: handle.includes("w") ? "start" : "end",
+                    source: xSnap.source,
+                }
+                : null,
+            y: ySnap
+                ? {
+                    position: ySnap.position,
+                    edge: handle.includes("n") ? "start" : "end",
+                    source: ySnap.source,
+                }
+                : null,
+        },
     };
-  }
-
-  return {
-    badge: "页面内容区",
-    title: "从模板面板拖入元素，开始搭建打印页面。",
-    description: "先把文字、图片、表格、条码和二维码放到纸面上，再继续做排版和属性调整。",
-    helper: "推荐起点",
-    chips: ["文本", "表格", "二维码"],
-  };
-});
-
-const gridDefinition = computed(() => createGridDefinition(props.pixelsPerUnit));
-
-const paperStyle = computed(() => ({
-  width: `${pageWidthPx.value}px`,
-  height: `${pageHeightPx.value}px`,
-  background: pageBackground.value,
-}));
-
-const safeAreaStyle = computed(() => ({
-  inset: `${mmToCssPx(marginTopMm.value)}px ${mmToCssPx(marginRightMm.value)}px ${mmToCssPx(marginBottomMm.value)}px ${mmToCssPx(marginLeftMm.value)}px`,
-}));
-const selectionMarqueeStyle = computed(() => {
-  const marquee = selectionMarquee.value;
-  if (!marquee) {
-    return {};
-  }
-  const left = Math.min(marquee.start.x, marquee.current.x);
-  const top = Math.min(marquee.start.y, marquee.current.y);
-  return {
-    left: `${mmToCssPx(left)}px`,
-    top: `${mmToCssPx(top)}px`,
-    width: `${mmToCssPx(Math.abs(marquee.current.x - marquee.start.x))}px`,
-    height: `${mmToCssPx(Math.abs(marquee.current.y - marquee.start.y))}px`,
-  };
-});
-const hasContextGroup = computed(() => currentPageGroups.value.some((group) => group.elementIds?.some((id) => selectedIds.value.includes(id))));
-
-function isOutsideSafeArea(object) {
-  if (!object || object.printable === false) {
-    return false;
-  }
-  return object.x < marginLeftMm.value
-    || object.y < marginTopMm.value
-    || object.x + object.width > pageWidthMm.value - marginRightMm.value
-    || object.y + object.height > pageHeightMm.value - marginBottomMm.value;
 }
-
-const headerLineStyle = computed(() => ({
-  top: `${mmToCssPx(clamp(headerOffsetMm.value, 0, pageHeightMm.value))}px`,
-}));
-
-const footerLineStyle = computed(() => ({
-  bottom: `${mmToCssPx(clamp(footerOffsetMm.value, 0, pageHeightMm.value))}px`,
-}));
-
-const gridStyle = computed(() => ({
-  backgroundImage: [
-    "linear-gradient(rgba(191, 201, 214, 0.26) 1px, transparent 1px)",
-    "linear-gradient(90deg, rgba(191, 201, 214, 0.26) 1px, transparent 1px)",
-    "linear-gradient(rgba(120, 138, 160, 0.2) 1px, transparent 1px)",
-    "linear-gradient(90deg, rgba(120, 138, 160, 0.2) 1px, transparent 1px)",
-  ].join(", "),
-  backgroundSize: [
-    `${gridDefinition.value.minorPx}px ${gridDefinition.value.minorPx}px`,
-    `${gridDefinition.value.minorPx}px ${gridDefinition.value.minorPx}px`,
-    `${gridDefinition.value.majorPx}px ${gridDefinition.value.majorPx}px`,
-    `${gridDefinition.value.majorPx}px ${gridDefinition.value.majorPx}px`,
-  ].join(", "),
-  backgroundPosition: "0 0, 0 0, 0 0, 0 0",
-}));
-
-function elementLabel(type) {
-  return getElementDefinition(type)?.label || type;
-}
-
-function objectFrameStyle(object) {
-  const autoHeight = isAutoHeightTextObject(object);
-
-  return {
-    left: `${mmToCssPx(object.x)}px`,
-    top: `${mmToCssPx(object.y)}px`,
-    width: `${mmToCssPx(object.width)}px`,
-    height: autoHeight ? "auto" : `${mmToCssPx(object.height)}px`,
-    minHeight: autoHeight ? `${mmToCssPx(object.height)}px` : undefined,
-    opacity: object.opacity ?? 1,
-  };
-}
-
-function objectContentStyle(object) {
-  return {
-    color: object.style?.color || "#111827",
-    background: object.style?.backgroundColor || "transparent",
-  };
-}
-
-function textContentStyle(object) {
-  const verticalAlign = object.style?.verticalAlign || "top";
-  const textAlign = object.style?.textAlign || "left";
-  const alignItemsMap = {
-    top: "flex-start",
-    middle: "center",
-    bottom: "flex-end",
-  };
-  const justifyContentMap = {
-    left: "flex-start",
-    center: "center",
-    right: "flex-end",
-  };
-
-  return {
-    ...previewPanelStyle(object, "transparent"),
-    color: object.style?.color || "#111827",
-    fontFamily: object.style?.fontFamily || "sans-serif",
-    fontSize: `${object.style?.fontSize || 14}px`,
-    fontWeight: object.style?.fontWeight || "normal",
-    fontStyle: object.style?.fontStyle || "normal",
-    textDecoration: object.style?.textDecoration || "none",
-    textAlign,
-    lineHeight: object.style?.lineHeight || 1.4,
-    letterSpacing: `${object.style?.letterSpacing || 0}px`,
-    whiteSpace: object.props?.whiteSpace || "pre-wrap",
-    writingMode: object.props?.writingMode || "horizontal-tb",
-    alignItems: alignItemsMap[verticalAlign] || "flex-start",
-    justifyContent: justifyContentMap[textAlign] || "flex-start",
-    overflow: object.props?.autoHeight ? "visible" : "hidden",
-  };
-}
-
-function textPreviewContent(object) {
-  const sampleValue = object.props?.sampleValue;
-  const variable = object.variable;
-  const content = object.content;
-
-  if (variable) {
-    if (sampleValue != null && String(sampleValue).trim() !== "") {
-      return String(sampleValue);
+const allPageObjects = computed((): any => {
+    const pageId = currentPage.value?.id || "page-1";
+    const objectIds = pageObjectMap.value[pageId] || [];
+    return objectIds.map((objectId: any): any => objectsById.value[objectId]).filter(Boolean);
+}) as any;
+const pageObjects = computed((): any => allPageObjects.value.filter((object: any): any => object.visible !== false)) as any;
+const hiddenObjectCount = computed((): any => allPageObjects.value.length - pageObjects.value.length) as any;
+const canvasEmptyState = computed((): any => {
+    if (hiddenObjectCount.value > 0) {
+        return {
+            badge: "全部隐藏",
+            title: "当前页元素已隐藏",
+            description: "页面里有元素，但它们都被图层面板隐藏了。恢复显示后即可继续在画布中编辑。",
+            helper: "可在图层面板处理",
+            chips: ["显示", "锁定", "排序"],
+        };
     }
-
-    return `{{${variable}}}`;
-  }
-
-  if (content != null && String(content).trim() !== "") {
-    return String(content);
-  }
-
-  return "未配置文本";
+    return {
+        badge: "页面内容区",
+        title: "从模板面板拖入元素，开始搭建打印页面。",
+        description: "先把文字、图片、表格、条码和二维码放到纸面上，再继续做排版和属性调整。",
+        helper: "推荐起点",
+        chips: ["文本", "表格", "二维码"],
+    };
+}) as any;
+const gridDefinition = computed((): any => createGridDefinition(props.pixelsPerUnit)) as any;
+const paperStyle = computed((): any => ({
+    width: `${pageWidthPx.value}px`,
+    height: `${pageHeightPx.value}px`,
+    background: pageBackground.value,
+})) as any;
+const safeAreaStyle = computed((): any => ({
+    inset: `${mmToCssPx(marginTopMm.value)}px ${mmToCssPx(marginRightMm.value)}px ${mmToCssPx(marginBottomMm.value)}px ${mmToCssPx(marginLeftMm.value)}px`,
+})) as any;
+const selectionMarqueeStyle = computed((): any => {
+    const marquee = selectionMarquee.value;
+    if (!marquee) {
+        return {};
+    }
+    const left = Math.min(marquee.start.x, marquee.current.x);
+    const top = Math.min(marquee.start.y, marquee.current.y);
+    return {
+        left: `${mmToCssPx(left)}px`,
+        top: `${mmToCssPx(top)}px`,
+        width: `${mmToCssPx(Math.abs(marquee.current.x - marquee.start.x))}px`,
+        height: `${mmToCssPx(Math.abs(marquee.current.y - marquee.start.y))}px`,
+    };
+}) as any;
+const hasContextGroup = computed((): any => currentPageGroups.value.some((group: any): any => group.elementIds?.some((id: any): any => selectedIds.value.includes(id)))) as any;
+function isOutsideSafeArea(object: any): any {
+    if (!object || object.printable === false) {
+        return false;
+    }
+    return object.x < marginLeftMm.value
+        || object.y < marginTopMm.value
+        || object.x + object.width > pageWidthMm.value - marginRightMm.value
+        || object.y + object.height > pageHeightMm.value - marginBottomMm.value;
 }
-
-function imagePlaceholderCaption(object) {
-  const variable = object.variable;
-
-  if (variable) {
-    return `{{${variable}}}`;
-  }
-
-  if (object.props?.placeholder) {
-    return String(object.props.placeholder);
-  }
-
-  return "未绑定图片";
+const headerLineStyle = computed((): any => ({
+    top: `${mmToCssPx(clamp(headerOffsetMm.value, 0, pageHeightMm.value))}px`,
+})) as any;
+const footerLineStyle = computed((): any => ({
+    bottom: `${mmToCssPx(clamp(footerOffsetMm.value, 0, pageHeightMm.value))}px`,
+})) as any;
+const gridStyle = computed((): any => ({
+    backgroundImage: [
+        "linear-gradient(rgba(191, 201, 214, 0.26) 1px, transparent 1px)",
+        "linear-gradient(90deg, rgba(191, 201, 214, 0.26) 1px, transparent 1px)",
+        "linear-gradient(rgba(120, 138, 160, 0.2) 1px, transparent 1px)",
+        "linear-gradient(90deg, rgba(120, 138, 160, 0.2) 1px, transparent 1px)",
+    ].join(", "),
+    backgroundSize: [
+        `${gridDefinition.value.minorPx}px ${gridDefinition.value.minorPx}px`,
+        `${gridDefinition.value.minorPx}px ${gridDefinition.value.minorPx}px`,
+        `${gridDefinition.value.majorPx}px ${gridDefinition.value.majorPx}px`,
+        `${gridDefinition.value.majorPx}px ${gridDefinition.value.majorPx}px`,
+    ].join(", "),
+    backgroundPosition: "0 0, 0 0, 0 0, 0 0",
+})) as any;
+function elementLabel(type: any): any {
+    return getElementDefinition(type)?.label || type;
 }
-
-function encodedPreviewContent(object, fallback) {
-  const variable = object.variable;
-  const content = object.content;
-
-  if (variable) {
-    return `{{${variable}}}`;
-  }
-
-  if (content != null && String(content).trim() !== "") {
-    return String(content);
-  }
-
-  return fallback;
+function objectFrameStyle(object: any): any {
+    const autoHeight = isAutoHeightTextObject(object);
+    return {
+        left: `${mmToCssPx(object.x)}px`,
+        top: `${mmToCssPx(object.y)}px`,
+        width: `${mmToCssPx(object.width)}px`,
+        height: autoHeight ? "auto" : `${mmToCssPx(object.height)}px`,
+        minHeight: autoHeight ? `${mmToCssPx(object.height)}px` : undefined,
+        opacity: object.opacity ?? 1,
+    };
 }
-
-function showVariableBadge(object) {
-  if (!object?.variable) {
-    return false;
-  }
-
-  return ["text", "image", "barcode", "qrcode"].includes(object.type);
+function objectContentStyle(object: any): any {
+    return {
+        color: object.style?.color || "#111827",
+        background: object.style?.backgroundColor || "transparent",
+    };
 }
-
-function variableBadgeLabel(object) {
-  return `{{${object.variable}}}`;
+function textContentStyle(object: any): any {
+    const verticalAlign = object.style?.verticalAlign || "top";
+    const textAlign = object.style?.textAlign || "left";
+    const alignItemsMap: any = {
+        top: "flex-start",
+        middle: "center",
+        bottom: "flex-end",
+    };
+    const justifyContentMap: any = {
+        left: "flex-start",
+        center: "center",
+        right: "flex-end",
+    };
+    return {
+        ...previewPanelStyle(object, "transparent"),
+        color: object.style?.color || "#111827",
+        fontFamily: object.style?.fontFamily || "sans-serif",
+        fontSize: `${object.style?.fontSize || 14}px`,
+        fontWeight: object.style?.fontWeight || "normal",
+        fontStyle: object.style?.fontStyle || "normal",
+        textDecoration: object.style?.textDecoration || "none",
+        textAlign,
+        lineHeight: object.style?.lineHeight || 1.4,
+        letterSpacing: `${object.style?.letterSpacing || 0}px`,
+        whiteSpace: object.props?.whiteSpace || "pre-wrap",
+        writingMode: object.props?.writingMode || "horizontal-tb",
+        alignItems: alignItemsMap[verticalAlign] || "flex-start",
+        justifyContent: justifyContentMap[textAlign] || "flex-start",
+        overflow: object.props?.autoHeight ? "visible" : "hidden",
+    };
 }
-
-function shapeStyle(object) {
-  return {
-    borderWidth: `${object.style?.borderWidth ?? 1}px`,
-    borderStyle: object.style?.borderStyle || "solid",
-    borderColor: object.style?.borderColor || "#111827",
-    background: object.style?.backgroundColor || "transparent",
-    borderRadius: `${Math.max(0, Number(object.style?.borderRadius) || 0)}px`,
-    opacity: Number.isFinite(Number(object.style?.opacity)) ? Number(object.style?.opacity) : 1,
-  };
+function textPreviewContent(object: any): any {
+    const sampleValue = object.props?.sampleValue;
+    const variable = object.variable;
+    const content = object.content;
+    if (variable) {
+        if (sampleValue != null && String(sampleValue).trim() !== "") {
+            return String(sampleValue);
+        }
+        return `{{${variable}}}`;
+    }
+    if (content != null && String(content).trim() !== "") {
+        return String(content);
+    }
+    return "未配置文本";
 }
-
-function tableColumns(object) {
-  if (Array.isArray(object.props?.columns)) {
-      return object.props.columns.map((column, index) => ({
-        key:
-          typeof column?.key === "string" && column.key.trim()
-            ? column.key
-            : `field${index + 1}`,
-      valuePath:
-        typeof column?.valuePath === "string" && column.valuePath.trim()
-          ? column.valuePath
-          : typeof column?.key === "string" && column.key.trim()
-            ? column.key
-            : `field${index + 1}`,
-      title:
-        typeof column?.title === "string" && column.title.trim()
-          ? column.title
-          : `列 ${index + 1}`,
-      width: Number.isFinite(Number(column?.width)) ? Number(column.width) : 100,
-      align:
-        column?.align === "center" || column?.align === "right"
-          ? column.align
-          : column?.align === "justify"
-            ? "left"
-            : "left",
-      formatter: column?.formatter,
-    }));
-  }
-
-  return [
-    { key: "id", title: "ID", width: 60, align: "center" },
-    { key: "name", title: "名称", width: 140, align: "left" },
-    { key: "qty", title: "数量", width: 100, align: "right" },
-    { key: "price", title: "单价", width: 120, align: "right" },
-    { key: "total", title: "合计", width: 120, align: "right" },
-  ];
+function imagePlaceholderCaption(object: any): any {
+    const variable = object.variable;
+    if (variable) {
+        return `{{${variable}}}`;
+    }
+    if (object.props?.placeholder) {
+        return String(object.props.placeholder);
+    }
+    return "未绑定图片";
 }
-
-function tableHeaderLabel(column) {
-  return column?.title || "";
+function encodedPreviewContent(object: any, fallback: any): any {
+    const variable = object.variable;
+    const content = object.content;
+    if (variable) {
+        return `{{${variable}}}`;
+    }
+    if (content != null && String(content).trim() !== "") {
+        return String(content);
+    }
+    return fallback;
 }
-
-function tableColumnWidth(column) {
-  const width = Number(column?.width);
-  return Number.isFinite(width) && width > 0 ? width : 100;
+function showVariableBadge(object: any): any {
+    if (!object?.variable) {
+        return false;
+    }
+    return ["text", "image", "barcode", "qrcode"].includes(object.type);
 }
-
-function tableGridStyle(object) {
-  const trackList = tableColumns(object)
-    .map((column) => `minmax(0, ${tableColumnWidth(column)}fr)`)
-    .join(" ");
-
-  return {
-    gridTemplateColumns: trackList || "minmax(0, 1fr)",
-  };
+function variableBadgeLabel(object: any): any {
+    return `{{${object.variable}}}`;
 }
-
-function tableCellStyle(column, object, section = "body") {
-  const sectionFontSize =
-    section === "header"
-      ? object?.style?.headerFontSize || object?.style?.fontSize || 10
-      : section === "footer"
-        ? object?.style?.footerFontSize || object?.style?.fontSize || 10
-        : object?.style?.fontSize || 10;
-  const textAlignFallback =
-    section === "header"
-      ? object?.style?.headerTextAlign || object?.style?.textAlign || "left"
-      : section === "footer"
-        ? object?.style?.footerTextAlign || object?.style?.textAlign || "left"
-        : object?.style?.textAlign || "left";
-  const textAlign = column?.align || textAlignFallback;
-  const verticalAlign = object?.style?.verticalAlign || "top";
-  const justifyContentMap = {
-    left: "flex-start",
-    center: "center",
-    right: "flex-end",
-  };
-  const alignItemsMap = {
-    top: "flex-start",
-    middle: "center",
-    bottom: "flex-end",
-  };
-
-  return {
-    display: "flex",
-    minWidth: 0,
-    minHeight: 0,
-    justifyContent: justifyContentMap[textAlign] || "flex-start",
-    alignItems: alignItemsMap[verticalAlign] || "flex-start",
-    textAlign,
-    fontSize: `${Math.max(9, Number(sectionFontSize) || 10)}px`,
-    color:
-      section === "header"
-        ? object?.style?.headerColor || object?.style?.color || "#111827"
+function shapeStyle(object: any): any {
+    return {
+        borderWidth: `${object.style?.borderWidth ?? 1}px`,
+        borderStyle: object.style?.borderStyle || "solid",
+        borderColor: object.style?.borderColor || "#111827",
+        background: object.style?.backgroundColor || "transparent",
+        borderRadius: `${Math.max(0, Number(object.style?.borderRadius) || 0)}px`,
+        opacity: Number.isFinite(Number(object.style?.opacity)) ? Number(object.style?.opacity) : 1,
+    };
+}
+function tableColumns(object: any): any {
+    if (Array.isArray(object.props?.columns)) {
+        return object.props.columns.map((column: any, index: any): any => ({
+            key: typeof column?.key === "string" && column.key.trim()
+                ? column.key
+                : `field${index + 1}`,
+            valuePath: typeof column?.valuePath === "string" && column.valuePath.trim()
+                ? column.valuePath
+                : typeof column?.key === "string" && column.key.trim()
+                    ? column.key
+                    : `field${index + 1}`,
+            title: typeof column?.title === "string" && column.title.trim()
+                ? column.title
+                : `列 ${index + 1}`,
+            width: Number.isFinite(Number(column?.width)) ? Number(column.width) : 100,
+            align: column?.align === "center" || column?.align === "right"
+                ? column.align
+                : column?.align === "justify"
+                    ? "left"
+                    : "left",
+            formatter: column?.formatter,
+        }));
+    }
+    return [
+        { key: "id", title: "ID", width: 60, align: "center" },
+        { key: "name", title: "名称", width: 140, align: "left" },
+        { key: "qty", title: "数量", width: 100, align: "right" },
+        { key: "price", title: "单价", width: 120, align: "right" },
+        { key: "total", title: "合计", width: 120, align: "right" },
+    ];
+}
+function tableHeaderLabel(column: any): any {
+    return column?.title || "";
+}
+function tableColumnWidth(column: any): any {
+    const width = Number(column?.width);
+    return Number.isFinite(width) && width > 0 ? width : 100;
+}
+function tableGridStyle(object: any): any {
+    const trackList = tableColumns(object)
+        .map((column: any): any => `minmax(0, ${tableColumnWidth(column)}fr)`)
+        .join(" ");
+    return {
+        gridTemplateColumns: trackList || "minmax(0, 1fr)",
+    };
+}
+function tableCellStyle(column: any, object: any, section: any = "body"): any {
+    const sectionFontSize = section === "header"
+        ? object?.style?.headerFontSize || object?.style?.fontSize || 10
         : section === "footer"
-          ? object?.style?.footerColor || object?.style?.color || "#111827"
-          : object?.style?.color || "#111827",
-  };
+            ? object?.style?.footerFontSize || object?.style?.fontSize || 10
+            : object?.style?.fontSize || 10;
+    const textAlignFallback = section === "header"
+        ? object?.style?.headerTextAlign || object?.style?.textAlign || "left"
+        : section === "footer"
+            ? object?.style?.footerTextAlign || object?.style?.textAlign || "left"
+            : object?.style?.textAlign || "left";
+    const textAlign = column?.align || textAlignFallback;
+    const verticalAlign = object?.style?.verticalAlign || "top";
+    const justifyContentMap: any = {
+        left: "flex-start",
+        center: "center",
+        right: "flex-end",
+    };
+    const alignItemsMap: any = {
+        top: "flex-start",
+        middle: "center",
+        bottom: "flex-end",
+    };
+    return {
+        display: "flex",
+        minWidth: 0,
+        minHeight: 0,
+        justifyContent: justifyContentMap[textAlign] || "flex-start",
+        alignItems: alignItemsMap[verticalAlign] || "flex-start",
+        textAlign,
+        fontSize: `${Math.max(9, Number(sectionFontSize) || 10)}px`,
+        color: section === "header"
+            ? object?.style?.headerColor || object?.style?.color || "#111827"
+            : section === "footer"
+                ? object?.style?.footerColor || object?.style?.color || "#111827"
+                : object?.style?.color || "#111827",
+    };
 }
-
-function tableStyle(object) {
-  const style = object.style || {};
-  const padding = Math.max(0, Number(style.padding) || 0);
-  const borderWidth = Math.max(0, Number(style.borderWidth) || 0);
-  const borderColor = style.borderColor || "#111827";
-  const headerHeight = Math.max(0, Number(object?.props?.headerHeight) || 0);
-  const rowHeight = Math.max(0, Number(object?.props?.rowHeight) || 0);
-  const footerHeight = Math.max(0, Number(object?.props?.footerHeight) || 0);
-
-  return {
-    ...previewPanelStyle(object, "#ffffff"),
-    color: style.color || "#111827",
-    fontFamily: style.fontFamily || undefined,
-    fontSize: `${Math.max(9, Number(style.fontSize) || 10)}px`,
-    fontWeight: style.fontWeight || "normal",
-    fontStyle: style.fontStyle || "normal",
-    lineHeight: style.lineHeight || 1.4,
-    letterSpacing: `${Number.isFinite(Number(style.letterSpacing)) ? Number(style.letterSpacing) : 0}px`,
-    "--table-cell-padding-y": `${Math.max(0, Math.round(mmToCssPx(padding) * 0.55))}px`,
-    "--table-cell-padding-x": `${Math.max(0, Math.round(mmToCssPx(padding)))}px`,
-    "--table-grid-border-width": `${borderWidth}px`,
-    "--table-grid-border-style": style.borderStyle || "solid",
-    "--table-grid-border-color": borderColor,
-    "--table-head-background": style.headerBackgroundColor || "rgba(243, 244, 246, 0.98)",
-    "--table-footer-background": style.footerBackgroundColor || "rgba(249, 250, 251, 0.98)",
-    "--table-head-color": style.headerColor || style.color || "#111827",
-    "--table-footer-color": style.footerColor || style.color || "#111827",
-    "--table-head-min-height": headerHeight > 0 ? `${Math.round(mmToCssPx(headerHeight))}px` : "auto",
-    "--table-row-min-height": rowHeight > 0 ? `${Math.round(mmToCssPx(rowHeight))}px` : "auto",
-    "--table-footer-min-height": footerHeight > 0 ? `${Math.round(mmToCssPx(footerHeight))}px` : "auto",
-  };
+function tableStyle(object: any): any {
+    const style = object.style || {};
+    const padding = Math.max(0, Number(style.padding) || 0);
+    const borderWidth = Math.max(0, Number(style.borderWidth) || 0);
+    const borderColor = style.borderColor || "#111827";
+    const headerHeight = Math.max(0, Number(object?.props?.headerHeight) || 0);
+    const rowHeight = Math.max(0, Number(object?.props?.rowHeight) || 0);
+    const footerHeight = Math.max(0, Number(object?.props?.footerHeight) || 0);
+    return {
+        ...previewPanelStyle(object, "#ffffff"),
+        color: style.color || "#111827",
+        fontFamily: style.fontFamily || undefined,
+        fontSize: `${Math.max(9, Number(style.fontSize) || 10)}px`,
+        fontWeight: style.fontWeight || "normal",
+        fontStyle: style.fontStyle || "normal",
+        lineHeight: style.lineHeight || 1.4,
+        letterSpacing: `${Number.isFinite(Number(style.letterSpacing)) ? Number(style.letterSpacing) : 0}px`,
+        "--table-cell-padding-y": `${Math.max(0, Math.round(mmToCssPx(padding) * 0.55))}px`,
+        "--table-cell-padding-x": `${Math.max(0, Math.round(mmToCssPx(padding)))}px`,
+        "--table-grid-border-width": `${borderWidth}px`,
+        "--table-grid-border-style": style.borderStyle || "solid",
+        "--table-grid-border-color": borderColor,
+        "--table-head-background": style.headerBackgroundColor || "rgba(243, 244, 246, 0.98)",
+        "--table-footer-background": style.footerBackgroundColor || "rgba(249, 250, 251, 0.98)",
+        "--table-head-color": style.headerColor || style.color || "#111827",
+        "--table-footer-color": style.footerColor || style.color || "#111827",
+        "--table-head-min-height": headerHeight > 0 ? `${Math.round(mmToCssPx(headerHeight))}px` : "auto",
+        "--table-row-min-height": rowHeight > 0 ? `${Math.round(mmToCssPx(rowHeight))}px` : "auto",
+        "--table-footer-min-height": footerHeight > 0 ? `${Math.round(mmToCssPx(footerHeight))}px` : "auto",
+    };
 }
-
-function tableBindingPlaceholder(variable, key, rowIndex = 0) {
-  return `{{${variable}[${rowIndex}].${key}}}`;
+function tableBindingPlaceholder(variable: any, key: any, rowIndex: any = 0): any {
+    return `{{${variable}[${rowIndex}].${key}}}`;
 }
-
-function tableDataSource(object) {
-  if (Array.isArray(object.props?.sampleData)) {
-    return object.props.sampleData;
-  }
-  return [];
-}
-
-function tableDesignRowCount(object) {
-  const value = Number(object?.editorHints?.rowCount);
-  return Number.isFinite(value) && value > 0 ? Math.max(1, Math.round(value)) : 0;
-}
-
-function tablePreviewRowCount(object, rows) {
-  const explicitCount = tableDesignRowCount(object);
-
-  if (explicitCount > 0) {
-    return explicitCount;
-  }
-
-  if (rows.length > 0) {
-    return rows.length;
-  }
-
-  return 5;
-}
-
-function tablePreviewLimit(object, totalRowCount) {
-  if (object?.editorHints?.omitRows === false) {
-    return totalRowCount;
-  }
-
-  return Math.min(totalRowCount, 5);
-}
-
-function createTableBindingPlaceholderRows(object, columns, rowCount) {
-  return Array.from({ length: rowCount }, (_, rowIndex) =>
-    columns.reduce((result, column) => {
-      result[column.key] = tableBindingPlaceholder(object.props?.dataVariable, column.valuePath || column.key, rowIndex);
-      return result;
-    }, {})
-  );
-}
-
-function createEmptyTableRows(columns, rowCount) {
-  return Array.from({ length: rowCount }, () =>
-    columns.reduce((result, column) => {
-      result[column.key] = "";
-      return result;
-    }, {})
-  );
-}
-
-function tableSummaryMetrics(object) {
-  const rows = tableDataSource(object);
-
-  return rows.reduce(
-    (result, row) => {
-      result.totalQty += Number(row?.qty) || 0;
-      result.totalAmount += Number(row?.total) || 0;
-      return result;
-    },
-    {
-      totalQty: 0,
-      totalAmount: 0,
+function tableDataSource(object: any): any {
+    if (Array.isArray(object.props?.sampleData)) {
+        return object.props.sampleData;
     }
-  );
+    return [];
 }
-
-function tableReplaceSummaryToken(value, object) {
-  if (typeof value !== "string" || !value.includes("{#")) {
-    return value;
-  }
-
-  const { totalQty, totalAmount } = tableSummaryMetrics(object);
-
-  return value
-    .replaceAll("{#pageQty}", String(totalQty))
-    .replaceAll("{#totalQty}", String(totalQty))
-    .replaceAll("{#pageSum}", totalAmount.toFixed(2))
-    .replaceAll("{#totalSum}", totalAmount.toFixed(2))
-    .replaceAll("{#totalCap}", digitUppercase(totalAmount));
+function tableDesignRowCount(object: any): any {
+    const value = Number(object?.editorHints?.rowCount);
+    return Number.isFinite(value) && value > 0 ? Math.max(1, Math.round(value)) : 0;
 }
-
-function digitUppercase(value) {
-  const fraction = ["角", "分"];
-  const digit = ["零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖"];
-  const unit = [
-    ["元", "万", "亿"],
-    ["", "拾", "佰", "仟"],
-  ];
-
-  let amount = Math.abs(Number(value) || 0);
-  let result = "";
-
-  for (let i = 0; i < fraction.length; i += 1) {
-    result += (digit[Math.floor(amount * 10 * 10 ** i) % 10] + fraction[i]).replace(/零./, "");
-  }
-
-  result = result || "整";
-  amount = Math.floor(amount);
-
-  for (let i = 0; i < unit[0].length && amount > 0; i += 1) {
-    let part = "";
-
-    for (let j = 0; j < unit[1].length && amount > 0; j += 1) {
-      part = digit[amount % 10] + unit[1][j] + part;
-      amount = Math.floor(amount / 10);
+function tablePreviewRowCount(object: any, rows: any): any {
+    const explicitCount = tableDesignRowCount(object);
+    if (explicitCount > 0) {
+        return explicitCount;
     }
-
-    result = part.replace(/(零.)*零$/, "").replace(/^$/, "零") + unit[0][i] + result;
-  }
-
-  return result.replace(/(零.)*零元/, "元").replace(/(零.)+/g, "零").replace(/^整$/, "零元整");
-}
-
-function tableResolveCellValue(value, object) {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    if (value.result != null && value.result !== "") {
-      return String(value.result);
+    if (rows.length > 0) {
+        return rows.length;
     }
-
-    if (typeof value.field === "string" && value.field) {
-      return String(tableReplaceSummaryToken(value.field, object));
-    }
-
-    if (typeof value.value === "string" && value.value) {
-      return String(tableReplaceSummaryToken(value.value, object));
-    }
-  }
-
-  if (value == null) {
-    return "";
-  }
-
-  return typeof value === "string" ? tableReplaceSummaryToken(value, object) : String(value);
+    return 5;
 }
-
-function tableCellDisplayValue(row, column, object, section = "body") {
-  const result = resolveRelativeRecordPath(row, column.valuePath || column.key);
-  const value = result.found ? result.value : row?.[column.key];
-  const resolved = tableResolveCellValue(value, object);
-
-  if (resolved === "" && section === "body") {
-    return "";
-  }
-
-  return formatTableValue(resolved, column?.formatter);
+function tablePreviewLimit(object: any, totalRowCount: any): any {
+    if (object?.editorHints?.omitRows === false) {
+        return totalRowCount;
+    }
+    return Math.min(totalRowCount, 5);
 }
-
-function tableRows(object) {
-  const rows = tableDataSource(object);
-  const previewLimit = tablePreviewLimit(object, tablePreviewRowCount(object, rows));
-  const bindingPreviewRows =
-    !rows.length && object.props?.dataVariable
-      ? Array.from({ length: previewLimit }, (_, rowIndex) =>
-          tableColumns(object).reduce((result, column) => {
+function createTableBindingPlaceholderRows(object: any, columns: any, rowCount: any): any {
+    return Array.from({ length: rowCount }, (_: any, rowIndex: any): any => columns.reduce((result: any, column: any): any => {
+        result[column.key] = tableBindingPlaceholder(object.props?.dataVariable, column.valuePath || column.key, rowIndex);
+        return result;
+    }, {}));
+}
+function createEmptyTableRows(columns: any, rowCount: any): any {
+    return Array.from({ length: rowCount }, (): any => columns.reduce((result: any, column: any): any => {
+        result[column.key] = "";
+        return result;
+    }, {}));
+}
+function tableSummaryMetrics(object: any): any {
+    const rows = tableDataSource(object);
+    return rows.reduce((result: any, row: any): any => {
+        result.totalQty += Number(row?.qty) || 0;
+        result.totalAmount += Number(row?.total) || 0;
+        return result;
+    }, {
+        totalQty: 0,
+        totalAmount: 0,
+    });
+}
+function tableReplaceSummaryToken(value: any, object: any): any {
+    if (typeof value !== "string" || !value.includes("{#")) {
+        return value;
+    }
+    const { totalQty, totalAmount } = tableSummaryMetrics(object);
+    return value
+        .replaceAll("{#pageQty}", String(totalQty))
+        .replaceAll("{#totalQty}", String(totalQty))
+        .replaceAll("{#pageSum}", totalAmount.toFixed(2))
+        .replaceAll("{#totalSum}", totalAmount.toFixed(2))
+        .replaceAll("{#totalCap}", digitUppercase(totalAmount));
+}
+function digitUppercase(value: any): any {
+    const fraction: any = ["角", "分"];
+    const digit: any = ["零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖"];
+    const unit: any = [
+        ["元", "万", "亿"],
+        ["", "拾", "佰", "仟"],
+    ];
+    let amount = Math.abs(Number(value) || 0);
+    let result = "";
+    for (let i = 0; i < fraction.length; i += 1) {
+        result += (digit[Math.floor(amount * 10 * 10 ** i) % 10] + fraction[i]).replace(/零./, "");
+    }
+    result = result || "整";
+    amount = Math.floor(amount);
+    for (let i = 0; i < unit[0].length && amount > 0; i += 1) {
+        let part = "";
+        for (let j = 0; j < unit[1].length && amount > 0; j += 1) {
+            part = digit[amount % 10] + unit[1][j] + part;
+            amount = Math.floor(amount / 10);
+        }
+        result = part.replace(/(零.)*零$/, "").replace(/^$/, "零") + unit[0][i] + result;
+    }
+    return result.replace(/(零.)*零元/, "元").replace(/(零.)+/g, "零").replace(/^整$/, "零元整");
+}
+function tableResolveCellValue(value: any, object: any): any {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+        if (value.result != null && value.result !== "") {
+            return String(value.result);
+        }
+        if (typeof value.field === "string" && value.field) {
+            return String(tableReplaceSummaryToken(value.field, object));
+        }
+        if (typeof value.value === "string" && value.value) {
+            return String(tableReplaceSummaryToken(value.value, object));
+        }
+    }
+    if (value == null) {
+        return "";
+    }
+    return typeof value === "string" ? tableReplaceSummaryToken(value, object) : String(value);
+}
+function tableCellDisplayValue(row: any, column: any, object: any, section: any = "body"): any {
+    const result = resolveRelativeRecordPath(row, column.valuePath || column.key);
+    const value = result.found ? result.value : row?.[column.key];
+    const resolved = tableResolveCellValue(value, object);
+    if (resolved === "" && section === "body") {
+        return "";
+    }
+    return formatTableValue(resolved, column?.formatter);
+}
+function tableRows(object: any): any {
+    const rows = tableDataSource(object);
+    const previewLimit = tablePreviewLimit(object, tablePreviewRowCount(object, rows));
+    const bindingPreviewRows = !rows.length && object.props?.dataVariable
+        ? Array.from({ length: previewLimit }, (_: any, rowIndex: any): any => tableColumns(object).reduce((result: any, column: any): any => {
             result[column.key] = tableBindingPlaceholder(object.props.dataVariable, column.valuePath || column.key, rowIndex);
             return result;
-          }, {})
-        )
-      : null;
-  const previewRows = rows;
-
-  return (bindingPreviewRows || previewRows).slice(0, previewLimit).map((row, index) => ({
-    ...row,
-    __rowKey: `${object.id}-${index}`,
-  }));
-}
-
-function tableShowsOmission(object) {
-  if (object?.editorHints?.omitRows === false) {
-    return false;
-  }
-
-  return tableDataSource(object).length > tableRows(object).length;
-}
-
-function renderedTableRows(object) {
-  const rows = tableDataSource(object);
-  const columns = tableColumns(object);
-  const totalRowCount = tablePreviewRowCount(object, rows);
-  const previewLimit = tablePreviewLimit(object, totalRowCount);
-  let previewRows = rows.slice(0, previewLimit);
-
-  if (!previewRows.length && columns.length) {
-    previewRows = object.props?.dataVariable
-      ? createTableBindingPlaceholderRows(object, columns, previewLimit)
-      : createEmptyTableRows(columns, previewLimit);
-  }
-
-  return previewRows.map((row, index) => ({
-    ...row,
-    __rowKey: `${object.id}-${index}`,
-  }));
-}
-
-function renderedTableShowsOmission(object) {
-  if (object?.editorHints?.omitRows === false) {
-    return false;
-  }
-
-  const rows = tableDataSource(object);
-  const totalRowCount = rows.length || tablePreviewRowCount(object, rows);
-
-  return totalRowCount > renderedTableRows(object).length;
-}
-
-function tableFooterRows(object) {
-  if (object.props?.showFooter === false) {
-    return [];
-  }
-
-  const columns = tableColumns(object);
-  const footerData = object.props?.footerData;
-
-  if (Array.isArray(footerData)) {
-    return footerData.map((row, index) => ({
-      ...row,
-      __rowKey: `${object.id}-footer-${index}`,
+        }, {}))
+        : null;
+    const previewRows = rows;
+    return (bindingPreviewRows || previewRows).slice(0, previewLimit).map((row: any, index: any): any => ({
+        ...row,
+        __rowKey: `${object.id}-${index}`,
     }));
-  }
-
-  if (footerData && typeof footerData === "object" && Object.keys(footerData).length) {
-    return [
-      {
-        ...footerData,
-        __rowKey: `${object.id}-footer-0`,
-      },
-    ];
-  }
-
-  if (object.props?.footerDataVariable) {
-    return [
-      {
-        ...columns.reduce((result, column) => {
-          result[column.key] = `{{${object.props.footerDataVariable}.${column.key}}}`;
-          return result;
-        }, {}),
-        __rowKey: `${object.id}-footer-0`,
-      },
-    ];
-  }
-
-  return [];
-
 }
-
-function tableBindingTokens(object) {
-  const tokens = [];
-
-  if (object.props?.dataVariable) {
-    tokens.push({
-      key: "data",
-      label: `数据: {{${object.props.dataVariable}}}`,
+function tableShowsOmission(object: any): any {
+    if (object?.editorHints?.omitRows === false) {
+        return false;
+    }
+    return tableDataSource(object).length > tableRows(object).length;
+}
+function renderedTableRows(object: any): any {
+    const rows = tableDataSource(object);
+    const columns = tableColumns(object);
+    const totalRowCount = tablePreviewRowCount(object, rows);
+    const previewLimit = tablePreviewLimit(object, totalRowCount);
+    let previewRows = rows.slice(0, previewLimit);
+    if (!previewRows.length && columns.length) {
+        previewRows = object.props?.dataVariable
+            ? createTableBindingPlaceholderRows(object, columns, previewLimit)
+            : createEmptyTableRows(columns, previewLimit);
+    }
+    return previewRows.map((row: any, index: any): any => ({
+        ...row,
+        __rowKey: `${object.id}-${index}`,
+    }));
+}
+function renderedTableShowsOmission(object: any): any {
+    if (object?.editorHints?.omitRows === false) {
+        return false;
+    }
+    const rows = tableDataSource(object);
+    const totalRowCount = rows.length || tablePreviewRowCount(object, rows);
+    return totalRowCount > renderedTableRows(object).length;
+}
+function tableFooterRows(object: any): any {
+    if (object.props?.showFooter === false) {
+        return [];
+    }
+    const columns = tableColumns(object);
+    const footerData = object.props?.footerData;
+    if (Array.isArray(footerData)) {
+        return footerData.map((row: any, index: any): any => ({
+            ...row,
+            __rowKey: `${object.id}-footer-${index}`,
+        }));
+    }
+    if (footerData && typeof footerData === "object" && Object.keys(footerData).length) {
+        return [
+            {
+                ...footerData,
+                __rowKey: `${object.id}-footer-0`,
+            },
+        ];
+    }
+    if (object.props?.footerDataVariable) {
+        return [
+            {
+                ...columns.reduce((result: any, column: any): any => {
+                    result[column.key] = `{{${object.props.footerDataVariable}.${column.key}}}`;
+                    return result;
+                }, {}),
+                __rowKey: `${object.id}-footer-0`,
+            },
+        ];
+    }
+    return [];
+}
+function tableBindingTokens(object: any): any {
+    const tokens = [];
+    if (object.props?.dataVariable) {
+        tokens.push({
+            key: "data",
+            label: `数据: {{${object.props.dataVariable}}}`,
+        });
+    }
+    if (object.props?.footerDataVariable) {
+        tokens.push({
+            key: "footer",
+            label: `页脚: {{${object.props.footerDataVariable}}}`,
+        });
+    }
+    return tokens;
+}
+function multiLabelConfig(object: any): any {
+    return {
+        rows: Math.max(1, Number(object?.props?.rows) || 1),
+        cols: Math.max(1, Number(object?.props?.cols) || 1),
+        gapX: Math.max(0, Number(object?.props?.gapX) || 0),
+        gapY: Math.max(0, Number(object?.props?.gapY) || 0),
+        direction: object?.props?.direction === "column" ? "column" : "row",
+    };
+}
+function multiLabelBindingLabel(object: any): any {
+    if (object.props?.dataVariable) {
+        return `数据: {{${object.props.dataVariable}}}`;
+    }
+    return "";
+}
+function multiLabelGridStyle(object: any): any {
+    const config = multiLabelConfig(object);
+    return {
+        gridTemplateColumns: `repeat(${config.cols}, minmax(0, 1fr))`,
+        gridTemplateRows: `repeat(${config.rows}, minmax(0, 1fr))`,
+        columnGap: `${mmToCssPx(config.gapX)}px`,
+        rowGap: `${mmToCssPx(config.gapY)}px`,
+    };
+}
+function multiLabelCellPosition(index: any, rows: any, cols: any, direction: any): any {
+    if (direction === "column") {
+        return {
+            row: (index % rows) + 1,
+            col: Math.floor(index / rows) + 1,
+        };
+    }
+    return {
+        row: Math.floor(index / cols) + 1,
+        col: (index % cols) + 1,
+    };
+}
+function multiLabelAlignItems(textAlign: any): any {
+    switch (textAlign) {
+        case "center":
+            return "center";
+        case "right":
+            return "flex-end";
+        default:
+            return "flex-start";
+    }
+}
+function multiLabelJustifyContent(verticalAlign: any): any {
+    switch (verticalAlign) {
+        case "middle":
+            return "center";
+        case "bottom":
+            return "flex-end";
+        default:
+            return "flex-start";
+    }
+}
+function multiLabelCellStyle(object: any, cell: any): any {
+    const style = object?.style || {};
+    const fontSize = Math.max(8, Number(style.fontSize) || 10);
+    const paddingMm = Math.max(0, Number(object?.props?.cellPadding ?? style.padding) || 0);
+    const borderWidth = Math.max(0, Number(style.borderWidth) || 0);
+    const hasVisibleBorder = borderWidth > 0;
+    const color = previewForegroundColor(object);
+    const backgroundColor = style.backgroundColor && style.backgroundColor !== "transparent"
+        ? style.backgroundColor
+        : "rgba(255, 255, 255, 0.96)";
+    return {
+        gridRow: String(cell.row),
+        gridColumn: String(cell.col),
+        justifyContent: multiLabelJustifyContent(style.verticalAlign),
+        alignItems: multiLabelAlignItems(style.textAlign),
+        padding: `${Math.max(0, mmToCssPx(paddingMm))}px`,
+        borderWidth: `${borderWidth}px`,
+        borderStyle: hasVisibleBorder ? style.borderStyle || "solid" : "solid",
+        borderColor: hasVisibleBorder ? style.borderColor || color : "transparent",
+        borderRadius: `${Math.max(0, Number(style.borderRadius) || 0)}px`,
+        background: backgroundColor,
+        color,
+        opacity: Number.isFinite(Number(style.opacity)) ? Number(style.opacity) : 1,
+        textAlign: style.textAlign || "left",
+        fontFamily: style.fontFamily || undefined,
+        fontStyle: style.fontStyle || "normal",
+        lineHeight: style.lineHeight || 1.4,
+        letterSpacing: `${Number(style.letterSpacing) || 0}px`,
+        "--multi-label-primary-size": `${fontSize}px`,
+        "--multi-label-secondary-size": `${Math.max(8, Math.round(fontSize * 0.84))}px`,
+        "--multi-label-index-size": `${Math.max(7, Math.round(fontSize * 0.72))}px`,
+        "--multi-label-primary-weight": style.fontWeight || "700",
+        "--multi-label-secondary-color": color,
+        "--multi-label-index-color": style.borderColor || color,
+    };
+}
+function multiLabelPreviewLines(item: any, fallbackIndex: any, object: any): any {
+    if (item == null || item === "") {
+        if (object?.props?.dataVariable) {
+            const base = `${object.props.dataVariable}[${fallbackIndex}]`;
+            return {
+                primary: `{{${base}.${object?.props?.primaryPath || "title"}}}`,
+                secondary: object?.props?.secondaryPath ? `{{${base}.${object.props.secondaryPath}}}` : "",
+                tertiary: object?.props?.tertiaryPath ? `{{${base}.${object.props.tertiaryPath}}}` : "",
+            };
+        }
+        return {
+            primary: "未绑定标签",
+            secondary: "",
+            tertiary: "",
+        };
+    }
+    if (typeof item === "string" || typeof item === "number") {
+        return {
+            primary: String(item),
+            secondary: "",
+            tertiary: "",
+        };
+    }
+    if (typeof item === "object") {
+        const mapped = (path: any): any => {
+            const result = resolveRelativeRecordPath(item, path);
+            return result.found && result.value != null ? String(result.value) : path ? `{{${path}}}` : "";
+        };
+        return {
+            primary: mapped(object?.props?.primaryPath),
+            secondary: mapped(object?.props?.secondaryPath),
+            tertiary: mapped(object?.props?.tertiaryPath),
+        };
+    }
+    return {
+        primary: "未配置标签",
+        secondary: String(item),
+        tertiary: "",
+    };
+}
+function multiLabelCells(object: any): any {
+    const config = multiLabelConfig(object);
+    const total = config.rows * config.cols;
+    const sampleData = Array.isArray(object?.props?.sampleData) ? object.props.sampleData : [];
+    return Array.from({ length: total }, (_: any, index: any): any => {
+        const item = sampleData[index];
+        const { row, col } = multiLabelCellPosition(index, config.rows, config.cols, config.direction);
+        const preview = multiLabelPreviewLines(item, index, object);
+        return {
+            key: `${object.id}-${index}`,
+            row,
+            col,
+            indexLabel: `#${index + 1}`,
+            ...preview,
+        };
     });
-  }
-
-  if (object.props?.footerDataVariable) {
-    tokens.push({
-      key: "footer",
-      label: `页脚: {{${object.props.footerDataVariable}}}`,
-    });
-  }
-
-  return tokens;
 }
-
-function multiLabelConfig(object) {
-  return {
-    rows: Math.max(1, Number(object?.props?.rows) || 1),
-    cols: Math.max(1, Number(object?.props?.cols) || 1),
-    gapX: Math.max(0, Number(object?.props?.gapX) || 0),
-    gapY: Math.max(0, Number(object?.props?.gapY) || 0),
-    direction: object?.props?.direction === "column" ? "column" : "row",
-  };
+function previewForegroundColor(object: any): any {
+    return object.style?.color || object.style?.borderColor || "#111827";
 }
-
-function multiLabelBindingLabel(object) {
-  if (object.props?.dataVariable) {
-    return `数据: {{${object.props.dataVariable}}}`;
-  }
-
-  return "";
+function previewBackgroundColor(object: any): any {
+    return object.style?.backgroundColor || "#ffffff";
 }
-
-function multiLabelGridStyle(object) {
-  const config = multiLabelConfig(object);
-
-  return {
-    gridTemplateColumns: `repeat(${config.cols}, minmax(0, 1fr))`,
-    gridTemplateRows: `repeat(${config.rows}, minmax(0, 1fr))`,
-    columnGap: `${mmToCssPx(config.gapX)}px`,
-    rowGap: `${mmToCssPx(config.gapY)}px`,
-  };
-}
-
-function multiLabelCellPosition(index, rows, cols, direction) {
-  if (direction === "column") {
+function previewPanelStyle(object: any, fallbackBackground: any = "transparent"): any {
+    const style = object?.style || {};
+    const borderWidth = Math.max(0, Number(style.borderWidth) || 0);
+    const padding = Math.max(0, Number(style.padding) || 0);
+    const radius = Math.max(0, Number(style.borderRadius) || 0);
+    const opacity = Number(style.opacity);
     return {
-      row: (index % rows) + 1,
-      col: Math.floor(index / rows) + 1,
+        boxSizing: "border-box",
+        padding: `${mmToCssPx(padding)}px`,
+        border: borderWidth
+            ? `${borderWidth}px ${style.borderStyle || "solid"} ${style.borderColor || previewForegroundColor(object)}`
+            : "0 solid transparent",
+        borderRadius: `${radius}px`,
+        background: style.backgroundColor && style.backgroundColor !== "transparent" ? style.backgroundColor : fallbackBackground,
+        opacity: Number.isFinite(opacity) ? opacity : 1,
     };
-  }
-
-  return {
-    row: Math.floor(index / cols) + 1,
-    col: (index % cols) + 1,
-  };
 }
-
-function multiLabelAlignItems(textAlign) {
-  switch (textAlign) {
-    case "center":
-      return "center";
-    case "right":
-      return "flex-end";
-    default:
-      return "flex-start";
-  }
+function imagePreviewStyle(object: any): any {
+    return previewPanelStyle(object, "#f8fafc");
 }
-
-function multiLabelJustifyContent(verticalAlign) {
-  switch (verticalAlign) {
-    case "middle":
-      return "center";
-    case "bottom":
-      return "flex-end";
-    default:
-      return "flex-start";
-  }
+function hashPreviewSeed(value: any): any {
+    const source = String(value || "");
+    let hash = 2166136261;
+    for (let index = 0; index < source.length; index += 1) {
+        hash ^= source.charCodeAt(index);
+        hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
 }
-
-function multiLabelCellStyle(object, cell) {
-  const style = object?.style || {};
-  const fontSize = Math.max(8, Number(style.fontSize) || 10);
-  const paddingMm = Math.max(0, Number(object?.props?.cellPadding ?? style.padding) || 0);
-  const borderWidth = Math.max(0, Number(style.borderWidth) || 0);
-  const hasVisibleBorder = borderWidth > 0;
-  const color = previewForegroundColor(object);
-  const backgroundColor =
-    style.backgroundColor && style.backgroundColor !== "transparent"
-      ? style.backgroundColor
-      : "rgba(255, 255, 255, 0.96)";
-
-  return {
-    gridRow: String(cell.row),
-    gridColumn: String(cell.col),
-    justifyContent: multiLabelJustifyContent(style.verticalAlign),
-    alignItems: multiLabelAlignItems(style.textAlign),
-    padding: `${Math.max(0, mmToCssPx(paddingMm))}px`,
-    borderWidth: `${borderWidth}px`,
-    borderStyle: hasVisibleBorder ? style.borderStyle || "solid" : "solid",
-    borderColor: hasVisibleBorder ? style.borderColor || color : "transparent",
-    borderRadius: `${Math.max(0, Number(style.borderRadius) || 0)}px`,
-    background: backgroundColor,
-    color,
-    opacity: Number.isFinite(Number(style.opacity)) ? Number(style.opacity) : 1,
-    textAlign: style.textAlign || "left",
-    fontFamily: style.fontFamily || undefined,
-    fontStyle: style.fontStyle || "normal",
-    lineHeight: style.lineHeight || 1.4,
-    letterSpacing: `${Number(style.letterSpacing) || 0}px`,
-    "--multi-label-primary-size": `${fontSize}px`,
-    "--multi-label-secondary-size": `${Math.max(8, Math.round(fontSize * 0.84))}px`,
-    "--multi-label-index-size": `${Math.max(7, Math.round(fontSize * 0.72))}px`,
-    "--multi-label-primary-weight": style.fontWeight || "700",
-    "--multi-label-secondary-color": color,
-    "--multi-label-index-color": style.borderColor || color,
-  };
+function barcodePreviewStyle(object: any): any {
+    const options = machineCodeOptions(object.props);
+    return {
+        ...previewPanelStyle(object, "#ffffff"),
+        padding: `${mmToCssPx(options.margin)}px`,
+    };
 }
-
-function multiLabelPreviewLines(item, fallbackIndex, object) {
-  if (item == null || item === "") {
-    if (object?.props?.dataVariable) {
-      const base = `${object.props.dataVariable}[${fallbackIndex}]`;
-      return {
-        primary: `{{${base}.${object?.props?.primaryPath || "title"}}}`,
-        secondary: object?.props?.secondaryPath ? `{{${base}.${object.props.secondaryPath}}}` : "",
-        tertiary: object?.props?.tertiaryPath ? `{{${base}.${object.props.tertiaryPath}}}` : "",
-      };
+function barcodeValueStyle(object: any): any {
+    const options = machineCodeOptions(object.props);
+    return {
+        color: previewForegroundColor(object),
+        fontFamily: object.style?.fontFamily || "sans-serif",
+        fontSize: `${options.textFontSize}px`,
+        fontWeight: object.style?.fontWeight || "normal",
+        letterSpacing: `${Number.isFinite(Number(object.style?.letterSpacing)) ? Number(object.style?.letterSpacing) : 1}px`,
+        textAlign: object.style?.textAlign || "center",
+        marginTop: `${options.textMargin}px`,
+    };
+}
+function barcodeBarsStyle(object: any): any {
+    const source = `${object.props?.format || "CODE128"}:${encodedPreviewContent(object, "未配置编码值")}`;
+    const seed = hashPreviewSeed(source);
+    const foreground = previewForegroundColor(object);
+    const segments = [];
+    let cursor = 0;
+    let state = 1;
+    for (let index = 0; index < 48; index += 1) {
+        const width = ((seed >> (index % 24)) & 0x3) + 1;
+        const nextCursor = Math.min(100, cursor + width);
+        const color = state ? foreground : "transparent";
+        segments.push(`${color} ${cursor}%`, `${color} ${nextCursor}%`);
+        cursor = nextCursor;
+        state = state ? 0 : 1;
+        if (cursor >= 100) {
+            break;
+        }
+    }
+    if (cursor < 100) {
+        segments.push(`transparent ${cursor}%`, `transparent 100%`);
     }
     return {
-      primary: "未绑定标签",
-      secondary: "",
-      tertiary: "",
+        backgroundImage: `linear-gradient(90deg, ${segments.join(", ")})`,
+        backgroundSize: "100% 100%",
+        backgroundRepeat: "no-repeat",
     };
-  }
-
-  if (typeof item === "string" || typeof item === "number") {
-    return {
-      primary: String(item),
-      secondary: "",
-      tertiary: "",
-    };
-  }
-
-  if (typeof item === "object") {
-    const mapped = (path) => {
-      const result = resolveRelativeRecordPath(item, path);
-      return result.found && result.value != null ? String(result.value) : path ? `{{${path}}}` : "";
-    };
-    return {
-      primary: mapped(object?.props?.primaryPath),
-      secondary: mapped(object?.props?.secondaryPath),
-      tertiary: mapped(object?.props?.tertiaryPath),
-    };
-
-  }
-
-  return {
-    primary: "未配置标签",
-    secondary: String(item),
-    tertiary: "",
-  };
 }
-
-function multiLabelCells(object) {
-  const config = multiLabelConfig(object);
-  const total = config.rows * config.cols;
-  const sampleData = Array.isArray(object?.props?.sampleData) ? object.props.sampleData : [];
-
-  return Array.from({ length: total }, (_, index) => {
-    const item = sampleData[index];
-    const { row, col } = multiLabelCellPosition(index, config.rows, config.cols, config.direction);
-    const preview = multiLabelPreviewLines(item, index, object);
-
-    return {
-      key: `${object.id}-${index}`,
-      row,
-      col,
-      indexLabel: `#${index + 1}`,
-      ...preview,
-    };
-  });
-}
-
-function previewForegroundColor(object) {
-  return object.style?.color || object.style?.borderColor || "#111827";
-}
-
-function previewBackgroundColor(object) {
-  return object.style?.backgroundColor || "#ffffff";
-}
-
-function previewPanelStyle(object, fallbackBackground = "transparent") {
-  const style = object?.style || {};
-  const borderWidth = Math.max(0, Number(style.borderWidth) || 0);
-  const padding = Math.max(0, Number(style.padding) || 0);
-  const radius = Math.max(0, Number(style.borderRadius) || 0);
-  const opacity = Number(style.opacity);
-
-  return {
-    boxSizing: "border-box",
-    padding: `${mmToCssPx(padding)}px`,
-    border: borderWidth
-      ? `${borderWidth}px ${style.borderStyle || "solid"} ${style.borderColor || previewForegroundColor(object)}`
-      : "0 solid transparent",
-    borderRadius: `${radius}px`,
-    background:
-      style.backgroundColor && style.backgroundColor !== "transparent" ? style.backgroundColor : fallbackBackground,
-    opacity: Number.isFinite(opacity) ? opacity : 1,
-  };
-}
-
-function imagePreviewStyle(object) {
-  return previewPanelStyle(object, "#f8fafc");
-}
-
-function hashPreviewSeed(value) {
-  const source = String(value || "");
-  let hash = 2166136261;
-
-  for (let index = 0; index < source.length; index += 1) {
-    hash ^= source.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-
-  return hash >>> 0;
-}
-
-function barcodePreviewStyle(object) {
-  const options = machineCodeOptions(object.props);
-
-  return {
-    ...previewPanelStyle(object, "#ffffff"),
-    padding: `${mmToCssPx(options.margin)}px`,
-  };
-}
-
-function barcodeValueStyle(object) {
-  const options = machineCodeOptions(object.props);
-
-  return {
-    color: previewForegroundColor(object),
-    fontFamily: object.style?.fontFamily || "sans-serif",
-    fontSize: `${options.textFontSize}px`,
-    fontWeight: object.style?.fontWeight || "normal",
-    letterSpacing: `${Number.isFinite(Number(object.style?.letterSpacing)) ? Number(object.style?.letterSpacing) : 1}px`,
-    textAlign: object.style?.textAlign || "center",
-    marginTop: `${options.textMargin}px`,
-  };
-}
-
-function barcodeBarsStyle(object) {
-  const source = `${object.props?.format || "CODE128"}:${encodedPreviewContent(object, "未配置编码值")}`;
-  const seed = hashPreviewSeed(source);
-  const foreground = previewForegroundColor(object);
-  const segments = [];
-  let cursor = 0;
-  let state = 1;
-
-  for (let index = 0; index < 48; index += 1) {
-    const width = ((seed >> (index % 24)) & 0x3) + 1;
-    const nextCursor = Math.min(100, cursor + width);
-    const color = state ? foreground : "transparent";
-    segments.push(`${color} ${cursor}%`, `${color} ${nextCursor}%`);
-    cursor = nextCursor;
-    state = state ? 0 : 1;
-
-    if (cursor >= 100) {
-      break;
+function qrCodeSize(object: any): any {
+    const eccLevel = object.props?.eccLevel || "M";
+    switch (eccLevel) {
+        case "L":
+            return 21;
+        case "Q":
+            return 25;
+        case "H":
+            return 29;
+        default:
+            return 23;
     }
-  }
-
-  if (cursor < 100) {
-    segments.push(`transparent ${cursor}%`, `transparent 100%`);
-  }
-
-  return {
-    backgroundImage: `linear-gradient(90deg, ${segments.join(", ")})`,
-    backgroundSize: "100% 100%",
-    backgroundRepeat: "no-repeat",
-  };
 }
-
-function qrCodeSize(object) {
-  const eccLevel = object.props?.eccLevel || "M";
-
-  switch (eccLevel) {
-    case "L":
-      return 21;
-    case "Q":
-      return 25;
-    case "H":
-      return 29;
-    default:
-      return 23;
-  }
+function isQrFinderCell(size: any, row: any, column: any): any {
+    const anchors = [
+        { row: 0, column: 0 },
+        { row: 0, column: size - 7 },
+        { row: size - 7, column: 0 },
+    ];
+    return anchors.some((anchor: any): any => row >= anchor.row && row < anchor.row + 7 && column >= anchor.column && column < anchor.column + 7);
 }
-
-function isQrFinderCell(size, row, column) {
-  const anchors = [
-    { row: 0, column: 0 },
-    { row: 0, column: size - 7 },
-    { row: size - 7, column: 0 },
-  ];
-
-  return anchors.some((anchor) => row >= anchor.row && row < anchor.row + 7 && column >= anchor.column && column < anchor.column + 7);
-}
-
-function isQrFinderDark(size, row, column) {
-  const anchors = [
-    { row: 0, column: 0 },
-    { row: 0, column: size - 7 },
-    { row: size - 7, column: 0 },
-  ];
-  const anchor = anchors.find((item) => row >= item.row && row < item.row + 7 && column >= item.column && column < item.column + 7);
-
-  if (!anchor) {
-    return false;
-  }
-
-  const innerRow = row - anchor.row;
-  const innerColumn = column - anchor.column;
-  const onOuter = innerRow === 0 || innerRow === 6 || innerColumn === 0 || innerColumn === 6;
-  const onCenter = innerRow >= 2 && innerRow <= 4 && innerColumn >= 2 && innerColumn <= 4;
-  return onOuter || onCenter;
-}
-
-function qrCodeCells(object) {
-  const size = qrCodeSize(object);
-  const seed = hashPreviewSeed(`${encodedPreviewContent(object, "未配置编码值")}:${object.props?.eccLevel || "M"}`);
-  const cells = [];
-
-  for (let row = 0; row < size; row += 1) {
-    for (let column = 0; column < size; column += 1) {
-      let dark;
-
-      if (isQrFinderCell(size, row, column)) {
-        dark = isQrFinderDark(size, row, column);
-      } else {
-        const mask = ((seed >> ((row + column) % 24)) & 1) ^ (((row * 3 + column * 5 + seed) % 7) < 3 ? 1 : 0);
-        dark = mask === 1;
-      }
-
-      cells.push({
-        key: `${row}-${column}`,
-        dark,
-      });
+function isQrFinderDark(size: any, row: any, column: any): any {
+    const anchors = [
+        { row: 0, column: 0 },
+        { row: 0, column: size - 7 },
+        { row: size - 7, column: 0 },
+    ];
+    const anchor = anchors.find((item: any): any => row >= item.row && row < item.row + 7 && column >= item.column && column < item.column + 7);
+    if (!anchor) {
+        return false;
     }
-  }
-
-  return cells;
+    const innerRow = row - anchor.row;
+    const innerColumn = column - anchor.column;
+    const onOuter = innerRow === 0 || innerRow === 6 || innerColumn === 0 || innerColumn === 6;
+    const onCenter = innerRow >= 2 && innerRow <= 4 && innerColumn >= 2 && innerColumn <= 4;
+    return onOuter || onCenter;
 }
-
-function qrCodePreviewStyle(object) {
-  const options = machineCodeOptions(object.props);
-
-  return {
-    ...previewPanelStyle(object, "#ffffff"),
-    padding: `${mmToCssPx(options.margin)}px`,
-  };
+function qrCodeCells(object: any): any {
+    const size = qrCodeSize(object);
+    const seed = hashPreviewSeed(`${encodedPreviewContent(object, "未配置编码值")}:${object.props?.eccLevel || "M"}`);
+    const cells = [];
+    for (let row = 0; row < size; row += 1) {
+        for (let column = 0; column < size; column += 1) {
+            let dark;
+            if (isQrFinderCell(size, row, column)) {
+                dark = isQrFinderDark(size, row, column);
+            }
+            else {
+                const mask = ((seed >> ((row + column) % 24)) & 1) ^ (((row * 3 + column * 5 + seed) % 7) < 3 ? 1 : 0);
+                dark = mask === 1;
+            }
+            cells.push({
+                key: `${row}-${column}`,
+                dark,
+            });
+        }
+    }
+    return cells;
 }
-
-function qrCodeGridStyle(object) {
-  const size = qrCodeSize(object);
-  return {
-    gridTemplateColumns: `repeat(${size}, 1fr)`,
-    gridTemplateRows: `repeat(${size}, 1fr)`,
-    borderColor: previewForegroundColor(object),
-  };
+function qrCodePreviewStyle(object: any): any {
+    const options = machineCodeOptions(object.props);
+    return {
+        ...previewPanelStyle(object, "#ffffff"),
+        padding: `${mmToCssPx(options.margin)}px`,
+    };
 }
-
-function qrCodeCellStyle(object, cell) {
-  return {
-    background: cell.dark ? previewForegroundColor(object) : previewBackgroundColor(object),
-  };
+function qrCodeGridStyle(object: any): any {
+    const size = qrCodeSize(object);
+    return {
+        gridTemplateColumns: `repeat(${size}, 1fr)`,
+        gridTemplateRows: `repeat(${size}, 1fr)`,
+        borderColor: previewForegroundColor(object),
+    };
 }
-
-function pageNumberContent(object) {
-  const current = String(object.content || "1");
-  const format = object.props?.format || "1";
-  const totalPages = String(Math.max(1, Number(object.props?.totalPages) || 1));
-
-  if (format === "Page 1") {
-    return `Page ${current}`;
-  }
-
-  if (format === "1/N") {
-    return `${current}/${totalPages}`;
-  }
-
-  if (format === "第1页") {
-    return `第 ${current} 页`;
-  }
-
-  if (format === "第1页/共N页") {
-    return `第 ${current} 页 / 共 N 页`;
-  }
-
-  return current;
+function qrCodeCellStyle(object: any, cell: any): any {
+    return {
+        background: cell.dark ? previewForegroundColor(object) : previewBackgroundColor(object),
+    };
 }
-
-function snapSourceLabel(source) {
-  switch (source) {
-    case "page":
-      return "页面";
-    case "guide":
-      return "参考线";
-    case "grid":
-      return "网格";
-    default:
-      return "吸附";
-  }
+function pageNumberContent(object: any): any {
+    const current = String(object.content || "1");
+    const format = object.props?.format || "1";
+    const totalPages = String(Math.max(1, Number(object.props?.totalPages) || 1));
+    if (format === "Page 1") {
+        return `Page ${current}`;
+    }
+    if (format === "1/N") {
+        return `${current}/${totalPages}`;
+    }
+    if (format === "第1页") {
+        return `第 ${current} 页`;
+    }
+    if (format === "第1页/共N页") {
+        return `第 ${current} 页 / 共 N 页`;
+    }
+    return current;
 }
-
-function getPointerPointMm(event) {
-  const paper = paperRef.value;
-
-  if (!paper) {
-    return null;
-  }
-
-  const paperRect = paper.getBoundingClientRect();
-  const safeZoom = Number.isFinite(props.zoom) && props.zoom > 0 ? props.zoom : 1;
-  const localX = (event.clientX - paperRect.left) / safeZoom;
-  const localY = (event.clientY - paperRect.top) / safeZoom;
-
-  return {
-    x: roundMm(localX / props.pixelsPerUnit),
-    y: roundMm(localY / props.pixelsPerUnit),
-  };
+function snapSourceLabel(source: any): any {
+    switch (source) {
+        case "page":
+            return "页面";
+        case "guide":
+            return "参考线";
+        case "grid":
+            return "网格";
+        default:
+            return "吸附";
+    }
 }
-
-function clearCanvasSelection() {
-  selectionStore.clearSelection();
-  selectionStore.hoverObjectId = null;
-  selectionStore.activeHandle = null;
-  activeSnap.value = {
-    x: null,
-    y: null,
-  };
+function getPointerPointMm(event: any): any {
+    const paper = paperRef.value;
+    if (!paper) {
+        return null;
+    }
+    const paperRect = paper.getBoundingClientRect();
+    const safeZoom = Number.isFinite(props.zoom) && props.zoom > 0 ? props.zoom : 1;
+    const localX = (event.clientX - paperRect.left) / safeZoom;
+    const localY = (event.clientY - paperRect.top) / safeZoom;
+    return {
+        x: roundMm(localX / props.pixelsPerUnit),
+        y: roundMm(localY / props.pixelsPerUnit),
+    };
 }
-
-function onCanvasSurfacePointerDown(event) {
-  closeContextMenu();
-  const target = event.target;
-
-  if (target instanceof Element && target.closest(".paper-canvas__interaction-layer")) {
-    return;
-  }
-
-  if (event.button !== 0) {
-    clearCanvasSelection();
-    return;
-  }
-  const point = getPointerPointMm(event);
-  if (!point) {
-    clearCanvasSelection();
-    return;
-  }
-  selectionMarquee.value = {
-    start: point,
-    current: point,
-    baseIds: event.shiftKey || event.ctrlKey || event.metaKey ? [...selectedIds.value] : [],
-  };
-  if (!selectionMarquee.value.baseIds.length) {
-    clearCanvasSelection();
-  }
-  window.addEventListener("pointermove", onMarqueePointerMove);
-  window.addEventListener("pointerup", onMarqueePointerUp);
-}
-
-function openContextMenu(object, event) {
-  const group = currentPageGroups.value.find((candidate) => candidate.elementIds?.includes(object.id));
-  if (group) {
-    selectionStore.selectGroup(group);
-  } else if (!selectedIds.value.includes(object.id)) {
-    selectionStore.select(object.id);
-  }
-  const point = getPointerPointMm(event);
-  if (!point) {
-    return;
-  }
-  contextMenu.value = {
-    x: Math.max(0, mmToCssPx(point.x)),
-    y: Math.max(0, mmToCssPx(point.y)),
-  };
-}
-
-function closeContextMenu() {
-  contextMenu.value = null;
-}
-
-function groupContextSelection() {
-  const ids = selectedIds.value.filter((id) => objectsById.value[id]?.pageId === currentPage.value?.id && !objectsById.value[id]?.locked);
-  const result = createGroupCommand(documentStore, currentPage.value?.id, ids);
-  if (result) {
-    executeEditorCommand(historyStore, result.command);
-    selectionStore.selectGroup(result.group);
-  }
-  closeContextMenu();
-}
-
-function ungroupContextSelection() {
-  const selected = new Set(selectedIds.value);
-  const groupIds = currentPageGroups.value.filter((group) => group.elementIds?.some((id) => selected.has(id))).map((group) => group.id);
-  const command = createUngroupCommand(documentStore, currentPage.value?.id, groupIds);
-  if (command) {
-    executeEditorCommand(historyStore, command);
-  }
-  closeContextMenu();
-}
-
-function deleteContextSelection() {
-  const command = createRemoveObjectsCommand(documentStore, selectedIds.value);
-  if (command) {
-    executeEditorCommand(historyStore, command);
+function clearCanvasSelection(): any {
     selectionStore.clearSelection();
-  }
-  closeContextMenu();
-}
-
-function marqueeIntersects(object, bounds) {
-  const right = object.x + object.width;
-  const bottom = object.y + object.height;
-  return right >= bounds.left && object.x <= bounds.right && bottom >= bounds.top && object.y <= bounds.bottom;
-}
-
-function includeGroupedMembers(ids = []) {
-  const selected = new Set(ids);
-  currentPageGroups.value.forEach((group) => {
-    if (group.elementIds?.some((id) => selected.has(id))) {
-      group.elementIds.forEach((id) => selected.add(id));
-    }
-  });
-  return [...selected];
-}
-
-function onMarqueePointerMove(event) {
-  const marquee = selectionMarquee.value;
-  const point = getPointerPointMm(event);
-  if (!marquee || !point) {
-    return;
-  }
-  marquee.current = point;
-  const bounds = {
-    left: Math.min(marquee.start.x, point.x),
-    right: Math.max(marquee.start.x, point.x),
-    top: Math.min(marquee.start.y, point.y),
-    bottom: Math.max(marquee.start.y, point.y),
-  };
-  const ids = pageObjects.value.filter((object) => marqueeIntersects(object, bounds)).map((object) => object.id);
-  selectionStore.select(includeGroupedMembers([...marquee.baseIds, ...ids]));
-}
-
-function onMarqueePointerUp() {
-  selectionMarquee.value = null;
-  window.removeEventListener("pointermove", onMarqueePointerMove);
-  window.removeEventListener("pointerup", onMarqueePointerUp);
-}
-
-function stopObjectDrag() {
-  window.removeEventListener("pointermove", onObjectPointerMove);
-  window.removeEventListener("pointerup", onObjectPointerUp);
-}
-
-function onObjectLeave(objectId) {
-  if (interactionState.value?.objectIds?.includes(objectId)) {
-    return;
-  }
-
-  if (hoverObjectId.value === objectId) {
     selectionStore.hoverObjectId = null;
-  }
+    selectionStore.activeHandle = null;
+    activeSnap.value = {
+        x: null,
+        y: null,
+    };
 }
-
-function startObjectDrag(object, event) {
-  if (event.button !== 0) {
-    return;
-  }
-
-  const point = getPointerPointMm(event);
-
-  if (!point) {
-    return;
-  }
-
-  if (event.shiftKey || event.ctrlKey || event.metaKey) {
-    const nextIds = selectedIds.value.includes(object.id)
-      ? selectedIds.value.filter((id) => id !== object.id)
-      : [...selectedIds.value, object.id];
-    selectionStore.select(nextIds);
+function onCanvasSurfacePointerDown(event: any): any {
+    closeContextMenu();
+    const target = event.target;
+    if (target instanceof Element && target.closest(".paper-canvas__interaction-layer")) {
+        return;
+    }
+    if (event.button !== 0) {
+        clearCanvasSelection();
+        return;
+    }
+    const point = getPointerPointMm(event);
+    if (!point) {
+        clearCanvasSelection();
+        return;
+    }
+    selectionMarquee.value = {
+        start: point,
+        current: point,
+        baseIds: event.shiftKey || event.ctrlKey || event.metaKey ? [...selectedIds.value] : [],
+    };
+    if (!selectionMarquee.value.baseIds.length) {
+        clearCanvasSelection();
+    }
+    window.addEventListener("pointermove", onMarqueePointerMove);
+    window.addEventListener("pointerup", onMarqueePointerUp);
+}
+function openContextMenu(object: any, event: any): any {
+    const group = currentPageGroups.value.find((candidate: any): any => candidate.elementIds?.includes(object.id));
+    if (group) {
+        selectionStore.selectGroup(group);
+    }
+    else if (!selectedIds.value.includes(object.id)) {
+        selectionStore.select(object.id);
+    }
+    const point = getPointerPointMm(event);
+    if (!point) {
+        return;
+    }
+    contextMenu.value = {
+        x: Math.max(0, mmToCssPx(point.x)),
+        y: Math.max(0, mmToCssPx(point.y)),
+    };
+}
+function closeContextMenu(): any {
+    contextMenu.value = null;
+}
+function groupContextSelection(): any {
+    const ids = selectedIds.value.filter((id: any): any => objectsById.value[id]?.pageId === currentPage.value?.id && !objectsById.value[id]?.locked);
+    const result = createGroupCommand(documentStore, currentPage.value?.id, ids);
+    if (result) {
+        executeEditorCommand(historyStore, result.command);
+        selectionStore.selectGroup(result.group);
+    }
+    closeContextMenu();
+}
+function ungroupContextSelection(): any {
+    const selected = new Set(selectedIds.value);
+    const groupIds = currentPageGroups.value.filter((group: any): any => group.elementIds?.some((id: any): any => selected.has(id))).map((group: any): any => group.id);
+    const command = createUngroupCommand(documentStore, currentPage.value?.id, groupIds);
+    if (command) {
+        executeEditorCommand(historyStore, command);
+    }
+    closeContextMenu();
+}
+function deleteContextSelection(): any {
+    const command = createRemoveObjectsCommand(documentStore, selectedIds.value);
+    if (command) {
+        executeEditorCommand(historyStore, command);
+        selectionStore.clearSelection();
+    }
+    closeContextMenu();
+}
+function marqueeIntersects(object: any, bounds: any): any {
+    const right = object.x + object.width;
+    const bottom = object.y + object.height;
+    return right >= bounds.left && object.x <= bounds.right && bottom >= bounds.top && object.y <= bounds.bottom;
+}
+function includeGroupedMembers(ids: any = []): any {
+    const selected = new Set(ids);
+    currentPageGroups.value.forEach((group: any): any => {
+        if (group.elementIds?.some((id: any): any => selected.has(id))) {
+            group.elementIds.forEach((id: any): any => selected.add(id));
+        }
+    });
+    return [...selected];
+}
+function onMarqueePointerMove(event: any): any {
+    const marquee = selectionMarquee.value;
+    const point = getPointerPointMm(event);
+    if (!marquee || !point) {
+        return;
+    }
+    marquee.current = point;
+    const bounds = {
+        left: Math.min(marquee.start.x, point.x),
+        right: Math.max(marquee.start.x, point.x),
+        top: Math.min(marquee.start.y, point.y),
+        bottom: Math.max(marquee.start.y, point.y),
+    };
+    const ids = pageObjects.value.filter((object: any): any => marqueeIntersects(object, bounds)).map((object: any): any => object.id);
+    selectionStore.select(includeGroupedMembers([...marquee.baseIds, ...ids]));
+}
+function onMarqueePointerUp(): any {
+    selectionMarquee.value = null;
+    window.removeEventListener("pointermove", onMarqueePointerMove);
+    window.removeEventListener("pointerup", onMarqueePointerUp);
+}
+function stopObjectDrag(): any {
+    window.removeEventListener("pointermove", onObjectPointerMove);
+    window.removeEventListener("pointerup", onObjectPointerUp);
+}
+function onObjectLeave(objectId: any): any {
+    if (interactionState.value?.objectIds?.includes(objectId)) {
+        return;
+    }
+    if (hoverObjectId.value === objectId) {
+        selectionStore.hoverObjectId = null;
+    }
+}
+function startObjectDrag(object: any, event: any): any {
+    if (event.button !== 0) {
+        return;
+    }
+    const point = getPointerPointMm(event);
+    if (!point) {
+        return;
+    }
+    if (event.shiftKey || event.ctrlKey || event.metaKey) {
+        const nextIds = selectedIds.value.includes(object.id)
+            ? selectedIds.value.filter((id: any): any => id !== object.id)
+            : [...selectedIds.value, object.id];
+        selectionStore.select(nextIds);
+        selectionStore.hoverObjectId = object.id;
+        selectionStore.activeHandle = null;
+        return;
+    }
+    const group = currentPageGroups.value.find((candidate: any): any => candidate.elementIds?.includes(object.id));
+    if (group) {
+        selectionStore.selectGroup(group);
+    }
+    else if (!selectedIds.value.includes(object.id)) {
+        selectionStore.select(object.id);
+    }
     selectionStore.hoverObjectId = object.id;
     selectionStore.activeHandle = null;
-    return;
-  }
-
-  const group = currentPageGroups.value.find((candidate) => candidate.elementIds?.includes(object.id));
-  if (group) {
-    selectionStore.selectGroup(group);
-  } else if (!selectedIds.value.includes(object.id)) {
-    selectionStore.select(object.id);
-  }
-  selectionStore.hoverObjectId = object.id;
-  selectionStore.activeHandle = null;
-
-  const objectIds = selectedIds.value.filter((id) => objectsById.value[id]?.pageId === object.pageId && !objectsById.value[id]?.locked);
-  if (!objectIds.length) {
-    return;
-  }
-
-  const startObjects = objectIds.map((id) => ({
-    id,
-    x: objectsById.value[id].x,
-    y: objectsById.value[id].y,
-    width: objectsById.value[id].width,
-    height: objectsById.value[id].height,
-  }));
-
-  interactionState.value = {
-    mode: "move",
-    objectId: object.id,
-    objectIds,
-    startObjects,
-    startPointerX: point.x,
-    startPointerY: point.y,
-    startObjectX: object.x,
-    startObjectY: object.y,
-    width: object.width,
-    height: object.height,
-  };
-  stopObjectDrag();
-  window.addEventListener("pointermove", onObjectPointerMove);
-  window.addEventListener("pointerup", onObjectPointerUp);
-}
-
-function startObjectResize(object, handle, event) {
-  if (event.button !== 0) {
-    return;
-  }
-
-  const point = getPointerPointMm(event);
-
-  if (!point) {
-    return;
-  }
-
-  const group = currentPageGroups.value.find((candidate) => candidate.elementIds?.includes(object.id));
-  const groupObjects = group?.elementIds?.map((id) => objectsById.value[id]).filter(Boolean) || [];
-  const canResizeGroup = groupObjects.length >= 2 && groupObjects.every((item) => !item.locked);
-  if (canResizeGroup) {
-    selectionStore.selectGroup(group);
-  } else {
-    selectionStore.select(object.id);
-  }
-  selectionStore.hoverObjectId = object.id;
-
-  if (object.locked) {
-    selectionStore.activeHandle = null;
-    return;
-  }
-
-  selectionStore.activeHandle = handle;
-  const startObjects = canResizeGroup
-    ? groupObjects.map((item) => ({ id: item.id, x: item.x, y: item.y, width: item.width, height: item.height }))
-    : [];
-  const groupBounds = canResizeGroup ? getObjectBounds(startObjects) : null;
-  interactionState.value = {
-    mode: canResizeGroup ? "resize-group" : "resize",
-    handle,
-    objectId: object.id,
-    objectIds: canResizeGroup ? startObjects.map((item) => item.id) : [object.id],
-    startObjects,
-    groupBounds,
-    startPointerX: point.x,
-    startPointerY: point.y,
-    startObjectX: object.x,
-    startObjectY: object.y,
-    startWidth: object.width,
-    startHeight: object.height,
-  };
-  activeSnap.value = {
-    x: null,
-    y: null,
-  };
-  stopObjectDrag();
-  window.addEventListener("pointermove", onObjectPointerMove);
-  window.addEventListener("pointerup", onObjectPointerUp);
-}
-
-function getObjectBounds(objects = []) {
-  const left = Math.min(...objects.map((item) => item.x));
-  const top = Math.min(...objects.map((item) => item.y));
-  const right = Math.max(...objects.map((item) => item.x + item.width));
-  const bottom = Math.max(...objects.map((item) => item.y + item.height));
-  return { x: left, y: top, width: right - left, height: bottom - top };
-}
-
-function clampResizeEdges(startRect, handle, deltaX, deltaY) {
-  const minWidth = 0.1;
-  const minHeight = 0.1;
-
-  let left = startRect.x;
-  let right = startRect.x + startRect.width;
-  let top = startRect.y;
-  let bottom = startRect.y + startRect.height;
-
-  if (isAspectRatioLocked(startRect, handle)) {
-    const aspectRatio = startRect.width / startRect.height || 1;
-    const maxWidthByPage = allowOverflowDrag.value
-      ? Number.POSITIVE_INFINITY
-      : handle.includes("w")
-        ? right
-        : pageWidthMm.value - left;
-    const maxHeightByPage = allowOverflowDrag.value
-      ? Number.POSITIVE_INFINITY
-      : handle.includes("n")
-        ? bottom
-        : pageHeightMm.value - top;
-    const widthLowerBound = Math.max(minWidth, minHeight * aspectRatio);
-    const widthUpperBound = Math.min(maxWidthByPage, maxHeightByPage * aspectRatio);
-    const heightLowerBound = Math.max(minHeight, minWidth / aspectRatio);
-    const heightUpperBound = Math.min(maxHeightByPage, maxWidthByPage / aspectRatio);
-    const rawWidth = handle.includes("w") ? startRect.width - deltaX : startRect.width + deltaX;
-    const rawHeight = handle.includes("n") ? startRect.height - deltaY : startRect.height + deltaY;
-    const widthDeltaRatio = Math.abs(rawWidth - startRect.width) / Math.max(startRect.width, 0.001);
-    const heightDeltaRatio = Math.abs(rawHeight - startRect.height) / Math.max(startRect.height, 0.001);
-
-    let nextWidth;
-    let nextHeight;
-
-    if (widthDeltaRatio >= heightDeltaRatio) {
-      nextWidth = clamp(rawWidth, widthLowerBound, widthUpperBound);
-      nextHeight = nextWidth / aspectRatio;
-    } else {
-      nextHeight = clamp(rawHeight, heightLowerBound, heightUpperBound);
-      nextWidth = nextHeight * aspectRatio;
+    const objectIds = selectedIds.value.filter((id: any): any => objectsById.value[id]?.pageId === object.pageId && !objectsById.value[id]?.locked);
+    if (!objectIds.length) {
+        return;
     }
-
-    if (handle.includes("w")) {
-      left = right - nextWidth;
-    }
-
-    if (handle.includes("n")) {
-      top = bottom - nextHeight;
-    }
-
-    return {
-      x: roundMm(left),
-      y: roundMm(top),
-      width: roundMm(nextWidth),
-      height: roundMm(nextHeight),
-    };
-  }
-
-  if (handle.includes("w")) {
-    const minLeft = allowOverflowDrag.value ? Number.NEGATIVE_INFINITY : 0;
-    const maxLeft = right - minWidth;
-    left = clamp(startRect.x + deltaX, minLeft, maxLeft);
-  }
-
-  if (handle.includes("e")) {
-    const minRight = left + minWidth;
-    const maxRight = allowOverflowDrag.value ? Number.POSITIVE_INFINITY : pageWidthMm.value;
-    right = clamp(startRect.x + startRect.width + deltaX, minRight, maxRight);
-  }
-
-  if (handle.includes("n")) {
-    const minTop = allowOverflowDrag.value ? Number.NEGATIVE_INFINITY : 0;
-    const maxTop = bottom - minHeight;
-    top = clamp(startRect.y + deltaY, minTop, maxTop);
-  }
-
-  if (handle.includes("s")) {
-    const minBottom = top + minHeight;
-    const maxBottom = allowOverflowDrag.value ? Number.POSITIVE_INFINITY : pageHeightMm.value;
-    bottom = clamp(startRect.y + startRect.height + deltaY, minBottom, maxBottom);
-  }
-
-  const width = roundMm(Math.max(minWidth, right - left));
-  const height = roundMm(Math.max(minHeight, bottom - top));
-
-  return {
-    x: roundMm(left),
-    y: roundMm(top),
-    width,
-    height,
-  };
-}
-
-function onObjectPointerMove(event) {
-  const drag = interactionState.value;
-  const point = getPointerPointMm(event);
-
-  if (!drag || !point) {
-    viewportStore.clearCoordinateReadout();
-    return;
-  }
-
-  const insidePage =
-    point.x >= 0 && point.x <= pageWidthMm.value && point.y >= 0 && point.y <= pageHeightMm.value;
-
-  if (drag.mode === "resize-group") {
-    const nextBounds = clampResizeEdges(
-      drag.groupBounds,
-      drag.handle,
-      point.x - drag.startPointerX,
-      point.y - drag.startPointerY
-    );
-    const scaleX = nextBounds.width / Math.max(0.01, drag.groupBounds.width);
-    const scaleY = nextBounds.height / Math.max(0.01, drag.groupBounds.height);
-    const patches = drag.startObjects.map((item) => ({
-      id: item.id,
-      patch: {
-        x: roundMm(nextBounds.x + (item.x - drag.groupBounds.x) * scaleX),
-        y: roundMm(nextBounds.y + (item.y - drag.groupBounds.y) * scaleY),
-        width: roundMm(Math.max(0.1, item.width * scaleX)),
-        height: roundMm(Math.max(0.1, item.height * scaleY)),
-      },
+    const startObjects = objectIds.map((id: any): any => ({
+        id,
+        x: objectsById.value[id].x,
+        y: objectsById.value[id].y,
+        width: objectsById.value[id].width,
+        height: objectsById.value[id].height,
     }));
-    documentStore.applyObjectPatches(patches);
-    selectionStore.activeHandle = drag.handle;
-    if (insidePage) {
-      viewportStore.setPointerCoordinate(point.x, point.y, true);
+    interactionState.value = {
+        mode: "move",
+        objectId: object.id,
+        objectIds,
+        startObjects,
+        startPointerX: point.x,
+        startPointerY: point.y,
+        startObjectX: object.x,
+        startObjectY: object.y,
+        width: object.width,
+        height: object.height,
+    };
+    stopObjectDrag();
+    window.addEventListener("pointermove", onObjectPointerMove);
+    window.addEventListener("pointerup", onObjectPointerUp);
+}
+function startObjectResize(object: any, handle: any, event: any): any {
+    if (event.button !== 0) {
+        return;
     }
-    return;
-  }
-
-  if (drag.mode === "resize") {
-    const rawRect = clampResizeEdges(
-      {
-        type: objectsById.value[drag.objectId]?.type,
-        props: objectsById.value[drag.objectId]?.props,
-        x: drag.startObjectX,
-        y: drag.startObjectY,
-        width: drag.startWidth,
-        height: drag.startHeight,
-      },
-      drag.handle,
-      point.x - drag.startPointerX,
-      point.y - drag.startPointerY
-    );
-    const resizeSnapResult = snapEnabled.value
-      ? resolveResizeSnap(
-          rawRect,
-          {
+    const point = getPointerPointMm(event);
+    if (!point) {
+        return;
+    }
+    const group = currentPageGroups.value.find((candidate: any): any => candidate.elementIds?.includes(object.id));
+    const groupObjects = group?.elementIds?.map((id: any): any => objectsById.value[id]).filter(Boolean) || [];
+    const canResizeGroup = groupObjects.length >= 2 && groupObjects.every((item: any): any => !item.locked);
+    if (canResizeGroup) {
+        selectionStore.selectGroup(group);
+    }
+    else {
+        selectionStore.select(object.id);
+    }
+    selectionStore.hoverObjectId = object.id;
+    if (object.locked) {
+        selectionStore.activeHandle = null;
+        return;
+    }
+    selectionStore.activeHandle = handle;
+    const startObjects = canResizeGroup
+        ? groupObjects.map((item: any): any => ({ id: item.id, x: item.x, y: item.y, width: item.width, height: item.height }))
+        : [];
+    const groupBounds = canResizeGroup ? getObjectBounds(startObjects) : null;
+    interactionState.value = {
+        mode: canResizeGroup ? "resize-group" : "resize",
+        handle,
+        objectId: object.id,
+        objectIds: canResizeGroup ? startObjects.map((item: any): any => item.id) : [object.id],
+        startObjects,
+        groupBounds,
+        startPointerX: point.x,
+        startPointerY: point.y,
+        startObjectX: object.x,
+        startObjectY: object.y,
+        startWidth: object.width,
+        startHeight: object.height,
+    };
+    activeSnap.value = {
+        x: null,
+        y: null,
+    };
+    stopObjectDrag();
+    window.addEventListener("pointermove", onObjectPointerMove);
+    window.addEventListener("pointerup", onObjectPointerUp);
+}
+function getObjectBounds(objects: any = []): any {
+    const left = Math.min(...objects.map((item: any): any => item.x));
+    const top = Math.min(...objects.map((item: any): any => item.y));
+    const right = Math.max(...objects.map((item: any): any => item.x + item.width));
+    const bottom = Math.max(...objects.map((item: any): any => item.y + item.height));
+    return { x: left, y: top, width: right - left, height: bottom - top };
+}
+function clampResizeEdges(startRect: any, handle: any, deltaX: any, deltaY: any): any {
+    const minWidth = 0.1;
+    const minHeight = 0.1;
+    let left = startRect.x;
+    let right = startRect.x + startRect.width;
+    let top = startRect.y;
+    let bottom = startRect.y + startRect.height;
+    if (isAspectRatioLocked(startRect, handle)) {
+        const aspectRatio = startRect.width / startRect.height || 1;
+        const maxWidthByPage = allowOverflowDrag.value
+            ? Number.POSITIVE_INFINITY
+            : handle.includes("w")
+                ? right
+                : pageWidthMm.value - left;
+        const maxHeightByPage = allowOverflowDrag.value
+            ? Number.POSITIVE_INFINITY
+            : handle.includes("n")
+                ? bottom
+                : pageHeightMm.value - top;
+        const widthLowerBound = Math.max(minWidth, minHeight * aspectRatio);
+        const widthUpperBound = Math.min(maxWidthByPage, maxHeightByPage * aspectRatio);
+        const heightLowerBound = Math.max(minHeight, minWidth / aspectRatio);
+        const heightUpperBound = Math.min(maxHeightByPage, maxWidthByPage / aspectRatio);
+        const rawWidth = handle.includes("w") ? startRect.width - deltaX : startRect.width + deltaX;
+        const rawHeight = handle.includes("n") ? startRect.height - deltaY : startRect.height + deltaY;
+        const widthDeltaRatio = Math.abs(rawWidth - startRect.width) / Math.max(startRect.width, 0.001);
+        const heightDeltaRatio = Math.abs(rawHeight - startRect.height) / Math.max(startRect.height, 0.001);
+        let nextWidth;
+        let nextHeight;
+        if (widthDeltaRatio >= heightDeltaRatio) {
+            nextWidth = clamp(rawWidth, widthLowerBound, widthUpperBound);
+            nextHeight = nextWidth / aspectRatio;
+        }
+        else {
+            nextHeight = clamp(rawHeight, heightLowerBound, heightUpperBound);
+            nextWidth = nextHeight * aspectRatio;
+        }
+        if (handle.includes("w")) {
+            left = right - nextWidth;
+        }
+        if (handle.includes("n")) {
+            top = bottom - nextHeight;
+        }
+        return {
+            x: roundMm(left),
+            y: roundMm(top),
+            width: roundMm(nextWidth),
+            height: roundMm(nextHeight),
+        };
+    }
+    if (handle.includes("w")) {
+        const minLeft = allowOverflowDrag.value ? Number.NEGATIVE_INFINITY : 0;
+        const maxLeft = right - minWidth;
+        left = clamp(startRect.x + deltaX, minLeft, maxLeft);
+    }
+    if (handle.includes("e")) {
+        const minRight = left + minWidth;
+        const maxRight = allowOverflowDrag.value ? Number.POSITIVE_INFINITY : pageWidthMm.value;
+        right = clamp(startRect.x + startRect.width + deltaX, minRight, maxRight);
+    }
+    if (handle.includes("n")) {
+        const minTop = allowOverflowDrag.value ? Number.NEGATIVE_INFINITY : 0;
+        const maxTop = bottom - minHeight;
+        top = clamp(startRect.y + deltaY, minTop, maxTop);
+    }
+    if (handle.includes("s")) {
+        const minBottom = top + minHeight;
+        const maxBottom = allowOverflowDrag.value ? Number.POSITIVE_INFINITY : pageHeightMm.value;
+        bottom = clamp(startRect.y + startRect.height + deltaY, minBottom, maxBottom);
+    }
+    const width = roundMm(Math.max(minWidth, right - left));
+    const height = roundMm(Math.max(minHeight, bottom - top));
+    return {
+        x: roundMm(left),
+        y: roundMm(top),
+        width,
+        height,
+    };
+}
+function onObjectPointerMove(event: any): any {
+    const drag = interactionState.value;
+    const point = getPointerPointMm(event);
+    if (!drag || !point) {
+        viewportStore.clearCoordinateReadout();
+        return;
+    }
+    const insidePage = point.x >= 0 && point.x <= pageWidthMm.value && point.y >= 0 && point.y <= pageHeightMm.value;
+    if (drag.mode === "resize-group") {
+        const nextBounds = clampResizeEdges(drag.groupBounds, drag.handle, point.x - drag.startPointerX, point.y - drag.startPointerY);
+        const scaleX = nextBounds.width / Math.max(0.01, drag.groupBounds.width);
+        const scaleY = nextBounds.height / Math.max(0.01, drag.groupBounds.height);
+        const patches = drag.startObjects.map((item: any): any => ({
+            id: item.id,
+            patch: {
+                x: roundMm(nextBounds.x + (item.x - drag.groupBounds.x) * scaleX),
+                y: roundMm(nextBounds.y + (item.y - drag.groupBounds.y) * scaleY),
+                width: roundMm(Math.max(0.1, item.width * scaleX)),
+                height: roundMm(Math.max(0.1, item.height * scaleY)),
+            },
+        }));
+        documentStore.applyObjectPatches(patches);
+        selectionStore.activeHandle = drag.handle;
+        if (insidePage) {
+            viewportStore.setPointerCoordinate(point.x, point.y, true);
+        }
+        return;
+    }
+    if (drag.mode === "resize") {
+        const rawRect = clampResizeEdges({
             type: objectsById.value[drag.objectId]?.type,
             props: objectsById.value[drag.objectId]?.props,
             x: drag.startObjectX,
             y: drag.startObjectY,
             width: drag.startWidth,
             height: drag.startHeight,
-          },
-          drag.handle
-        )
-      : null;
-    const nextRect = resizeSnapResult?.rect || rawRect;
-
-    activeSnap.value = resizeSnapResult?.activeSnap || { x: null, y: null };
-    selectionStore.activeHandle = drag.handle;
-    if (insidePage) {
-      viewportStore.setPointerCoordinate(point.x, point.y, true);
-    } else {
-      viewportStore.clearCoordinateReadout();
-    }
-    documentStore.updateObjectProps(drag.objectId, nextRect);
-    return;
-  }
-
-  const rawX = roundMm(drag.startObjectX + (point.x - drag.startPointerX));
-  const rawY = roundMm(drag.startObjectY + (point.y - drag.startPointerY));
-  const snapResult = snapEnabled.value
-    ? resolveObjectSnap({
-        x: rawX,
-        y: rawY,
-        width: drag.width,
-        height: drag.height,
-        pageWidthMm: pageWidthMm.value,
-        pageHeightMm: pageHeightMm.value,
-        verticalGuides: guidesVisible.value ? verticalGuides.value : [],
-        horizontalGuides: guidesVisible.value ? horizontalGuides.value : [],
-        gridSpacingMm: gridVisible.value ? gridDefinition.value.minorMm : null,
-        pixelsPerUnit: props.pixelsPerUnit * props.zoom,
-      })
-    : null;
-  const targetX = snapResult ? snapResult.x : rawX;
-  const targetY = snapResult ? snapResult.y : rawY;
-  const nextX = clampObjectPosition(targetX, drag.width, pageWidthMm.value);
-  const nextY = clampObjectPosition(targetY, drag.height, pageHeightMm.value);
-
-  activeSnap.value = snapResult?.activeSnap || { x: null, y: null };
-  if (insidePage) {
-    viewportStore.setPointerCoordinate(point.x, point.y, true);
-  } else {
-    viewportStore.clearCoordinateReadout();
-  }
-  const deltaX = nextX - drag.startObjectX;
-  const deltaY = nextY - drag.startObjectY;
-  const patches = drag.startObjects.map((item) => ({
-    id: item.id,
-    patch: {
-      x: clampObjectPosition(item.x + deltaX, item.width, pageWidthMm.value),
-      y: clampObjectPosition(item.y + deltaY, item.height, pageHeightMm.value),
-    },
-  }));
-  documentStore.applyObjectPatches(patches);
-}
-
-function onObjectPointerUp() {
-  const drag = interactionState.value;
-
-  if (!drag) {
-    stopObjectDrag();
-    return;
-  }
-
-  const currentObject = objectsById.value[drag.objectId];
-
-  if (currentObject) {
-    if (drag.mode === "resize-group") {
-      const patches = drag.startObjects.map((item) => {
-        const current = objectsById.value[item.id];
-        return current ? { id: item.id, patch: { x: current.x, y: current.y, width: current.width, height: current.height } } : null;
-      }).filter(Boolean);
-      const changed = patches.some(({ id, patch }) => {
-        const previous = drag.startObjects.find((item) => item.id === id);
-        return previous && (previous.x !== patch.x || previous.y !== patch.y || previous.width !== patch.width || previous.height !== patch.height);
-      });
-      if (changed) {
-        executeEditorCommand(
-          historyStore,
-          createPatchTransactionCommand(
-            documentStore,
-            "Resize group",
-            patches,
-            { previousPatches: drag.startObjects.map((item) => ({ id: item.id, patch: { x: item.x, y: item.y, width: item.width, height: item.height } })) }
-          )
-        );
-      }
-    } else if (drag.mode === "resize") {
-      const previousPatch = {
-        x: drag.startObjectX,
-        y: drag.startObjectY,
-        width: drag.startWidth,
-        height: drag.startHeight,
-      };
-      const nextPatch = {
-        x: currentObject.x,
-        y: currentObject.y,
-        width: currentObject.width,
-        height: currentObject.height,
-      };
-
-      if (
-        previousPatch.x !== nextPatch.x ||
-        previousPatch.y !== nextPatch.y ||
-        previousPatch.width !== nextPatch.width ||
-        previousPatch.height !== nextPatch.height
-      ) {
-        executeEditorCommand(
-          historyStore,
-          createTransformObjectCommand(documentStore, drag.objectId, previousPatch, nextPatch, "Resize")
-        );
-      }
-    } else {
-      const patches = drag.startObjects.map((item) => {
-        const current = objectsById.value[item.id];
-        return current ? { id: item.id, patch: { x: current.x, y: current.y } } : null;
-      }).filter(Boolean);
-      const changed = patches.some(({ id, patch }) => {
-        const previous = drag.startObjects.find((item) => item.id === id);
-        return previous && (previous.x !== patch.x || previous.y !== patch.y);
-      });
-      if (changed) {
-        if (patches.length === 1) {
-          const previous = drag.startObjects[0];
-          executeEditorCommand(historyStore, createMoveObjectCommand(documentStore, previous.id, { x: previous.x, y: previous.y }, patches[0].patch));
-        } else {
-          executeEditorCommand(
-            historyStore,
-            createPatchTransactionCommand(
-              documentStore,
-              "Move selection",
-              patches,
-              { previousPatches: drag.startObjects.map((item) => ({ id: item.id, patch: { x: item.x, y: item.y } })) }
-            )
-          );
+        }, drag.handle, point.x - drag.startPointerX, point.y - drag.startPointerY);
+        const resizeSnapResult = snapEnabled.value
+            ? resolveResizeSnap(rawRect, {
+                type: objectsById.value[drag.objectId]?.type,
+                props: objectsById.value[drag.objectId]?.props,
+                x: drag.startObjectX,
+                y: drag.startObjectY,
+                width: drag.startWidth,
+                height: drag.startHeight,
+            }, drag.handle)
+            : null;
+        const nextRect = resizeSnapResult?.rect || rawRect;
+        activeSnap.value = resizeSnapResult?.activeSnap || { x: null, y: null };
+        selectionStore.activeHandle = drag.handle;
+        if (insidePage) {
+            viewportStore.setPointerCoordinate(point.x, point.y, true);
         }
-      }
+        else {
+            viewportStore.clearCoordinateReadout();
+        }
+        documentStore.updateObjectProps(drag.objectId, nextRect);
+        return;
     }
-  }
-
-  interactionState.value = null;
-  selectionStore.activeHandle = null;
-  activeSnap.value = {
-    x: null,
-    y: null,
-  };
-  stopObjectDrag();
+    const rawX = roundMm(drag.startObjectX + (point.x - drag.startPointerX));
+    const rawY = roundMm(drag.startObjectY + (point.y - drag.startPointerY));
+    const snapResult = snapEnabled.value
+        ? resolveObjectSnap({
+            x: rawX,
+            y: rawY,
+            width: drag.width,
+            height: drag.height,
+            pageWidthMm: pageWidthMm.value,
+            pageHeightMm: pageHeightMm.value,
+            verticalGuides: guidesVisible.value ? verticalGuides.value : [],
+            horizontalGuides: guidesVisible.value ? horizontalGuides.value : [],
+            gridSpacingMm: gridVisible.value ? gridDefinition.value.minorMm : null,
+            pixelsPerUnit: props.pixelsPerUnit * props.zoom,
+        })
+        : null;
+    const targetX = snapResult ? snapResult.x : rawX;
+    const targetY = snapResult ? snapResult.y : rawY;
+    const nextX = clampObjectPosition(targetX, drag.width, pageWidthMm.value);
+    const nextY = clampObjectPosition(targetY, drag.height, pageHeightMm.value);
+    activeSnap.value = snapResult?.activeSnap || { x: null, y: null };
+    if (insidePage) {
+        viewportStore.setPointerCoordinate(point.x, point.y, true);
+    }
+    else {
+        viewportStore.clearCoordinateReadout();
+    }
+    const deltaX = nextX - drag.startObjectX;
+    const deltaY = nextY - drag.startObjectY;
+    const patches = drag.startObjects.map((item: any): any => ({
+        id: item.id,
+        patch: {
+            x: clampObjectPosition(item.x + deltaX, item.width, pageWidthMm.value),
+            y: clampObjectPosition(item.y + deltaY, item.height, pageHeightMm.value),
+        },
+    }));
+    documentStore.applyObjectPatches(patches);
 }
-
-onBeforeUnmount(() => {
-  stopObjectDrag();
-  onMarqueePointerUp();
+function onObjectPointerUp(): any {
+    const drag = interactionState.value;
+    if (!drag) {
+        stopObjectDrag();
+        return;
+    }
+    const currentObject = objectsById.value[drag.objectId];
+    if (currentObject) {
+        if (drag.mode === "resize-group") {
+            const patches = drag.startObjects.map((item: any): any => {
+                const current = objectsById.value[item.id];
+                return current ? { id: item.id, patch: { x: current.x, y: current.y, width: current.width, height: current.height } } : null;
+            }).filter(Boolean);
+            const changed = patches.some(({ id, patch }: any): any => {
+                const previous = drag.startObjects.find((item: any): any => item.id === id);
+                return previous && (previous.x !== patch.x || previous.y !== patch.y || previous.width !== patch.width || previous.height !== patch.height);
+            });
+            if (changed) {
+                executeEditorCommand(historyStore, createPatchTransactionCommand(documentStore, "Resize group", patches, { previousPatches: drag.startObjects.map((item: any): any => ({ id: item.id, patch: { x: item.x, y: item.y, width: item.width, height: item.height } })) }));
+            }
+        }
+        else if (drag.mode === "resize") {
+            const previousPatch = {
+                x: drag.startObjectX,
+                y: drag.startObjectY,
+                width: drag.startWidth,
+                height: drag.startHeight,
+            };
+            const nextPatch = {
+                x: currentObject.x,
+                y: currentObject.y,
+                width: currentObject.width,
+                height: currentObject.height,
+            };
+            if (previousPatch.x !== nextPatch.x ||
+                previousPatch.y !== nextPatch.y ||
+                previousPatch.width !== nextPatch.width ||
+                previousPatch.height !== nextPatch.height) {
+                executeEditorCommand(historyStore, createTransformObjectCommand(documentStore, drag.objectId, previousPatch, nextPatch, "Resize"));
+            }
+        }
+        else {
+            const patches = drag.startObjects.map((item: any): any => {
+                const current = objectsById.value[item.id];
+                return current ? { id: item.id, patch: { x: current.x, y: current.y } } : null;
+            }).filter(Boolean);
+            const changed = patches.some(({ id, patch }: any): any => {
+                const previous = drag.startObjects.find((item: any): any => item.id === id);
+                return previous && (previous.x !== patch.x || previous.y !== patch.y);
+            });
+            if (changed) {
+                if (patches.length === 1) {
+                    const previous = drag.startObjects[0];
+                    executeEditorCommand(historyStore, createMoveObjectCommand(documentStore, previous.id, { x: previous.x, y: previous.y }, patches[0].patch));
+                }
+                else {
+                    executeEditorCommand(historyStore, createPatchTransactionCommand(documentStore, "Move selection", patches, { previousPatches: drag.startObjects.map((item: any): any => ({ id: item.id, patch: { x: item.x, y: item.y } })) }));
+                }
+            }
+        }
+    }
+    interactionState.value = null;
+    selectionStore.activeHandle = null;
+    activeSnap.value = {
+        x: null,
+        y: null,
+    };
+    stopObjectDrag();
+}
+onBeforeUnmount((): any => {
+    stopObjectDrag();
+    onMarqueePointerUp();
 });
 </script>
 

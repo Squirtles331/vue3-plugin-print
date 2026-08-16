@@ -51,8 +51,7 @@
   </aside>
 </template>
 
-<script setup>
-import { Clock, DataLine, Files, Setting, View } from "../../ui/icons.js";
+<script setup lang="ts">import { Clock, DataLine, Files, Setting, View } from "../../ui/icons.js";
 import PdButton from "../../ui/primitives/PdButton.vue";
 import PdIcon from "../../ui/primitives/PdIcon.vue";
 import { computed, onBeforeUnmount, ref } from "vue";
@@ -66,86 +65,72 @@ import ViewSettingsPanel from "../panels/ViewSettingsPanel.vue";
 import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorSelectionStore } from "../stores/selectionStore";
 import { useEditorShellStore } from "../stores/shellStore";
-
-const emit = defineEmits(["bind"]);
-const shellStore = useEditorShellStore();
-const documentStore = useEditorDocumentStore();
-const selectionStore = useEditorSelectionStore();
-
-const { activeRightPanel, rightDockCollapsed, rightPanelWidth } = storeToRefs(shellStore);
-const { layers, variables } = storeToRefs(documentStore);
-const { selectedIds } = storeToRefs(selectionStore);
-const rightDockRef = ref(null);
-
+const emit = defineEmits(["bind"]) as any;
+const shellStore = useEditorShellStore() as any;
+const documentStore = useEditorDocumentStore() as any;
+const selectionStore = useEditorSelectionStore() as any;
+const { activeRightPanel, rightDockCollapsed, rightPanelWidth } = storeToRefs(shellStore) as any;
+const { layers, variables } = storeToRefs(documentStore) as any;
+const { selectedIds } = storeToRefs(selectionStore) as any;
+const rightDockRef = ref(null) as any;
 const panels = [
-  { key: "properties", label: "属性", icon: Setting },
-  { key: "page", label: "页面", icon: Setting },
-  { key: "view", label: "视图", icon: View },
-  { key: "layers", label: "结构", icon: Files },
-  { key: "bindings", label: "绑定", icon: DataLine },
-  { key: "history", label: "历史", icon: Clock },
-];
-
-const panelTitle = computed(() => {
-  const map = {
-    properties: "元素属性",
-    page: "页面设置",
-    view: "视图设置",
-    layers: "图层结构",
-    bindings: "数据绑定",
-    history: "历史记录",
-  };
-
-  return map[activeRightPanel.value] || "右侧面板";
-});
-
-const panelDescription = computed(() => {
-  const map = {
-    properties: !selectedIds.value.length
-      ? "选中画布元素后，可在这里修改位置、样式和绑定。"
-      : selectedIds.value.length === 1
-        ? "正在编辑 1 个选中元素。"
-        : `已选中 ${selectedIds.value.length} 个元素。可批量修改显示、打印、锁定和通用样式。`,
-    page: "设置纸张、方向、边距和打印标记。",
-    view: "控制辅助线、网格、吸附和编辑器显示。",
-    layers: "查看当前页图层并定位到画布。",
-    bindings: "查看可用字段并核对绑定结果。",
-    history: "查看最近操作，确认可撤销范围。",
-  };
-
-  return map[activeRightPanel.value] || "";
-});
-
-const panelBadges = computed(() => ({
-  properties: selectedIds.value.length,
-  layers: layers.value.length,
-  bindings: variables.value.length,
-}));
-
-function onPointerMove(event) {
-  const dockElement = rightDockRef.value;
-
-  if (!dockElement) {
-    return;
-  }
-
-  const dockRect = dockElement.getBoundingClientRect();
-  shellStore.setRightPanelWidth(dockRect.right - event.clientX);
+    { key: "properties", label: "属性", icon: Setting },
+    { key: "page", label: "页面", icon: Setting },
+    { key: "view", label: "视图", icon: View },
+    { key: "layers", label: "结构", icon: Files },
+    { key: "bindings", label: "绑定", icon: DataLine },
+    { key: "history", label: "历史", icon: Clock },
+] as any;
+const panelTitle = computed((): any => {
+    const map: any = {
+        properties: "元素属性",
+        page: "页面设置",
+        view: "视图设置",
+        layers: "图层结构",
+        bindings: "数据绑定",
+        history: "历史记录",
+    };
+    return map[activeRightPanel.value] || "右侧面板";
+}) as any;
+const panelDescription = computed((): any => {
+    const map: any = {
+        properties: !selectedIds.value.length
+            ? "选中画布元素后，可在这里修改位置、样式和绑定。"
+            : selectedIds.value.length === 1
+                ? "正在编辑 1 个选中元素。"
+                : `已选中 ${selectedIds.value.length} 个元素。可批量修改显示、打印、锁定和通用样式。`,
+        page: "设置纸张、方向、边距和打印标记。",
+        view: "控制辅助线、网格、吸附和编辑器显示。",
+        layers: "查看当前页图层并定位到画布。",
+        bindings: "查看可用字段并核对绑定结果。",
+        history: "查看最近操作，确认可撤销范围。",
+    };
+    return map[activeRightPanel.value] || "";
+}) as any;
+const panelBadges = computed((): any => ({
+    properties: selectedIds.value.length,
+    layers: layers.value.length,
+    bindings: variables.value.length,
+})) as any;
+function onPointerMove(event: any): any {
+    const dockElement = rightDockRef.value;
+    if (!dockElement) {
+        return;
+    }
+    const dockRect = dockElement.getBoundingClientRect();
+    shellStore.setRightPanelWidth(dockRect.right - event.clientX);
 }
-
-function stopResize() {
-  window.removeEventListener("pointermove", onPointerMove);
-  window.removeEventListener("pointerup", stopResize);
+function stopResize(): any {
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", stopResize);
 }
-
-function startResize(event) {
-  event.preventDefault();
-  window.addEventListener("pointermove", onPointerMove);
-  window.addEventListener("pointerup", stopResize);
+function startResize(event: any): any {
+    event.preventDefault();
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", stopResize);
 }
-
-onBeforeUnmount(() => {
-  stopResize();
+onBeforeUnmount((): any => {
+    stopResize();
 });
 </script>
 

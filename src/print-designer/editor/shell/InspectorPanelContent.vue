@@ -13,8 +13,7 @@
   </div>
 </template>
 
-<script setup>
-import { storeToRefs } from "pinia";
+<script setup lang="ts">import { storeToRefs } from "pinia";
 import StructurePanel from "../../components/inspector/StructurePanel.vue";
 import BindingPanel from "../panels/BindingPanel.vue";
 import ElementPropertiesPanel from "../panels/ElementPropertiesPanel.vue";
@@ -22,19 +21,16 @@ import PageSetupPanel from "../panels/PageSetupPanel.vue";
 import ViewSettingsPanel from "../panels/ViewSettingsPanel.vue";
 import { useEditorDocumentStore } from "../stores/documentStore";
 import { useEditorSelectionStore } from "../stores/selectionStore";
-
 defineProps({
-  activeKey: {
-    type: String,
-    default: "properties",
-  },
+    activeKey: {
+        type: String,
+        default: "properties",
+    },
 });
-
-const documentStore = useEditorDocumentStore();
-const selectionStore = useEditorSelectionStore();
-
-const { layers, variables } = storeToRefs(documentStore);
-const { selectedIds } = storeToRefs(selectionStore);
+const documentStore = useEditorDocumentStore() as any;
+const selectionStore = useEditorSelectionStore() as any;
+const { layers, variables } = storeToRefs(documentStore) as any;
+const { selectedIds } = storeToRefs(selectionStore) as any;
 </script>
 
 <style scoped lang="scss">

@@ -17,24 +17,21 @@
   </div>
 </template>
 
-<script setup>
-import { computed } from "vue";
+<script setup lang="ts">import { computed } from "vue";
 import { imageObjectPosition } from "../../runtime/propertySemantics.js";
 import { bindingLabel, previewPanelStyle } from "./elementPreview.js";
-
 const props = defineProps({
-  object: {
-    type: Object,
-    required: true,
-  },
-});
-
-const frameStyle = computed(() => previewPanelStyle(props.object, "#f8fafc"));
-const imageStyle = computed(() => ({
-  objectFit: props.object.style?.objectFit || "contain",
-  objectPosition: imageObjectPosition(props.object.style),
-}));
-const placeholder = computed(() => bindingLabel(props.object) || props.object.props?.placeholder || "未绑定图片");
+    object: {
+        type: Object,
+        required: true,
+    },
+}) as any;
+const frameStyle = computed((): any => previewPanelStyle(props.object, "#f8fafc")) as any;
+const imageStyle = computed((): any => ({
+    objectFit: props.object.style?.objectFit || "contain",
+    objectPosition: imageObjectPosition(props.object.style),
+})) as any;
+const placeholder = computed((): any => bindingLabel(props.object) || props.object.props?.placeholder || "未绑定图片") as any;
 </script>
 
 <style scoped lang="scss">

@@ -20,80 +20,63 @@
   </section>
 </template>
 
-<script setup>
-import { computed } from "vue";
+<script setup lang="ts">import { computed } from "vue";
 import { storeToRefs } from "pinia";
-import {
-  createAlignmentPatches,
-  createDistributionPatches,
-  createDuplicateCommand,
-  createDuplicateObjects,
-  createOrderIds,
-  createOrderTransactionCommand,
-  createPatchTransactionCommand,
-  getEditableSelection,
-} from "../commands/layoutCommands.js";
+import { createAlignmentPatches, createDistributionPatches, createDuplicateCommand, createDuplicateObjects, createOrderIds, createOrderTransactionCommand, createPatchTransactionCommand, getEditableSelection, } from "../commands/layoutCommands.js";
 import { executeEditorCommand } from "../commands/executeCommand.js";
 import { useEditorDocumentStore } from "../stores/documentStore.js";
 import { useEditorHistoryStore } from "../stores/historyStore.js";
 import { useEditorSelectionStore } from "../stores/selectionStore.js";
 import { useEditorViewportStore } from "../stores/viewportStore.js";
-
-const documentStore = useEditorDocumentStore();
-const historyStore = useEditorHistoryStore();
-const selectionStore = useEditorSelectionStore();
-const viewportStore = useEditorViewportStore();
-const { objectsById, currentPage, pageObjectMap, pageWidthMm, pageHeightMm } = storeToRefs(documentStore);
-const { selectedIds } = storeToRefs(selectionStore);
-const { allowOverflowDrag } = storeToRefs(viewportStore);
-
-const page = computed(() => ({ widthMm: pageWidthMm.value, heightMm: pageHeightMm.value }));
-const selectedObjects = computed(() => getEditableSelection(objectsById.value, selectedIds.value, currentPage.value?.id));
-const hasEditableSelection = computed(() => selectedObjects.value.length > 0);
-const canAlign = computed(() => selectedObjects.value.length >= 2);
-const canDistribute = computed(() => selectedObjects.value.length >= 3);
-const canArrange = computed(() => selectedObjects.value.length > 0);
+const documentStore = useEditorDocumentStore() as any;
+const historyStore = useEditorHistoryStore() as any;
+const selectionStore = useEditorSelectionStore() as any;
+const viewportStore = useEditorViewportStore() as any;
+const { objectsById, currentPage, pageObjectMap, pageWidthMm, pageHeightMm } = storeToRefs(documentStore) as any;
+const { selectedIds } = storeToRefs(selectionStore) as any;
+const { allowOverflowDrag } = storeToRefs(viewportStore) as any;
+const page = computed((): any => ({ widthMm: pageWidthMm.value, heightMm: pageHeightMm.value })) as any;
+const selectedObjects = computed((): any => getEditableSelection(objectsById.value, selectedIds.value, currentPage.value?.id)) as any;
+const hasEditableSelection = computed((): any => selectedObjects.value.length > 0) as any;
+const canAlign = computed((): any => selectedObjects.value.length >= 2) as any;
+const canDistribute = computed((): any => selectedObjects.value.length >= 3) as any;
+const canArrange = computed((): any => selectedObjects.value.length > 0) as any;
 const alignActions = [
-  { key: "left", short: "左齐", label: "左对齐" },
-  { key: "center", short: "中齐", label: "水平居中对齐" },
-  { key: "right", short: "右齐", label: "右对齐" },
-  { key: "top", short: "上齐", label: "顶端对齐" },
-  { key: "middle", short: "中线", label: "垂直居中对齐" },
-  { key: "bottom", short: "下齐", label: "底端对齐" },
-];
-
-function run(command) {
-  if (command) {
-    executeEditorCommand(historyStore, command);
-  }
+    { key: "left", short: "左齐", label: "左对齐" },
+    { key: "center", short: "中齐", label: "水平居中对齐" },
+    { key: "right", short: "右齐", label: "右对齐" },
+    { key: "top", short: "上齐", label: "顶端对齐" },
+    { key: "middle", short: "中线", label: "垂直居中对齐" },
+    { key: "bottom", short: "下齐", label: "底端对齐" },
+] as any;
+function run(command: any): any {
+    if (command) {
+        executeEditorCommand(historyStore, command);
+    }
 }
-
-function duplicate() {
-  const copies = createDuplicateObjects(selectedObjects.value, page.value, { allowOverflow: allowOverflowDrag.value });
-  const command = createDuplicateCommand(documentStore, copies);
-  run(command);
-  if (command) {
-    selectionStore.select(copies.map((object) => object.id));
-  }
+function duplicate(): any {
+    const copies = createDuplicateObjects(selectedObjects.value, page.value, { allowOverflow: allowOverflowDrag.value });
+    const command = createDuplicateCommand(documentStore, copies);
+    run(command);
+    if (command) {
+        selectionStore.select(copies.map((object: any): any => object.id));
+    }
 }
-
-function align(action) {
-  const patches = createAlignmentPatches(selectedObjects.value, action, page.value, { allowOverflow: allowOverflowDrag.value });
-  run(createPatchTransactionCommand(documentStore, `Align ${action}`, patches));
+function align(action: any): any {
+    const patches = createAlignmentPatches(selectedObjects.value, action, page.value, { allowOverflow: allowOverflowDrag.value });
+    run(createPatchTransactionCommand(documentStore, `Align ${action}`, patches));
 }
-
-function distribute(axis) {
-  const patches = createDistributionPatches(selectedObjects.value, axis, page.value, { allowOverflow: allowOverflowDrag.value });
-  run(createPatchTransactionCommand(documentStore, `Distribute ${axis}`, patches));
+function distribute(axis: any): any {
+    const patches = createDistributionPatches(selectedObjects.value, axis, page.value, { allowOverflow: allowOverflowDrag.value });
+    run(createPatchTransactionCommand(documentStore, `Distribute ${axis}`, patches));
 }
-
-function order(action) {
-  const pageId = currentPage.value?.id;
-  if (!pageId) {
-    return;
-  }
-  const nextIds = createOrderIds(pageObjectMap.value[pageId] || [], objectsById.value, selectedIds.value, action);
-  run(createOrderTransactionCommand(documentStore, pageId, nextIds, action === "front" ? "Bring to front" : "Send to back"));
+function order(action: any): any {
+    const pageId = currentPage.value?.id;
+    if (!pageId) {
+        return;
+    }
+    const nextIds = createOrderIds(pageObjectMap.value[pageId] || [], objectsById.value, selectedIds.value, action);
+    run(createOrderTransactionCommand(documentStore, pageId, nextIds, action === "front" ? "Bring to front" : "Send to back"));
 }
 </script>
 

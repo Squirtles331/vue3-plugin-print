@@ -1,56 +1,43 @@
-<script setup>
-import { computed, onBeforeUnmount, useAttrs, watch } from "vue";
+<script setup lang="ts">import { computed, onBeforeUnmount, useAttrs, watch } from "vue";
 import PdButton from "./PdButton.vue";
-
 defineOptions({ inheritAttrs: false });
-
 const props = defineProps({
-  modelValue: { type: Boolean, default: false },
-  title: { type: String, default: "" },
-  width: { type: String, default: "min(640px, 92vw)" },
-  closeOnClickModal: { type: Boolean, default: true },
-});
-
-const emit = defineEmits(["update:modelValue", "close"]);
-const attrs = useAttrs();
-const panelStyle = computed(() => ({ width: props.width }));
-
-function closeDialog() {
-  emit("update:modelValue", false);
-  emit("close");
+    modelValue: { type: Boolean, default: false },
+    title: { type: String, default: "" },
+    width: { type: String, default: "min(640px, 92vw)" },
+    closeOnClickModal: { type: Boolean, default: true },
+}) as any;
+const emit = defineEmits(["update:modelValue", "close"]) as any;
+const attrs = useAttrs() as any;
+const panelStyle = computed((): any => ({ width: props.width })) as any;
+function closeDialog(): any {
+    emit("update:modelValue", false);
+    emit("close");
 }
-
-function onBackdropClick() {
-  if (props.closeOnClickModal) {
-    closeDialog();
-  }
+function onBackdropClick(): any {
+    if (props.closeOnClickModal) {
+        closeDialog();
+    }
 }
-
-function onKeyDown(event) {
-  if (event.key === "Escape" && props.modelValue) {
-    closeDialog();
-  }
+function onKeyDown(event: any): any {
+    if (event.key === "Escape" && props.modelValue) {
+        closeDialog();
+    }
 }
-
-watch(
-  () => props.modelValue,
-  (visible) => {
+watch((): any => props.modelValue, (visible: any): any => {
     if (typeof window === "undefined") {
-      return;
+        return;
     }
     if (visible) {
-      window.addEventListener("keydown", onKeyDown);
-      return;
+        window.addEventListener("keydown", onKeyDown);
+        return;
     }
     window.removeEventListener("keydown", onKeyDown);
-  },
-  { immediate: true }
-);
-
-onBeforeUnmount(() => {
-  if (typeof window !== "undefined") {
-    window.removeEventListener("keydown", onKeyDown);
-  }
+}, { immediate: true });
+onBeforeUnmount((): any => {
+    if (typeof window !== "undefined") {
+        window.removeEventListener("keydown", onKeyDown);
+    }
 });
 </script>
 

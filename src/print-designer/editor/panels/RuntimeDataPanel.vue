@@ -34,70 +34,58 @@
   </section>
 </template>
 
-<script setup>
-import { computed, ref, watch } from "vue";
+<script setup lang="ts">import { computed, ref, watch } from "vue";
 import DataPanel from "../../components/sidebar/DataPanel.vue";
 import { describeRuntimeBindingPaths } from "../../runtime/bindingPaths.js";
 import PdButton from "../../ui/primitives/PdButton.vue";
 import PdInput from "../../ui/primitives/PdInput.vue";
-
 const props = defineProps({
-  runtimeData: { type: Object, default: () => ({}) },
-  variables: { type: Array, default: () => [] },
-  selectedCount: { type: Number, default: 0 },
-  searchQuery: { type: String, default: "" },
-});
-const emit = defineEmits(["update:runtime-data", "bind"]);
-const text = ref("{}");
-
-function normalized(value) {
-  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    runtimeData: { type: Object, default: (): any => ({}) },
+    variables: { type: Array as any, default: (): any => [] },
+    selectedCount: { type: Number, default: 0 },
+    searchQuery: { type: String, default: "" },
+}) as any;
+const emit = defineEmits(["update:runtime-data", "bind"]) as any;
+const text = ref("{}") as any;
+function normalized(value: any): any {
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
-
-function parse(value = text.value) {
-  try {
-    const parsed = JSON.parse(value || "{}");
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-      ? { value: parsed, error: "" }
-      : { value: null, error: "测试数据必须是 JSON 对象。" };
-  } catch {
-    return { value: null, error: "JSON 格式不正确；修复后会自动更新预览。" };
-  }
+function parse(value: any = text.value): any {
+    try {
+        const parsed = JSON.parse(value || "{}");
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+            ? { value: parsed, error: "" }
+            : { value: null, error: "测试数据必须是 JSON 对象。" };
+    }
+    catch {
+        return { value: null, error: "JSON 格式不正确；修复后会自动更新预览。" };
+    }
 }
-
-const parseError = computed(() => parse().error);
-const selectedHint = computed(() => props.selectedCount === 1 ? "点击字段即可绑定" : props.selectedCount ? "请只选择一个元素" : "先选择元素");
-const bindingFields = computed(() => describeRuntimeBindingPaths(normalized(props.runtimeData)));
-
-watch(
-  () => props.runtimeData,
-  (value) => {
+const parseError = computed((): any => parse().error) as any;
+const selectedHint = computed((): any => props.selectedCount === 1 ? "点击字段即可绑定" : props.selectedCount ? "请只选择一个元素" : "先选择元素") as any;
+const bindingFields = computed((): any => describeRuntimeBindingPaths(normalized(props.runtimeData))) as any;
+watch((): any => props.runtimeData, (value: any): any => {
     const parsed = parse();
     const next = normalized(value);
     if (!parsed.value || JSON.stringify(parsed.value) !== JSON.stringify(next)) {
-      text.value = JSON.stringify(next, null, 2);
+        text.value = JSON.stringify(next, null, 2);
     }
-  },
-  { immediate: true, deep: true }
-);
-
-watch(text, () => {
-  const result = parse();
-  if (result.value) {
-    emit("update:runtime-data", result.value);
-  }
+}, { immediate: true, deep: true });
+watch(text, (): any => {
+    const result = parse();
+    if (result.value) {
+        emit("update:runtime-data", result.value);
+    }
 });
-
-function formatData() {
-  const result = parse();
-  if (!result.value) {
-    return;
-  }
-  text.value = JSON.stringify(result.value, null, 2);
+function formatData(): any {
+    const result = parse();
+    if (!result.value) {
+        return;
+    }
+    text.value = JSON.stringify(result.value, null, 2);
 }
-
-function resetData() {
-  text.value = "{}";
+function resetData(): any {
+    text.value = "{}";
 }
 </script>
 

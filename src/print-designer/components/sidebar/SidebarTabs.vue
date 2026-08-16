@@ -16,20 +16,17 @@
   </div>
 </template>
 
-<script setup>
-import PdIcon from "../../ui/primitives/PdIcon.vue";
-
+<script setup lang="ts">import PdIcon from "../../ui/primitives/PdIcon.vue";
 defineProps({
-  modelValue: {
-    type: String,
-    required: true,
-  },
-  tabs: {
-    type: Array,
-    default: () => [],
-  },
+    modelValue: {
+        type: String,
+        required: true,
+    },
+    tabs: {
+        type: Array as any,
+        default: (): any => [],
+    },
 });
-
 defineEmits(["update:modelValue"]);
 </script>
 

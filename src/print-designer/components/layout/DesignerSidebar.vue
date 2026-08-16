@@ -32,8 +32,7 @@
   </aside>
 </template>
 
-<script setup>
-import { computed, ref, watch } from "vue";
+<script setup lang="ts">import { computed, ref, watch } from "vue";
 import { useEditorDocumentStore } from "../../editor/stores/documentStore";
 import { useEditorSelectionStore } from "../../editor/stores/selectionStore";
 import PdButton from "../../ui/primitives/PdButton.vue";
@@ -42,73 +41,58 @@ import InsertPanel from "../sidebar/InsertPanel.vue";
 import LayersPanel from "../sidebar/LayersPanel.vue";
 import PagesPanel from "../sidebar/PagesPanel.vue";
 import SidebarTabs from "../sidebar/SidebarTabs.vue";
-
 const props = defineProps({
-  tabs: {
-    type: Array,
-    default: () => [],
-  },
-  sections: {
-    type: Array,
-    default: () => [],
-  },
-  palette: {
-    type: Array,
-    default: () => [],
-  },
-  pages: {
-    type: Array,
-    default: () => [],
-  },
-  layers: {
-    type: Array,
-    default: () => [],
-  },
-  variables: {
-    type: Array,
-    default: () => [],
-  },
-  initialTab: {
-    type: String,
-    default: "insert",
-  },
-});
-
-const emit = defineEmits(["palette-dragstart", "tab-change"]);
-const documentStore = useEditorDocumentStore();
-const selectionStore = useEditorSelectionStore();
-
-const activeTab = ref(props.initialTab);
-
-watch(
-  () => props.initialTab,
-  (value) => {
+    tabs: {
+        type: Array as any,
+        default: (): any => [],
+    },
+    sections: {
+        type: Array as any,
+        default: (): any => [],
+    },
+    palette: {
+        type: Array as any,
+        default: (): any => [],
+    },
+    pages: {
+        type: Array as any,
+        default: (): any => [],
+    },
+    layers: {
+        type: Array as any,
+        default: (): any => [],
+    },
+    variables: {
+        type: Array as any,
+        default: (): any => [],
+    },
+    initialTab: {
+        type: String,
+        default: "insert",
+    },
+}) as any;
+const emit = defineEmits(["palette-dragstart", "tab-change"]) as any;
+const documentStore = useEditorDocumentStore() as any;
+const selectionStore = useEditorSelectionStore() as any;
+const activeTab = ref(props.initialTab) as any;
+watch((): any => props.initialTab, (value: any): any => {
     activeTab.value = value;
-  }
-);
-
-watch(activeTab, (value) => {
-  emit("tab-change", value);
 });
-
-const currentSection = computed(
-  () => props.sections.find((item) => item.key === activeTab.value) || props.sections[0] || {}
-);
-
-function onPageSelect(page) {
-  if (!page?.id) {
-    return;
-  }
-
-  const switched = documentStore.setCurrentPage(page.id);
-
-  if (!switched) {
-    return;
-  }
-
-  selectionStore.clearSelection();
-  selectionStore.focusedPageId = page.id;
-  selectionStore.hoverObjectId = null;
+watch(activeTab, (value: any): any => {
+    emit("tab-change", value);
+});
+const currentSection = computed((): any => props.sections.find((item: any): any => item.key === activeTab.value) || props.sections[0] || {}) as any;
+function onPageSelect(page: any): any {
+    if (!page?.id) {
+        return;
+    }
+    const switched = documentStore.setCurrentPage(page.id);
+    if (!switched) {
+        return;
+    }
+    selectionStore.clearSelection();
+    selectionStore.focusedPageId = page.id;
+    selectionStore.hoverObjectId = null;
 }
 </script>
 

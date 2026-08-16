@@ -78,56 +78,42 @@
   </header>
 </template>
 
-<script setup>
-import {
-  Check,
-  DocumentAdd,
-  Download,
-  FolderOpened,
-  Printer,
-  RefreshLeft,
-  RefreshRight,
-  View,
-  ZoomIn,
-  ZoomOut,
-} from "../../ui/icons.js";
+<script setup lang="ts">import { Check, DocumentAdd, Download, FolderOpened, Printer, RefreshLeft, RefreshRight, View, ZoomIn, ZoomOut, } from "../../ui/icons.js";
 import PdIcon from "../../ui/primitives/PdIcon.vue";
-
 defineProps({
-  templateName: {
-    type: String,
-    default: "默认模板",
-  },
-  saveStatus: {
-    type: String,
-    default: "已保存",
-  },
-  zoomLabel: {
-    type: String,
-    default: "100%",
-  },
-  canUndo: {
-    type: Boolean,
-    default: false,
-  },
-  canRedo: {
-    type: Boolean,
-    default: false,
-  },
+    templateName: {
+        type: String,
+        default: "默认模板",
+    },
+    saveStatus: {
+        type: String,
+        default: "已保存",
+    },
+    zoomLabel: {
+        type: String,
+        default: "100%",
+    },
+    canUndo: {
+        type: Boolean,
+        default: false,
+    },
+    canRedo: {
+        type: Boolean,
+        default: false,
+    },
 });
-
 defineEmits([
-  "new-template",
-  "open-template",
-  "save-template",
-  "undo",
-  "redo",
-  "zoom-in",
-  "zoom-out",
-  "zoom-reset",
-  "preview",
-  "print",
-  "export",
+    "new-template",
+    "open-template",
+    "save-template",
+    "undo",
+    "redo",
+    "zoom-in",
+    "zoom-out",
+    "zoom-reset",
+    "preview",
+    "print",
+    "export",
 ]);
 </script>
 

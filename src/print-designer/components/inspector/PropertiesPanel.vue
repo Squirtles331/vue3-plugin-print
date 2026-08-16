@@ -29,14 +29,12 @@
   </div>
 </template>
 
-<script setup>
-import InspectorEmpty from "./InspectorEmpty.vue";
-
+<script setup lang="ts">import InspectorEmpty from "./InspectorEmpty.vue";
 defineProps({
-  variables: {
-    type: Array,
-    default: () => [],
-  },
+    variables: {
+        type: Array as any,
+        default: (): any => [],
+    },
 });
 </script>
 

@@ -72,102 +72,91 @@
   </div>
 </template>
 
-<script setup>
-import { computed } from "vue";
+<script setup lang="ts">import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import PdSwitch from "../../ui/primitives/PdSwitch.vue";
 import { useEditorViewportStore } from "../stores/viewportStore";
-
-const viewportStore = useEditorViewportStore();
-
-const {
-  guidesVisible,
-  gridVisible,
-  safeAreaVisible,
-  snapEnabled,
-  pageOutlineVisible,
-  allowOverflowDrag,
-  textQuickToolbarVisible,
-} = storeToRefs(viewportStore);
-
-const activeOptionCount = computed(() => {
-  const options = [
-    guidesVisible.value,
-    gridVisible.value,
-    safeAreaVisible.value,
-    pageOutlineVisible.value,
-    snapEnabled.value,
-    allowOverflowDrag.value,
-    textQuickToolbarVisible.value,
-  ];
-
-  return options.filter(Boolean).length;
-});
-
-const activeMode = computed(() => {
-  if (
-    guidesVisible.value &&
-    gridVisible.value &&
-    !safeAreaVisible.value &&
-    pageOutlineVisible.value &&
-    snapEnabled.value &&
-    !allowOverflowDrag.value &&
-    !textQuickToolbarVisible.value
-  ) {
-    return "focus";
-  }
-
-  if (
-    guidesVisible.value &&
-    !gridVisible.value &&
-    !safeAreaVisible.value &&
-    pageOutlineVisible.value &&
-    snapEnabled.value &&
-    !allowOverflowDrag.value &&
-    !textQuickToolbarVisible.value
-  ) {
-    return "print";
-  }
-
-  if (
-    !guidesVisible.value &&
-    !gridVisible.value &&
-    !safeAreaVisible.value &&
-    !pageOutlineVisible.value &&
-    snapEnabled.value &&
-    !allowOverflowDrag.value &&
-    !textQuickToolbarVisible.value
-  ) {
-    return "simple";
-  }
-
-  return "";
-});
-
-function applyMode(mode) {
-  if (mode === "focus") {
-    if (!guidesVisible.value) viewportStore.toggleGuides();
-    if (!gridVisible.value) viewportStore.toggleGrid();
-    if (safeAreaVisible.value) viewportStore.toggleSafeArea();
-    if (!pageOutlineVisible.value) viewportStore.togglePageOutline();
-    if (!snapEnabled.value) viewportStore.toggleSnap();
-    return;
-  }
-
-  if (mode === "print") {
-    if (!guidesVisible.value) viewportStore.toggleGuides();
-    if (gridVisible.value) viewportStore.toggleGrid();
-    if (!safeAreaVisible.value) viewportStore.toggleSafeArea();
-    if (!pageOutlineVisible.value) viewportStore.togglePageOutline();
-    if (!snapEnabled.value) viewportStore.toggleSnap();
-    return;
-  }
-
-  if (guidesVisible.value) viewportStore.toggleGuides();
-  if (gridVisible.value) viewportStore.toggleGrid();
-  if (safeAreaVisible.value) viewportStore.toggleSafeArea();
-  if (pageOutlineVisible.value) viewportStore.togglePageOutline();
-  if (!snapEnabled.value) viewportStore.toggleSnap();
+const viewportStore = useEditorViewportStore() as any;
+const { guidesVisible, gridVisible, safeAreaVisible, snapEnabled, pageOutlineVisible, allowOverflowDrag, textQuickToolbarVisible, } = storeToRefs(viewportStore) as any;
+const activeOptionCount = computed((): any => {
+    const options = [
+        guidesVisible.value,
+        gridVisible.value,
+        safeAreaVisible.value,
+        pageOutlineVisible.value,
+        snapEnabled.value,
+        allowOverflowDrag.value,
+        textQuickToolbarVisible.value,
+    ];
+    return options.filter(Boolean).length;
+}) as any;
+const activeMode = computed((): any => {
+    if (guidesVisible.value &&
+        gridVisible.value &&
+        !safeAreaVisible.value &&
+        pageOutlineVisible.value &&
+        snapEnabled.value &&
+        !allowOverflowDrag.value &&
+        !textQuickToolbarVisible.value) {
+        return "focus";
+    }
+    if (guidesVisible.value &&
+        !gridVisible.value &&
+        !safeAreaVisible.value &&
+        pageOutlineVisible.value &&
+        snapEnabled.value &&
+        !allowOverflowDrag.value &&
+        !textQuickToolbarVisible.value) {
+        return "print";
+    }
+    if (!guidesVisible.value &&
+        !gridVisible.value &&
+        !safeAreaVisible.value &&
+        !pageOutlineVisible.value &&
+        snapEnabled.value &&
+        !allowOverflowDrag.value &&
+        !textQuickToolbarVisible.value) {
+        return "simple";
+    }
+    return "";
+}) as any;
+function applyMode(mode: any): any {
+    if (mode === "focus") {
+        if (!guidesVisible.value)
+            viewportStore.toggleGuides();
+        if (!gridVisible.value)
+            viewportStore.toggleGrid();
+        if (safeAreaVisible.value)
+            viewportStore.toggleSafeArea();
+        if (!pageOutlineVisible.value)
+            viewportStore.togglePageOutline();
+        if (!snapEnabled.value)
+            viewportStore.toggleSnap();
+        return;
+    }
+    if (mode === "print") {
+        if (!guidesVisible.value)
+            viewportStore.toggleGuides();
+        if (gridVisible.value)
+            viewportStore.toggleGrid();
+        if (!safeAreaVisible.value)
+            viewportStore.toggleSafeArea();
+        if (!pageOutlineVisible.value)
+            viewportStore.togglePageOutline();
+        if (!snapEnabled.value)
+            viewportStore.toggleSnap();
+        return;
+    }
+    if (guidesVisible.value)
+        viewportStore.toggleGuides();
+    if (gridVisible.value)
+        viewportStore.toggleGrid();
+    if (safeAreaVisible.value)
+        viewportStore.toggleSafeArea();
+    if (pageOutlineVisible.value)
+        viewportStore.togglePageOutline();
+    if (!snapEnabled.value)
+        viewportStore.toggleSnap();
 }
 </script>
 

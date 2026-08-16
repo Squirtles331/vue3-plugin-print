@@ -26,6 +26,8 @@ jobs:
         run: npm ci
       - name: Lint source
         run: npm run lint
+      - name: Type-check source
+        run: npm run typecheck
       - name: Run unit tests
         run: npm test
       - name: Run pagination performance check
@@ -36,5 +38,7 @@ jobs:
         run: npm run build:demo && npm run build:library
       - name: Inspect package contents
         run: npm run test:package
+      - name: Build packed consumer
+        run: npm run test:consumer
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high --registry=https://registry.npmjs.org

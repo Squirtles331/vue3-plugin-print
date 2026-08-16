@@ -110,8 +110,7 @@
   </main>
 </template>
 
-<script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+<script setup lang="ts">import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { ElementType } from "../../core/constants.js";
 import { createElement } from "../../core/elementFactory.js";
@@ -128,51 +127,31 @@ import { useEditorViewportStore } from "../stores/viewportStore";
 import { createWorkspaceProjection, getPixelsPerUnit } from "./workspaceProjection.js";
 import DesignerCanvasViewport from "../../components/layout/DesignerCanvasViewport.vue";
 import DesignerRuler from "../../components/layout/DesignerRuler.vue";
-
-const viewportStore = useEditorViewportStore();
-const historyStore = useEditorHistoryStore();
-const documentStore = useEditorDocumentStore();
-const selectionStore = useEditorSelectionStore();
-const dragStore = useEditorDragStore();
-
-const {
-  zoom,
-  zoomAnchor,
-  scrollLeft,
-  scrollTop,
-  viewportWidth,
-  viewportHeight,
-  guidesVisible,
-  horizontalGuides,
-  verticalGuides,
-  hoveredGuide,
-  activeGuide,
-  draggingGuide,
-  activeGuideDraft,
-} = storeToRefs(viewportStore);
-const { currentPage, unit, pageWidthMm, pageHeightMm, pageWidthPx, pageHeightPx, marginTopMm, marginRightMm, marginBottomMm, marginLeftMm } =
-  storeToRefs(documentStore);
-const { requestedPaletteInsert } = storeToRefs(dragStore);
-
-const viewportRef = ref(null);
-const canvasViewportRef = ref(null);
-const paperOffsetLeft = ref(0);
-const paperOffsetTop = ref(0);
-const pendingTableInsert = ref(null);
-const tableDialogVisible = ref(false);
-let viewportResizeObserver = null;
-let clickInsertOffset = 0;
-
-const scaledPaperWidth = computed(() => Math.round(pageWidthPx.value * zoom.value));
-const scaledPaperHeight = computed(() => Math.round(pageHeightPx.value * zoom.value));
-const pagePixelsPerUnit = computed(() => getPixelsPerUnit(unit.value, 1));
-const visibleVerticalGuides = computed(() => (guidesVisible.value ? verticalGuides.value : []));
-const visibleHorizontalGuides = computed(() => (guidesVisible.value ? horizontalGuides.value : []));
-const visibleGuideDraft = computed(() => (guidesVisible.value ? activeGuideDraft.value : null));
-const visibleHoveredGuide = computed(() => (guidesVisible.value ? hoveredGuide.value : null));
-const visibleActiveGuide = computed(() => (guidesVisible.value ? activeGuide.value : null));
-const projection = computed(() =>
-  createWorkspaceProjection({
+const viewportStore = useEditorViewportStore() as any;
+const historyStore = useEditorHistoryStore() as any;
+const documentStore = useEditorDocumentStore() as any;
+const selectionStore = useEditorSelectionStore() as any;
+const dragStore = useEditorDragStore() as any;
+const { zoom, zoomAnchor, scrollLeft, scrollTop, viewportWidth, viewportHeight, guidesVisible, horizontalGuides, verticalGuides, hoveredGuide, activeGuide, draggingGuide, activeGuideDraft, } = storeToRefs(viewportStore) as any;
+const { currentPage, unit, pageWidthMm, pageHeightMm, pageWidthPx, pageHeightPx, marginTopMm, marginRightMm, marginBottomMm, marginLeftMm } = storeToRefs(documentStore) as any;
+const { requestedPaletteInsert } = storeToRefs(dragStore) as any;
+const viewportRef = ref(null) as any;
+const canvasViewportRef = ref(null) as any;
+const paperOffsetLeft = ref(0) as any;
+const paperOffsetTop = ref(0) as any;
+const pendingTableInsert = ref(null) as any;
+const tableDialogVisible = ref(false) as any;
+let viewportResizeObserver = null as any;
+let clickInsertOffset = 0 as any;
+const scaledPaperWidth = computed((): any => Math.round(pageWidthPx.value * zoom.value)) as any;
+const scaledPaperHeight = computed((): any => Math.round(pageHeightPx.value * zoom.value)) as any;
+const pagePixelsPerUnit = computed((): any => getPixelsPerUnit(unit.value, 1)) as any;
+const visibleVerticalGuides = computed((): any => (guidesVisible.value ? verticalGuides.value : [])) as any;
+const visibleHorizontalGuides = computed((): any => (guidesVisible.value ? horizontalGuides.value : [])) as any;
+const visibleGuideDraft = computed((): any => (guidesVisible.value ? activeGuideDraft.value : null)) as any;
+const visibleHoveredGuide = computed((): any => (guidesVisible.value ? hoveredGuide.value : null)) as any;
+const visibleActiveGuide = computed((): any => (guidesVisible.value ? activeGuide.value : null)) as any;
+const projection = computed((): any => createWorkspaceProjection({
     unit: unit.value,
     zoom: zoom.value,
     viewportWidth: viewportWidth.value,
@@ -183,555 +162,433 @@ const projection = computed(() =>
     pageOffsetTop: paperOffsetTop.value,
     pageWidthMm: pageWidthMm.value,
     pageHeightMm: pageHeightMm.value,
-  })
-);
-const renderedVerticalGuides = computed(() => {
-  if (!guidesVisible.value) {
-    return [];
-  }
-
-  if (draggingGuide.value?.orientation !== "vertical" || draggingGuide.value.sourcePosition === null) {
-    return visibleVerticalGuides.value;
-  }
-
-  return visibleVerticalGuides.value.filter((guide) => guide !== draggingGuide.value.sourcePosition);
-});
-const renderedHorizontalGuides = computed(() => {
-  if (!guidesVisible.value) {
-    return [];
-  }
-
-  if (draggingGuide.value?.orientation !== "horizontal" || draggingGuide.value.sourcePosition === null) {
-    return visibleHorizontalGuides.value;
-  }
-
-  return visibleHorizontalGuides.value.filter((guide) => guide !== draggingGuide.value.sourcePosition);
-});
-const visibleGuideFeedback = computed(() => {
-  if (!guidesVisible.value || !visibleGuideDraft.value) {
-    return null;
-  }
-
-  return {
-    orientation: visibleGuideDraft.value.orientation,
-    position: visibleGuideDraft.value.position,
-    displayPosition: visibleGuideDraft.value.displayPosition ?? visibleGuideDraft.value.position,
-    visible: visibleGuideDraft.value.visible,
-  };
-});
-const guideFeedbackLabel = computed(() => {
-  if (!visibleGuideFeedback.value) {
-    return "";
-  }
-
-  const axis = visibleGuideFeedback.value.orientation === "vertical" ? "X" : "Y";
-  return `${axis}: ${visibleGuideFeedback.value.position.toFixed(2)} mm`;
-});
-const guideFeedbackStyle = computed(() => {
-  if (!visibleGuideFeedback.value) {
-    return {};
-  }
-
-  const guide = visibleGuideFeedback.value;
-
-  if (guide.orientation === "vertical") {
+})) as any;
+const renderedVerticalGuides = computed((): any => {
+    if (!guidesVisible.value) {
+        return [];
+    }
+    if (draggingGuide.value?.orientation !== "vertical" || draggingGuide.value.sourcePosition === null) {
+        return visibleVerticalGuides.value;
+    }
+    return visibleVerticalGuides.value.filter((guide: any): any => guide !== draggingGuide.value.sourcePosition);
+}) as any;
+const renderedHorizontalGuides = computed((): any => {
+    if (!guidesVisible.value) {
+        return [];
+    }
+    if (draggingGuide.value?.orientation !== "horizontal" || draggingGuide.value.sourcePosition === null) {
+        return visibleHorizontalGuides.value;
+    }
+    return visibleHorizontalGuides.value.filter((guide: any): any => guide !== draggingGuide.value.sourcePosition);
+}) as any;
+const visibleGuideFeedback = computed((): any => {
+    if (!guidesVisible.value || !visibleGuideDraft.value) {
+        return null;
+    }
     return {
-      left: `${guideToViewportX(guide.position)}px`,
-      top: "6px",
+        orientation: visibleGuideDraft.value.orientation,
+        position: visibleGuideDraft.value.position,
+        displayPosition: visibleGuideDraft.value.displayPosition ?? visibleGuideDraft.value.position,
+        visible: visibleGuideDraft.value.visible,
     };
-  }
-
-  return {
-    left: "6px",
-    top: `${guideToViewportY(guide.position)}px`,
-  };
-});
-
-function getPageStackShellElement() {
-  return canvasViewportRef.value?.getPageStackShellElement?.() || null;
+}) as any;
+const guideFeedbackLabel = computed((): any => {
+    if (!visibleGuideFeedback.value) {
+        return "";
+    }
+    const axis = visibleGuideFeedback.value.orientation === "vertical" ? "X" : "Y";
+    return `${axis}: ${visibleGuideFeedback.value.position.toFixed(2)} mm`;
+}) as any;
+const guideFeedbackStyle = computed((): any => {
+    if (!visibleGuideFeedback.value) {
+        return {};
+    }
+    const guide = visibleGuideFeedback.value;
+    if (guide.orientation === "vertical") {
+        return {
+            left: `${guideToViewportX(guide.position)}px`,
+            top: "6px",
+        };
+    }
+    return {
+        left: "6px",
+        top: `${guideToViewportY(guide.position)}px`,
+    };
+}) as any;
+function getPageStackShellElement(): any {
+    return canvasViewportRef.value?.getPageStackShellElement?.() || null;
 }
-
-function getViewportLocalPoint(event) {
-  const viewport = viewportRef.value;
-
-  if (!viewport) {
-    return null;
-  }
-
-  const viewportRect = viewport.getBoundingClientRect();
-
-  return {
-    x: event.clientX - viewportRect.left,
-    y: event.clientY - viewportRect.top,
-  };
+function getViewportLocalPoint(event: any): any {
+    const viewport = viewportRef.value;
+    if (!viewport) {
+        return null;
+    }
+    const viewportRect = viewport.getBoundingClientRect();
+    return {
+        x: event.clientX - viewportRect.left,
+        y: event.clientY - viewportRect.top,
+    };
 }
-
-function getDocumentPoint(event) {
-  const localPoint = getViewportLocalPoint(event);
-
-  if (!localPoint) {
-    return null;
-  }
-
-  const documentX = projection.value.screenToDocumentX(localPoint.x);
-  const documentY = projection.value.screenToDocumentY(localPoint.y);
-  const insidePage =
-    documentX >= 0 && documentX <= pageWidthMm.value && documentY >= 0 && documentY <= pageHeightMm.value;
-
-  return {
-    localX: localPoint.x,
-    localY: localPoint.y,
-    documentX,
-    documentY,
-    insidePage,
-  };
+function getDocumentPoint(event: any): any {
+    const localPoint = getViewportLocalPoint(event);
+    if (!localPoint) {
+        return null;
+    }
+    const documentX = projection.value.screenToDocumentX(localPoint.x);
+    const documentY = projection.value.screenToDocumentY(localPoint.y);
+    const insidePage = documentX >= 0 && documentX <= pageWidthMm.value && documentY >= 0 && documentY <= pageHeightMm.value;
+    return {
+        localX: localPoint.x,
+        localY: localPoint.y,
+        documentX,
+        documentY,
+        insidePage,
+    };
 }
-
-function roundMm(value) {
-  return Number.isFinite(value) ? +value.toFixed(2) : 0;
+function roundMm(value: any): any {
+    return Number.isFinite(value) ? +value.toFixed(2) : 0;
 }
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
+function clamp(value: any, min: any, max: any): any {
+    return Math.min(max, Math.max(min, value));
 }
-
-function clampSafeInsertPosition(position, size, pageSize, startMargin, endMargin) {
-  if (viewportStore.allowOverflowDrag) {
-    return roundMm(position);
-  }
-  const min = Math.max(0, Number(startMargin) || 0);
-  const max = Math.max(min, Number(pageSize) - (Number(endMargin) || 0) - Number(size));
-  return clamp(roundMm(position), min, max);
+function clampSafeInsertPosition(position: any, size: any, pageSize: any, startMargin: any, endMargin: any): any {
+    if (viewportStore.allowOverflowDrag) {
+        return roundMm(position);
+    }
+    const min = Math.max(0, Number(startMargin) || 0);
+    const max = Math.max(min, Number(pageSize) - (Number(endMargin) || 0) - Number(size));
+    return clamp(roundMm(position), min, max);
 }
-
-function defaultInsertPoint(item) {
-  const preview = createElement(item.type, { pageId: currentPage.value?.id || "page-1" });
-  const offset = (clickInsertOffset++ % 6) * 4;
-  return {
-    x: clampSafeInsertPosition((Number(marginLeftMm.value) || 0) + 8 + offset, preview.width, pageWidthMm.value, marginLeftMm.value, marginRightMm.value),
-    y: clampSafeInsertPosition((Number(marginTopMm.value) || 0) + 8 + offset, preview.height, pageHeightMm.value, marginTopMm.value, marginBottomMm.value),
-  };
+function defaultInsertPoint(item: any): any {
+    const preview = createElement(item.type, { pageId: currentPage.value?.id || "page-1" });
+    const offset = (clickInsertOffset++ % 6) * 4;
+    return {
+        x: clampSafeInsertPosition((Number(marginLeftMm.value) || 0) + 8 + offset, preview.width, pageWidthMm.value, marginLeftMm.value, marginRightMm.value),
+        y: clampSafeInsertPosition((Number(marginTopMm.value) || 0) + 8 + offset, preview.height, pageHeightMm.value, marginTopMm.value, marginBottomMm.value),
+    };
 }
-
-function insertPaletteItem(payload, point) {
-  if (!payload?.type || !point) {
-    return false;
-  }
-  const pageId = currentPage.value?.id || "page-1";
-  if (payload.type === ElementType.TABLE) {
-    pendingTableInsert.value = { pageId, x: roundMm(point.x), y: roundMm(point.y) };
-    tableDialogVisible.value = true;
+function insertPaletteItem(payload: any, point: any): any {
+    if (!payload?.type || !point) {
+        return false;
+    }
+    const pageId = currentPage.value?.id || "page-1";
+    if (payload.type === ElementType.TABLE) {
+        pendingTableInsert.value = { pageId, x: roundMm(point.x), y: roundMm(point.y) };
+        tableDialogVisible.value = true;
+        return true;
+    }
+    const nextObject = createElement(payload.type, { pageId });
+    nextObject.x = clampSafeInsertPosition(point.x, nextObject.width, pageWidthMm.value, marginLeftMm.value, marginRightMm.value);
+    nextObject.y = clampSafeInsertPosition(point.y, nextObject.height, pageHeightMm.value, marginTopMm.value, marginBottomMm.value);
+    executeEditorCommand(historyStore, createAddObjectCommand(documentStore, nextObject));
+    selectionStore.select(nextObject.id);
+    selectionStore.focusedPageId = pageId;
+    selectionStore.hoverObjectId = null;
     return true;
-  }
-  const nextObject = createElement(payload.type, { pageId });
-  nextObject.x = clampSafeInsertPosition(point.x, nextObject.width, pageWidthMm.value, marginLeftMm.value, marginRightMm.value);
-  nextObject.y = clampSafeInsertPosition(point.y, nextObject.height, pageHeightMm.value, marginTopMm.value, marginBottomMm.value);
-  executeEditorCommand(historyStore, createAddObjectCommand(documentStore, nextObject));
-  selectionStore.select(nextObject.id);
-  selectionStore.focusedPageId = pageId;
-  selectionStore.hoverObjectId = null;
-  return true;
 }
-
-function guideToViewportX(position) {
-  return Math.round(projection.value.documentToScreenX(position || 0));
+function guideToViewportX(position: any): any {
+    return Math.round(projection.value.documentToScreenX(position || 0));
 }
-
-function guideToViewportY(position) {
-  return Math.round(projection.value.documentToScreenY(position || 0));
+function guideToViewportY(position: any): any {
+    return Math.round(projection.value.documentToScreenY(position || 0));
 }
-
-function isSameGuide(guideRef, orientation, position) {
-  return guideRef?.orientation === orientation && guideRef?.position === position;
+function isSameGuide(guideRef: any, orientation: any, position: any): any {
+    return guideRef?.orientation === orientation && guideRef?.position === position;
 }
-
-function guideClasses(orientation, position) {
-  return {
-    "is-hovered": isSameGuide(visibleHoveredGuide.value, orientation, position),
-    "is-active": isSameGuide(visibleActiveGuide.value, orientation, position),
-  };
-}
-
-function updateViewportMetrics() {
-  const viewport = viewportRef.value;
-  const paper = getPageStackShellElement();
-
-  if (!viewport || !paper) {
-    return;
-  }
-
-  const viewportRect = viewport.getBoundingClientRect();
-  const paperRect = paper.getBoundingClientRect();
-
-  viewportStore.setViewportSize(viewport.clientWidth, viewport.clientHeight);
-  paperOffsetLeft.value = Math.round(paperRect.left - viewportRect.left + viewport.scrollLeft);
-  paperOffsetTop.value = Math.round(paperRect.top - viewportRect.top + viewport.scrollTop);
-}
-
-function clampViewportScrollLeft(viewport, value) {
-  const maxScrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
-  return Math.min(maxScrollLeft, Math.max(0, Math.round(value)));
-}
-
-function clampViewportScrollTop(viewport, value) {
-  const maxScrollTop = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
-  return Math.min(maxScrollTop, Math.max(0, Math.round(value)));
-}
-
-function applyViewportScroll(left, top) {
-  const viewport = viewportRef.value;
-
-  if (!viewport) {
-    return;
-  }
-
-  viewport.scrollLeft = clampViewportScrollLeft(viewport, left);
-  viewport.scrollTop = clampViewportScrollTop(viewport, top);
-  viewportStore.setScroll(viewport.scrollLeft, viewport.scrollTop);
-}
-
-function resolveZoomAnchorPoint() {
-  const viewport = viewportRef.value;
-
-  if (!viewport) {
-    return null;
-  }
-
-  const viewportRect = viewport.getBoundingClientRect();
-  const anchor = zoomAnchor.value || {};
-  const usePointerAnchor =
-    anchor.mode === "pointer" &&
-    anchor.clientX >= viewportRect.left &&
-    anchor.clientX <= viewportRect.right &&
-    anchor.clientY >= viewportRect.top &&
-    anchor.clientY <= viewportRect.bottom;
-
-  if (!usePointerAnchor) {
+function guideClasses(orientation: any, position: any): any {
     return {
-      localX: viewport.clientWidth / 2,
-      localY: viewport.clientHeight / 2,
+        "is-hovered": isSameGuide(visibleHoveredGuide.value, orientation, position),
+        "is-active": isSameGuide(visibleActiveGuide.value, orientation, position),
     };
-  }
-
-  return {
-    localX: Math.min(viewport.clientWidth, Math.max(0, anchor.clientX - viewportRect.left)),
-    localY: Math.min(viewport.clientHeight, Math.max(0, anchor.clientY - viewportRect.top)),
-  };
 }
-
-function onViewportScroll(event) {
-  viewportStore.setScroll(event.target.scrollLeft, event.target.scrollTop);
-  updateViewportMetrics();
+function updateViewportMetrics(): any {
+    const viewport = viewportRef.value;
+    const paper = getPageStackShellElement();
+    if (!viewport || !paper) {
+        return;
+    }
+    const viewportRect = viewport.getBoundingClientRect();
+    const paperRect = paper.getBoundingClientRect();
+    viewportStore.setViewportSize(viewport.clientWidth, viewport.clientHeight);
+    paperOffsetLeft.value = Math.round(paperRect.left - viewportRect.left + viewport.scrollLeft);
+    paperOffsetTop.value = Math.round(paperRect.top - viewportRect.top + viewport.scrollTop);
 }
-
-function onViewportPointerDown(event) {
-  const target = event.target;
-
-  if (!(target instanceof Element)) {
+function clampViewportScrollLeft(viewport: any, value: any): any {
+    const maxScrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+    return Math.min(maxScrollLeft, Math.max(0, Math.round(value)));
+}
+function clampViewportScrollTop(viewport: any, value: any): any {
+    const maxScrollTop = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+    return Math.min(maxScrollTop, Math.max(0, Math.round(value)));
+}
+function applyViewportScroll(left: any, top: any): any {
+    const viewport = viewportRef.value;
+    if (!viewport) {
+        return;
+    }
+    viewport.scrollLeft = clampViewportScrollLeft(viewport, left);
+    viewport.scrollTop = clampViewportScrollTop(viewport, top);
+    viewportStore.setScroll(viewport.scrollLeft, viewport.scrollTop);
+}
+function resolveZoomAnchorPoint(): any {
+    const viewport = viewportRef.value;
+    if (!viewport) {
+        return null;
+    }
+    const viewportRect = viewport.getBoundingClientRect();
+    const anchor = zoomAnchor.value || {};
+    const usePointerAnchor = anchor.mode === "pointer" &&
+        anchor.clientX >= viewportRect.left &&
+        anchor.clientX <= viewportRect.right &&
+        anchor.clientY >= viewportRect.top &&
+        anchor.clientY <= viewportRect.bottom;
+    if (!usePointerAnchor) {
+        return {
+            localX: viewport.clientWidth / 2,
+            localY: viewport.clientHeight / 2,
+        };
+    }
+    return {
+        localX: Math.min(viewport.clientWidth, Math.max(0, anchor.clientX - viewportRect.left)),
+        localY: Math.min(viewport.clientHeight, Math.max(0, anchor.clientY - viewportRect.top)),
+    };
+}
+function onViewportScroll(event: any): any {
+    viewportStore.setScroll(event.target.scrollLeft, event.target.scrollTop);
+    updateViewportMetrics();
+}
+function onViewportPointerDown(event: any): any {
+    const target = event.target;
+    if (!(target instanceof Element)) {
+        selectionStore.clearSelection();
+        selectionStore.hoverObjectId = null;
+        return;
+    }
+    if (target.closest(".paper-canvas__object") ||
+        target.closest(".workspace-root__guide") ||
+        target.closest(".designer-ruler")) {
+        return;
+    }
     selectionStore.clearSelection();
     selectionStore.hoverObjectId = null;
-    return;
-  }
-
-  if (
-    target.closest(".paper-canvas__object") ||
-    target.closest(".workspace-root__guide") ||
-    target.closest(".designer-ruler")
-  ) {
-    return;
-  }
-
-  selectionStore.clearSelection();
-  selectionStore.hoverObjectId = null;
 }
-
-function onViewportDragOver(event) {
-  if (!dragStore.isPaletteDragging) {
-    return;
-  }
-
-  event.preventDefault();
-
-  if (event.dataTransfer) {
-    event.dataTransfer.dropEffect = "copy";
-  }
-
-  syncPointerCoordinate(event);
+function onViewportDragOver(event: any): any {
+    if (!dragStore.isPaletteDragging) {
+        return;
+    }
+    event.preventDefault();
+    if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = "copy";
+    }
+    syncPointerCoordinate(event);
 }
-
-function onViewportDrop(event) {
-  const payload = dragStore.activePaletteItem;
-
-  if (!payload) {
-    return;
-  }
-
-  event.preventDefault();
-
-  const point = getDocumentPoint(event);
-
-  if (!point?.insidePage) {
+function onViewportDrop(event: any): any {
+    const payload = dragStore.activePaletteItem;
+    if (!payload) {
+        return;
+    }
+    event.preventDefault();
+    const point = getDocumentPoint(event);
+    if (!point?.insidePage) {
+        dragStore.clearPaletteDrag();
+        viewportStore.clearCoordinateReadout();
+        return;
+    }
+    insertPaletteItem(payload, { x: point.documentX, y: point.documentY });
     dragStore.clearPaletteDrag();
+    viewportStore.setPointerCoordinate(point.documentX, point.documentY, true);
+}
+function cancelTableInsert(): any {
+    pendingTableInsert.value = null;
+    tableDialogVisible.value = false;
     viewportStore.clearCoordinateReadout();
-    return;
-  }
-
-  insertPaletteItem(payload, { x: point.documentX, y: point.documentY });
-  dragStore.clearPaletteDrag();
-  viewportStore.setPointerCoordinate(point.documentX, point.documentY, true);
 }
-
-function cancelTableInsert() {
-  pendingTableInsert.value = null;
-  tableDialogVisible.value = false;
-  viewportStore.clearCoordinateReadout();
+function confirmTableInsert(config: any): any {
+    const pendingInsert = pendingTableInsert.value;
+    if (!pendingInsert) {
+        cancelTableInsert();
+        return;
+    }
+    const nextObject = createElement(ElementType.TABLE, {
+        pageId: pendingInsert.pageId,
+        ...buildTableInsertOverrides(config),
+    });
+    nextObject.x = clampSafeInsertPosition(pendingInsert.x, nextObject.width, pageWidthMm.value, marginLeftMm.value, marginRightMm.value);
+    nextObject.y = clampSafeInsertPosition(pendingInsert.y, nextObject.height, pageHeightMm.value, marginTopMm.value, marginBottomMm.value);
+    executeEditorCommand(historyStore, createAddObjectCommand(documentStore, nextObject));
+    selectionStore.select(nextObject.id);
+    selectionStore.focusedPageId = pendingInsert.pageId;
+    selectionStore.hoverObjectId = null;
+    tableDialogVisible.value = false;
+    pendingTableInsert.value = null;
+    viewportStore.setPointerCoordinate(nextObject.x, nextObject.y, true);
 }
-
-function confirmTableInsert(config) {
-  const pendingInsert = pendingTableInsert.value;
-
-  if (!pendingInsert) {
-    cancelTableInsert();
-    return;
-  }
-
-  const nextObject = createElement(ElementType.TABLE, {
-    pageId: pendingInsert.pageId,
-    ...buildTableInsertOverrides(config),
-  });
-
-  nextObject.x = clampSafeInsertPosition(pendingInsert.x, nextObject.width, pageWidthMm.value, marginLeftMm.value, marginRightMm.value);
-  nextObject.y = clampSafeInsertPosition(pendingInsert.y, nextObject.height, pageHeightMm.value, marginTopMm.value, marginBottomMm.value);
-
-  executeEditorCommand(historyStore, createAddObjectCommand(documentStore, nextObject));
-  selectionStore.select(nextObject.id);
-  selectionStore.focusedPageId = pendingInsert.pageId;
-  selectionStore.hoverObjectId = null;
-  tableDialogVisible.value = false;
-  pendingTableInsert.value = null;
-  viewportStore.setPointerCoordinate(nextObject.x, nextObject.y, true);
+function syncPointerCoordinate(event: any): any {
+    const point = getDocumentPoint(event);
+    if (!point || !point.insidePage) {
+        viewportStore.clearCoordinateReadout();
+        return;
+    }
+    viewportStore.setPointerCoordinate(point.documentX, point.documentY, true);
 }
-
-function syncPointerCoordinate(event) {
-  const point = getDocumentPoint(event);
-
-  if (!point || !point.insidePage) {
-    viewportStore.clearCoordinateReadout();
-    return;
-  }
-
-  viewportStore.setPointerCoordinate(point.documentX, point.documentY, true);
+function onViewportPointerMove(event: any): any {
+    if (activeGuideDraft.value) {
+        return;
+    }
+    syncPointerCoordinate(event);
 }
-
-function onViewportPointerMove(event) {
-  if (activeGuideDraft.value) {
-    return;
-  }
-
-  syncPointerCoordinate(event);
+function onViewportPointerLeave(): any {
+    if (!activeGuideDraft.value) {
+        viewportStore.clearCoordinateReadout();
+    }
+    if (!draggingGuide.value) {
+        viewportStore.clearHoveredGuide();
+    }
 }
-
-function onViewportPointerLeave() {
-  if (!activeGuideDraft.value) {
-    viewportStore.clearCoordinateReadout();
-  }
-
-  if (!draggingGuide.value) {
-    viewportStore.clearHoveredGuide();
-  }
-}
-
-watch(
-  zoom,
-  async (nextZoom, previousZoom) => {
+watch(zoom, async (nextZoom: any, previousZoom: any): Promise<any> => {
     const viewport = viewportRef.value;
-
     if (!viewport || nextZoom === previousZoom) {
-      return;
+        return;
     }
-
     const anchorPoint = resolveZoomAnchorPoint();
-
     if (!anchorPoint) {
-      return;
+        return;
     }
-
     const anchorDocumentX = projection.value.screenToDocumentX(anchorPoint.localX);
     const anchorDocumentY = projection.value.screenToDocumentY(anchorPoint.localY);
-
     await nextTick();
     updateViewportMetrics();
-
     const nextAnchorLocalX = projection.value.documentToScreenX(anchorDocumentX);
     const nextAnchorLocalY = projection.value.documentToScreenY(anchorDocumentY);
-
-    applyViewportScroll(
-      viewport.scrollLeft + (nextAnchorLocalX - anchorPoint.localX),
-      viewport.scrollTop + (nextAnchorLocalY - anchorPoint.localY)
-    );
+    applyViewportScroll(viewport.scrollLeft + (nextAnchorLocalX - anchorPoint.localX), viewport.scrollTop + (nextAnchorLocalY - anchorPoint.localY));
     updateViewportMetrics();
-  }
-);
-
-watch([pageWidthPx, pageHeightPx], async () => {
-  await nextTick();
-  updateViewportMetrics();
 });
-
-watch(requestedPaletteInsert, (request) => {
-  if (!request?.item) {
-    return;
-  }
-  insertPaletteItem(request.item, defaultInsertPoint(request.item));
-  dragStore.consumePaletteInsert(request.id);
+watch([pageWidthPx, pageHeightPx], async (): Promise<any> => {
+    await nextTick();
+    updateViewportMetrics();
 });
-
-function getGuideDraft(event, orientation) {
-  const point = getDocumentPoint(event);
-
-  if (!point) {
-    return null;
-  }
-
-  const pageEnd = orientation === "vertical" ? pageWidthMm.value : pageHeightMm.value;
-  const documentPosition =
-    orientation === "vertical" ? point.documentX : point.documentY;
-  const clampedPosition = Math.min(pageEnd, Math.max(0, documentPosition));
-
-  return {
-    position: +clampedPosition.toFixed(2),
-    displayPosition: +documentPosition.toFixed(2),
-    visible: documentPosition >= 0 && documentPosition <= pageEnd,
-  };
+watch(requestedPaletteInsert, (request: any): any => {
+    if (!request?.item) {
+        return;
+    }
+    insertPaletteItem(request.item, defaultInsertPoint(request.item));
+    dragStore.consumePaletteInsert(request.id);
+});
+function getGuideDraft(event: any, orientation: any): any {
+    const point = getDocumentPoint(event);
+    if (!point) {
+        return null;
+    }
+    const pageEnd = orientation === "vertical" ? pageWidthMm.value : pageHeightMm.value;
+    const documentPosition = orientation === "vertical" ? point.documentX : point.documentY;
+    const clampedPosition = Math.min(pageEnd, Math.max(0, documentPosition));
+    return {
+        position: +clampedPosition.toFixed(2),
+        displayPosition: +documentPosition.toFixed(2),
+        visible: documentPosition >= 0 && documentPosition <= pageEnd,
+    };
 }
-
-function syncDraftPosition(event) {
-  if (!activeGuideDraft.value) {
-    return;
-  }
-
-  const draft = getGuideDraft(event, activeGuideDraft.value.orientation);
-
-  if (!draft) {
-    viewportStore.updateGuideDraft(0, false, 0);
-    viewportStore.setGuideCoordinate(activeGuideDraft.value.orientation, 0, false);
-    return;
-  }
-
-  viewportStore.updateGuideDraft(draft.position, draft.visible, draft.displayPosition);
-  viewportStore.setGuideCoordinate(activeGuideDraft.value.orientation, draft.position, draft.visible);
+function syncDraftPosition(event: any): any {
+    if (!activeGuideDraft.value) {
+        return;
+    }
+    const draft = getGuideDraft(event, activeGuideDraft.value.orientation);
+    if (!draft) {
+        viewportStore.updateGuideDraft(0, false, 0);
+        viewportStore.setGuideCoordinate(activeGuideDraft.value.orientation, 0, false);
+        return;
+    }
+    viewportStore.updateGuideDraft(draft.position, draft.visible, draft.displayPosition);
+    viewportStore.setGuideCoordinate(activeGuideDraft.value.orientation, draft.position, draft.visible);
 }
-
-function onGuidePointerMove(event) {
-  syncDraftPosition(event);
+function onGuidePointerMove(event: any): any {
+    syncDraftPosition(event);
 }
-
-function stopGuideDrag() {
-  window.removeEventListener("pointermove", onGuidePointerMove);
-  window.removeEventListener("pointerup", onGuidePointerUp);
+function stopGuideDrag(): any {
+    window.removeEventListener("pointermove", onGuidePointerMove);
+    window.removeEventListener("pointerup", onGuidePointerUp);
 }
-
-function onGuidePointerUp(event) {
-  syncDraftPosition(event);
-
-  const draft = activeGuideDraft.value;
-  const drag = draggingGuide.value;
-
-  if (!draft || !drag) {
-    viewportStore.clearGuideDraft();
-    viewportStore.clearCoordinateReadout();
+function onGuidePointerUp(event: any): any {
+    syncDraftPosition(event);
+    const draft = activeGuideDraft.value;
+    const drag = draggingGuide.value;
+    if (!draft || !drag) {
+        viewportStore.clearGuideDraft();
+        viewportStore.clearCoordinateReadout();
+        stopGuideDrag();
+        return;
+    }
+    if (drag.mode === "create") {
+        if (draft.visible) {
+            executeEditorCommand(historyStore, createAddGuideCommand(viewportStore, draft.orientation, draft.position));
+            viewportStore.finishGuideInteraction(draft.position, true);
+        }
+        else {
+            viewportStore.finishGuideInteraction(null, false);
+        }
+    }
+    else if (!draft.visible) {
+        executeEditorCommand(historyStore, createRemoveGuideCommand(viewportStore, drag.orientation, drag.sourcePosition));
+        viewportStore.finishGuideInteraction(null, false);
+    }
+    else {
+        const moveCommand = createMoveGuideCommand(viewportStore, drag.orientation, drag.sourcePosition, draft.position);
+        if (moveCommand) {
+            executeEditorCommand(historyStore, moveCommand);
+        }
+        viewportStore.finishGuideInteraction(draft.position, true);
+    }
+    syncPointerCoordinate(event);
     stopGuideDrag();
-    return;
-  }
-
-  if (drag.mode === "create") {
-    if (draft.visible) {
-      executeEditorCommand(historyStore, createAddGuideCommand(viewportStore, draft.orientation, draft.position));
-      viewportStore.finishGuideInteraction(draft.position, true);
-    } else {
-      viewportStore.finishGuideInteraction(null, false);
+}
+function startGuideDrag(orientation: any, event: any, sourcePosition: any = null): any {
+    if (event.button !== 0) {
+        return;
     }
-  } else if (!draft.visible) {
-    executeEditorCommand(historyStore, createRemoveGuideCommand(viewportStore, drag.orientation, drag.sourcePosition));
-    viewportStore.finishGuideInteraction(null, false);
-  } else {
-    const moveCommand = createMoveGuideCommand(
-      viewportStore,
-      drag.orientation,
-      drag.sourcePosition,
-      draft.position
-    );
-
-    if (moveCommand) {
-      executeEditorCommand(historyStore, moveCommand);
+    event.preventDefault();
+    viewportStore.startGuideInteraction(orientation, sourcePosition);
+    syncDraftPosition(event);
+    stopGuideDrag();
+    window.addEventListener("pointermove", onGuidePointerMove);
+    window.addEventListener("pointerup", onGuidePointerUp);
+}
+function onGuideEditStart(payload: any): any {
+    if (!payload?.event) {
+        return;
     }
-
-    viewportStore.finishGuideInteraction(draft.position, true);
-  }
-
-  syncPointerCoordinate(event);
-  stopGuideDrag();
+    startGuideDrag(payload.orientation, payload.event, payload.position);
 }
-
-function startGuideDrag(orientation, event, sourcePosition = null) {
-  if (event.button !== 0) {
-    return;
-  }
-
-  event.preventDefault();
-  viewportStore.startGuideInteraction(orientation, sourcePosition);
-  syncDraftPosition(event);
-  stopGuideDrag();
-  window.addEventListener("pointermove", onGuidePointerMove);
-  window.addEventListener("pointerup", onGuidePointerUp);
+function onGuideHover(guide: any = null): any {
+    if (draggingGuide.value) {
+        return;
+    }
+    if (!guide) {
+        viewportStore.clearHoveredGuide();
+        return;
+    }
+    viewportStore.setHoveredGuide(guide.orientation, guide.position);
 }
-
-function onGuideEditStart(payload) {
-  if (!payload?.event) {
-    return;
-  }
-
-  startGuideDrag(payload.orientation, payload.event, payload.position);
-}
-
-function onGuideHover(guide) {
-  if (draggingGuide.value) {
-    return;
-  }
-
-  if (!guide) {
-    viewportStore.clearHoveredGuide();
-    return;
-  }
-
-  viewportStore.setHoveredGuide(guide.orientation, guide.position);
-}
-
-onMounted(async () => {
-  await nextTick();
-
-  const viewport = viewportRef.value;
-
-  if (viewport) {
-    applyViewportScroll(viewportStore.scrollLeft, viewportStore.scrollTop);
-  }
-
-  updateViewportMetrics();
-  if (viewport) {
-    viewportResizeObserver = new ResizeObserver(() => {
-      updateViewportMetrics();
-    });
-    viewportResizeObserver.observe(viewport);
-  }
-  window.addEventListener("resize", updateViewportMetrics);
+onMounted(async (): Promise<any> => {
+    await nextTick();
+    const viewport = viewportRef.value;
+    if (viewport) {
+        applyViewportScroll(viewportStore.scrollLeft, viewportStore.scrollTop);
+    }
+    updateViewportMetrics();
+    if (viewport) {
+        viewportResizeObserver = new ResizeObserver((): any => {
+            updateViewportMetrics();
+        });
+        viewportResizeObserver.observe(viewport);
+    }
+    window.addEventListener("resize", updateViewportMetrics);
 });
-
-onBeforeUnmount(() => {
-  dragStore.clearPaletteDrag();
-  pendingTableInsert.value = null;
-  stopGuideDrag();
-  viewportResizeObserver?.disconnect();
-  window.removeEventListener("resize", updateViewportMetrics);
+onBeforeUnmount((): any => {
+    dragStore.clearPaletteDrag();
+    pendingTableInsert.value = null;
+    stopGuideDrag();
+    viewportResizeObserver?.disconnect();
+    window.removeEventListener("resize", updateViewportMetrics);
 });
 </script>
 

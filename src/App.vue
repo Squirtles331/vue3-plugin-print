@@ -2,6 +2,5 @@
   <PrintDesigner height="100dvh" />
 </template>
 
-<script setup>
-import PrintDesigner from "./print-designer/index.vue";
+<script setup lang="ts">import PrintDesigner from "./print-designer/index.vue";
 </script>
