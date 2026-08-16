@@ -16,7 +16,7 @@ test("resolves bound elements and does not substitute sample rows for a missing 
   const document = createBlankTemplateDocument({
     pages: [{ id: "page-1", title: "Page 1", elements: [
       { id: "title", type: "text", x: 0, y: 0, width: 20, height: 8, variable: "customer.name", props: {}, style: {} },
-      { id: "items", type: "table", x: 0, y: 10, width: 80, height: 32, props: { dataVariable: "items", columns: [{ key: "name", title: "Name" }], sampleData: [{ name: "Legacy sample" }], headerHeight: 8, rowHeight: 8, autoPaginate: true }, style: {} },
+      { id: "items", type: "table", x: 0, y: 10, width: 80, height: 32, props: { dataVariable: "items", columns: [{ key: "name", title: "Name" }], sampleData: [{ name: "Sample row" }], headerHeight: 8, rowHeight: 8, autoPaginate: true }, style: {} },
     ] }],
   });
   const resolved = resolveRuntimeTemplate(document, { customer: { name: "Ada" } });
@@ -44,7 +44,7 @@ test("resolves a reactive template without mutating the source document", () => 
   assert.notEqual(resolved.document, source);
 });
 
-test("preserves explicit legacy preview rows when no runtime binding is configured", () => {
+test("preserves explicit design preview rows when no runtime binding is configured", () => {
   const document = createBlankTemplateDocument({
     pages: [{ id: "page-1", title: "Page 1", elements: [{ id: "items", type: "table", x: 0, y: 0, width: 80, height: 32, props: { columns: [{ key: "name" }], sampleData: [{ name: "Existing row" }] }, style: {} }] }],
   });
@@ -92,7 +92,7 @@ test("validates print runtime with the same blocking issues used by preview", ()
 test("runtime data cannot replace authored table columns or presentation", () => {
   const document = {
     schemaVersion: 2,
-    pages: [{ id: "page-1", elements: [{ id: "items", type: "table", x: 0, y: 0, width: 80, height: 32, props: { columns: [{ key: "sku", valuePath: "product.sku", title: "SKU", width: 48 }], columnsVariable: "runtimeColumns", dataVariable: "items" }, style: { color: "#123456" } }] }],
+    pages: [{ id: "page-1", elements: [{ id: "items", type: "table", x: 0, y: 0, width: 80, height: 32, props: { columns: [{ key: "sku", valuePath: "product.sku", title: "SKU", width: 48 }], dataVariable: "items" }, style: { color: "#123456" } }] }],
   };
   const resolved = resolveRuntimeTemplate(document, { runtimeColumns: [{ key: "unsafe", title: "Unsafe", width: 1 }], items: [{ product: { sku: "A-1" } }] });
   const table = resolved.document.pages[0].elements[0];

@@ -58,7 +58,7 @@ test("property capability validation rejects invalid machine-code, binding, tabl
   assert.equal(validateElementProperty("qrcode", "props", "eccLevel", "H"), null);
 });
 
-test("unresolved bindings stay explicit and arbitrary table scripts are never persisted or executed", () => {
+test("unresolved bindings stay explicit and removed table scripts are rejected", () => {
   const pageId = "page-1";
   const document = createBlankTemplateDocument({
     pages: [{ id: pageId, title: "Page 1", elements: [
@@ -82,6 +82,6 @@ test("unresolved bindings stay explicit and arbitrary table scripts are never pe
   assert.ok(resolved.issues.some((issue) => /Missing binding value/.test(issue.message)));
   assert.ok(resolved.issues.some((issue) => /Missing table data/.test(issue.message)));
   assert.ok(resolved.issues.some((issue) => /disabled/.test(issue.message)));
-  assert.equal(serialized.valid, true);
-  assert.equal("customScript" in serialized.document.pages[0].elements.find((element) => element.id === "table").props, false);
+  assert.equal(serialized.valid, false);
+  assert.ok(serialized.issues.some((issue) => issue.path.endsWith("props.customScript")));
 });

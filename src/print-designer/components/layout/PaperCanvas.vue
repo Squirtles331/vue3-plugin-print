@@ -616,27 +616,21 @@ function shapeStyle(object) {
 
 function tableColumns(object) {
   if (Array.isArray(object.props?.columns)) {
-    return object.props.columns.map((column, index) => ({
-       key:
-        typeof column?.key === "string" && column.key.trim()
-          ? column.key
-          : typeof column?.field === "string" && column.field.trim()
-             ? column.field
-             : `field${index + 1}`,
+      return object.props.columns.map((column, index) => ({
+        key:
+          typeof column?.key === "string" && column.key.trim()
+            ? column.key
+            : `field${index + 1}`,
       valuePath:
         typeof column?.valuePath === "string" && column.valuePath.trim()
           ? column.valuePath
           : typeof column?.key === "string" && column.key.trim()
             ? column.key
-            : typeof column?.field === "string" && column.field.trim()
-              ? column.field
-              : `field${index + 1}`,
+            : `field${index + 1}`,
       title:
         typeof column?.title === "string" && column.title.trim()
           ? column.title
-          : typeof column?.header === "string" && column.header.trim()
-            ? column.header
-            : `列 ${index + 1}`,
+          : `列 ${index + 1}`,
       width: Number.isFinite(Number(column?.width)) ? Number(column.width) : 100,
       align:
         column?.align === "center" || column?.align === "right"
@@ -658,7 +652,7 @@ function tableColumns(object) {
 }
 
 function tableHeaderLabel(column) {
-  return column?.title || column?.header || "";
+  return column?.title || "";
 }
 
 function tableColumnWidth(column) {
@@ -760,11 +754,6 @@ function tableDataSource(object) {
   if (Array.isArray(object.props?.sampleData)) {
     return object.props.sampleData;
   }
-
-  if (Array.isArray(object.props?.data)) {
-    return object.props.data;
-  }
-
   return [];
 }
 

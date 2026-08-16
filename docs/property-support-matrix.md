@@ -1,10 +1,10 @@
 # Property support matrix
 
-This is the independently authored support matrix for `TemplateDocument v1`. The executable source of truth is `src/print-designer/core/propertyCapabilities.js`; it supplies the field type, bounds, default, editor-only marker, and renderer effect. `src/print-designer/core/elementRegistry.js` supplies element-specific defaults. The matrix is intentionally capability-oriented and does not reproduce any external product's labels, stored format, or visual design.
+This is the independently authored support matrix for `TemplateDocument v2`. The executable source of truth is `src/print-designer/core/propertyCapabilities.js`; it supplies the field type, bounds, default, editor-only marker, and renderer effect. `src/print-designer/core/elementRegistry.js` supplies element-specific defaults. The matrix is intentionally capability-oriented and does not reproduce any external product's labels, stored format, or visual design.
 
 | Scope | Persisted fields (canonical storage) | Defaults and validation | Editor / output effect | Editor-only |
 | --- | --- | --- | --- | --- |
-| Template | `meta.name`, `schemaVersion`, pages | v1; required page/element identifiers are normalized and validated | repository, preview, print input | no |
+| Template | `meta.name`, `schemaVersion`, pages | v2; required page/element identifiers are normalized and validated | repository, preview, print input | no |
 | Page | `pageSettings.paper`, `margin`, `background`, `printMarks` | A4 portrait 210 × 297 mm; four 8 mm margins; bounded numeric dimensions | shared runtime page geometry and print marks | no |
 | Page guides | `cornerMarks`, `headerLine`, `footerLine` | off unless authored | canvas guide only | yes |
 | All elements | root `x`, `y`, `width`, `height`, `rotation`, `zIndex`, `visible`, `printable`, `locked`, `repeatPerPage`, `variable` | bounded mm/degree/layer values; visible and printable default true | geometry, stacking, data binding, pagination and print filtering | `locked` affects editing only |
@@ -20,4 +20,4 @@ This is the independently authored support matrix for `TemplateDocument v1`. The
 | Table | `columns[key,valuePath,title,width,align,formatter]`, header/footer flags and data, row/header/footer metrics, pagination, style, transform | widths 1–240; safe paths; formatters only `number`, `currency`, `date`; declarative `sort` / `filterEquals` transform | shared table rows, widths, styles and pagination | `editorHints.omitRows,rowCount` |
 | Multi-label | grid rows/columns/direction/gaps, data path, `primaryPath`, `secondaryPath`, `tertiaryPath`, cell padding, style | 5 × 3 row flow, 12 mm gaps, 2 mm cell padding | explicit relative-field mapping and missing-value tokens in canvas/runtime | no |
 
-Migration is additive for known safe fields. Unknown non-executable fields are retained. Legacy selection/history state is stripped; legacy script fields and dynamic table-column inputs are stripped with warnings. Browser print uses the standalone runtime and excludes `editorHints`, selection handles, guides, and other canvas-only UI.
+Only the canonical v2 fields are accepted. Templates containing a different schema version or removed field aliases are rejected; no migration or compatibility normalization is performed. Browser print uses the standalone runtime and excludes `editorHints`, selection handles, guides, and other canvas-only UI.

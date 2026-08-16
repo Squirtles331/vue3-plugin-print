@@ -116,25 +116,24 @@ function stripEditorState(page, index) {
 
 function normalizeTableProps(sourceProps) {
   const source = object(sourceProps);
-  const { headers, rows, footerRows, dataKey, footerKey, columnKey, columnsVariable, transformConfig, customScript, customScriptVariable, designOmitRows, designRowCount, embeddedCellTextPosition, embeddedCellTextLayer, ...props } = source;
+  const { customScript, customScriptVariable, ...props } = source;
 
   const normalizeColumn = (column) => {
     const value = object(column);
-    const formatter = object(value.formatter || value.format);
     return {
       ...value,
-      key: optionalText(value.key || value.field),
-      valuePath: optionalText(value.valuePath || value.key || value.field),
-      title: optionalText(value.title || value.header || value.key || value.field),
+      key: optionalText(value.key),
+      valuePath: optionalText(value.valuePath || value.key),
+      title: optionalText(value.title || value.key),
       width: boundedNumber(value.width, 20, 1, 240, 2),
       align: ["left", "center", "right"].includes(value.align) ? value.align : "left",
-      ...(Object.keys(formatter).length ? { formatter } : {}),
+      ...(Object.keys(object(value.formatter)).length ? { formatter: object(value.formatter) } : {}),
     };
   };
 
-  const columns = Array.isArray(props.columns) ? props.columns : Array.isArray(headers) ? headers : null;
-  const sampleData = Array.isArray(props.sampleData) ? props.sampleData : Array.isArray(rows) ? rows : Array.isArray(props.data) ? props.data : null;
-  const footerData = Array.isArray(props.footerData) ? props.footerData : Array.isArray(footerRows) ? footerRows : null;
+  const columns = Array.isArray(props.columns) ? props.columns : null;
+  const sampleData = Array.isArray(props.sampleData) ? props.sampleData : null;
+  const footerData = Array.isArray(props.footerData) ? props.footerData : null;
   const normalizedColumns = columns ? columns.map(normalizeColumn) : [];
 
   return {
@@ -143,18 +142,17 @@ function normalizeTableProps(sourceProps) {
     ...(sampleData ? { sampleData: normalizedColumns.length ? normalizeTableRows(sampleData, normalizedColumns) : sampleData } : {}),
     ...(footerData ? { footerData: normalizedColumns.length ? normalizeTableRows(footerData, normalizedColumns) : footerData } : {}),
     ...(props.rowHeights != null ? { rowHeights: normalizeTableRowHeights(props.rowHeights) } : {}),
-    dataVariable: optionalText(props.dataVariable || dataKey),
-    footerDataVariable: optionalText(props.footerDataVariable || footerKey),
-    transform: object(props.transform || transformConfig),
+    dataVariable: optionalText(props.dataVariable),
+    footerDataVariable: optionalText(props.footerDataVariable),
+    transform: object(props.transform),
   };
 }
 
 function normalizeTableEditorHints(source) {
   const hints = object(source.editorHints);
-  const props = object(source.props);
   return {
-    omitRows: boolean(hints.omitRows ?? props.designOmitRows, true),
-    rowCount: boundedNumber(hints.rowCount ?? props.designRowCount, 10, 1, 500, 0),
+    omitRows: boolean(hints.omitRows, true),
+    rowCount: boundedNumber(hints.rowCount, 10, 1, 500, 0),
   };
 }
 
@@ -165,18 +163,6 @@ function normalizeElement(element, index, pageId) {
     hovered,
     editing,
     interactionState,
-    display,
-    isLocked,
-    isPrint,
-    angle,
-    left,
-    top,
-    dataKey,
-    imageUrl,
-    codeFormat,
-    errorCorrectionLevel,
-    pageNumberFormat,
-    opacity: legacyOpacity,
     ...elementData
   } = source;
   const type = text(source.type);
@@ -195,27 +181,19 @@ function normalizeElement(element, index, pageId) {
   const sourceProps = object(source.props);
   const normalizedProps = {
     ...(type === "table" ? normalizeTableProps(sourceProps) : sourceProps),
-    ...(type === "image" && imageUrl ? { src: imageUrl } : {}),
-    ...(type === "barcode" && codeFormat ? { format: codeFormat } : {}),
-    ...(type === "qrcode" && errorCorrectionLevel ? { eccLevel: errorCorrectionLevel } : {}),
-    ...(type === "pageNumber" && pageNumberFormat ? { format: pageNumberFormat } : {}),
-    ...(type === "multiLabel" && sourceProps.columns != null && sourceProps.cols == null ? { cols: sourceProps.columns } : {}),
   };
-  const normalizedStyle = {
-    ...object(source.style),
-    ...(legacyOpacity != null && object(source.style).opacity == null ? { opacity: legacyOpacity } : {}),
-  };
+  const normalizedStyle = object(source.style);
   const normalized = createElement(type, {
     ...elementData,
     id: text(source.id, `${pageId}-element-${index + 1}`),
     pageId,
-    x: source.x ?? left,
-    y: source.y ?? top,
-    rotation: source.rotation ?? angle,
-    variable: source.variable ?? dataKey,
-    visible: source.visible ?? display,
-    locked: source.locked ?? isLocked,
-    printable: source.printable ?? isPrint,
+    x: source.x,
+    y: source.y,
+    rotation: source.rotation,
+    variable: source.variable,
+    visible: source.visible,
+    locked: source.locked,
+    printable: source.printable,
     style: normalizedStyle,
     props: normalizedProps,
     ...(type === "table" ? { editorHints: normalizeTableEditorHints(source) } : {}),
@@ -227,12 +205,12 @@ function normalizeElement(element, index, pageId) {
     pageId,
     name: text(source.name, normalized.name),
     content: source.content == null ? "" : String(source.content),
-    variable: optionalText(source.variable ?? dataKey),
-    visible: boolean(source.visible ?? display, true),
-    locked: boolean(source.locked ?? isLocked, false),
-    printable: boolean(source.printable ?? isPrint, true),
+    variable: optionalText(source.variable),
+    visible: boolean(source.visible, true),
+    locked: boolean(source.locked, false),
+    printable: boolean(source.printable, true),
     repeatPerPage: boolean(source.repeatPerPage, false),
-    rotation: boundedNumber(source.rotation ?? angle, 0, -360, 360, 2),
+    rotation: boundedNumber(source.rotation, 0, -360, 360, 2),
     zIndex: Math.max(0, Math.round(numeric(source.zIndex, index))),
     style: {
       ...normalized.style,
@@ -244,12 +222,10 @@ function normalizeElement(element, index, pageId) {
 
 function normalizePageSettings(value) {
   const source = object(value);
-  const paper = object(source.paper || source.paperSize);
+  const paper = object(source.paper);
   const margin = object(source.margin);
-  const widthMm = boundedNumber(paper.widthMm ?? source.pageWidthMm ?? source.widthMm, DEFAULT_PAPER.widthMm, 20, 1_000, 1);
-  const heightMm = boundedNumber(paper.heightMm ?? source.pageHeightMm ?? source.heightMm, DEFAULT_PAPER.heightMm, 20, 1_500, 1);
-  const marginX = source.marginXMm ?? source.marginX;
-  const marginY = source.marginYMm ?? source.marginY;
+  const widthMm = boundedNumber(paper.widthMm, DEFAULT_PAPER.widthMm, 20, 1_000, 1);
+  const heightMm = boundedNumber(paper.heightMm, DEFAULT_PAPER.heightMm, 20, 1_500, 1);
   const cornerMarks = object(source.cornerMarks);
   const headerLine = object(source.headerLine);
   const footerLine = object(source.footerLine);
@@ -263,25 +239,25 @@ function normalizePageSettings(value) {
       orientation: widthMm > heightMm ? "landscape" : "portrait",
     },
     margin: {
-      top: boundedNumber(margin.top ?? marginY, DEFAULT_MARGIN.top, 0, 200, 1),
-      right: boundedNumber(margin.right ?? marginX, DEFAULT_MARGIN.right, 0, 200, 1),
-      bottom: boundedNumber(margin.bottom ?? marginY, DEFAULT_MARGIN.bottom, 0, 200, 1),
-      left: boundedNumber(margin.left ?? marginX, DEFAULT_MARGIN.left, 0, 200, 1),
+      top: boundedNumber(margin.top, DEFAULT_MARGIN.top, 0, 200, 1),
+      right: boundedNumber(margin.right, DEFAULT_MARGIN.right, 0, 200, 1),
+      bottom: boundedNumber(margin.bottom, DEFAULT_MARGIN.bottom, 0, 200, 1),
+      left: boundedNumber(margin.left, DEFAULT_MARGIN.left, 0, 200, 1),
     },
-    background: text(source.background ?? source.pageBackground, "#ffffff"),
+    background: text(source.background, "#ffffff"),
     cornerMarks: {
-      visible: boolean(cornerMarks.visible ?? source.pageCornerVisible, true),
+      visible: boolean(cornerMarks.visible, true),
     },
     headerLine: {
-      visible: boolean(headerLine.visible ?? source.headerLineVisible, false),
-      offsetMm: boundedNumber(headerLine.offsetMm ?? source.headerOffsetMm, 26.5, 0, 200, 1),
+      visible: boolean(headerLine.visible, false),
+      offsetMm: boundedNumber(headerLine.offsetMm, 26.5, 0, 200, 1),
     },
     footerLine: {
-      visible: boolean(footerLine.visible ?? source.footerLineVisible, false),
-      offsetMm: boundedNumber(footerLine.offsetMm ?? source.footerOffsetMm, 26.5, 0, 200, 1),
+      visible: boolean(footerLine.visible, false),
+      offsetMm: boundedNumber(footerLine.offsetMm, 26.5, 0, 200, 1),
     },
     printMarks: {
-      visible: boolean(printMarks.visible ?? source.printMarksVisible, false),
+      visible: boolean(printMarks.visible, false),
     },
   };
 }
@@ -291,16 +267,16 @@ function normalizeSource(source) {
     return createBlankTemplateDocument();
   }
 
-  const rawTemplate = source.template && typeof source.template === "object" ? source.template : source;
+  const rawTemplate = source;
   const meta = object(rawTemplate.meta);
   const pages = Array.isArray(rawTemplate.pages) ? rawTemplate.pages : [];
   const now = new Date().toISOString();
 
   return {
     schemaVersion: TEMPLATE_SCHEMA_VERSION,
-    id: text(rawTemplate.id || meta.id, newId()),
+    id: text(rawTemplate.id, newId()),
     meta: {
-      name: text(meta.name ?? rawTemplate.name, "Untitled print template"),
+      name: text(meta.name, "Untitled print template"),
       unit: "mm",
       createdAt: text(meta.createdAt, now),
       updatedAt: text(meta.updatedAt, now),
@@ -344,6 +320,53 @@ function addRawBoundedIssues(rawTemplate, issues) {
       if (element?.height != null && (Number(element.height) < rule.minHeight || Number(element.height) > rule.maxHeight)) {
         issues.push({ path: `pages[${pageIndex}].elements[${elementIndex}].height`, message: `height must be between ${rule.minHeight} and ${rule.maxHeight}.`, severity: "error" });
       }
+    });
+  });
+}
+
+const REMOVED_PAGE_SETTINGS_FIELDS = [
+  "paperSize", "pageWidthMm", "pageHeightMm", "widthMm", "heightMm", "marginXMm", "marginYMm", "marginX", "marginY",
+  "pageBackground", "pageCornerVisible", "headerLineVisible", "footerLineVisible", "headerOffsetMm", "footerOffsetMm", "printMarksVisible",
+];
+const REMOVED_ELEMENT_FIELDS = [
+  "display", "isLocked", "isPrint", "angle", "left", "top", "dataKey", "imageUrl", "codeFormat", "errorCorrectionLevel", "pageNumberFormat", "opacity",
+];
+const REMOVED_TABLE_PROP_FIELDS = [
+  "headers", "rows", "footerRows", "data", "dataKey", "footerKey", "columnKey", "columnsVariable", "transformConfig",
+  "customScript", "customScriptVariable", "designOmitRows", "designRowCount", "embeddedCellTextPosition", "embeddedCellTextLayer",
+];
+const REMOVED_TABLE_COLUMN_FIELDS = ["field", "header", "format"];
+
+function addRemovedFieldIssues(rawTemplate, issues) {
+  const pageSettings = object(rawTemplate?.pageSettings);
+  REMOVED_PAGE_SETTINGS_FIELDS.forEach((field) => {
+    if (Object.hasOwn(pageSettings, field)) {
+      issues.push({ path: `pageSettings.${field}`, message: `${field} was removed; use the v2 canonical field.`, severity: "error" });
+    }
+  });
+  (Array.isArray(rawTemplate?.pages) ? rawTemplate.pages : []).forEach((page, pageIndex) => {
+    (Array.isArray(page?.elements) ? page.elements : []).forEach((element, elementIndex) => {
+      REMOVED_ELEMENT_FIELDS.forEach((field) => {
+        if (Object.hasOwn(object(element), field)) {
+          issues.push({ path: `pages[${pageIndex}].elements[${elementIndex}].${field}`, message: `${field} was removed; use the v2 canonical field.`, severity: "error" });
+        }
+      });
+      if (element?.type !== "table") {
+        return;
+      }
+      const props = object(element.props);
+      REMOVED_TABLE_PROP_FIELDS.forEach((field) => {
+        if (Object.hasOwn(props, field)) {
+          issues.push({ path: `pages[${pageIndex}].elements[${elementIndex}].props.${field}`, message: `${field} was removed; use the v2 table field.`, severity: "error" });
+        }
+      });
+      (Array.isArray(props.columns) ? props.columns : []).forEach((column, columnIndex) => {
+        REMOVED_TABLE_COLUMN_FIELDS.forEach((field) => {
+          if (Object.hasOwn(object(column), field)) {
+            issues.push({ path: `pages[${pageIndex}].elements[${elementIndex}].props.columns[${columnIndex}].${field}`, message: `${field} was removed; use the v2 column field.`, severity: "error" });
+          }
+        });
+      });
     });
   });
 }
@@ -420,7 +443,7 @@ export function createBlankTemplateDocument(overrides = {}) {
 
 export function validateTemplateDocument(source) {
   const issues = [];
-  const rawTemplate = source?.template && typeof source.template === "object" ? source.template : source;
+  const rawTemplate = source;
   const version = Number(rawTemplate?.schemaVersion);
   if (version !== TEMPLATE_SCHEMA_VERSION) {
     return {
@@ -444,6 +467,7 @@ export function validateTemplateDocument(source) {
   if (rawTemplate?.meta?.unit && rawTemplate.meta.unit !== "mm") {
     issues.push({ path: "meta.unit", message: "Template unit must be mm.", severity: "error" });
   }
+  addRemovedFieldIssues(rawTemplate, issues);
   addRawBoundedIssues(rawTemplate, issues);
   addRawGroupIssues(rawTemplate, issues);
 

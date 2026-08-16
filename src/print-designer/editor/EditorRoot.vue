@@ -493,7 +493,7 @@ function onImportTemplate() {
     }
     loadTemplateDocument(imported.document, { markAsDirty: true });
     historyStore.reset();
-    PdMessage.success(imported.issues.length ? "模板已导入，已应用兼容迁移" : "模板已导入");
+    PdMessage.success("模板已导入");
   }, { once: true });
   input.click();
 }

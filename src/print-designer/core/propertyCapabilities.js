@@ -147,7 +147,7 @@ function validateTableColumns(value) {
   if (!Array.isArray(value) || !value.length) {
     return "Table requires at least one column.";
   }
-  if (value.length > 100 || value.some((column) => !column || typeof (column.key || column.field) !== "string" || !(column.key || column.field).trim())) {
+  if (value.length > 100 || value.some((column) => !column || typeof column.key !== "string" || !column.key.trim())) {
     return "Each table column requires a key and at most 100 columns are allowed.";
   }
   if (value.some((column) => column.formatter && (!Object.hasOwn(column.formatter, "type") || !["number", "currency", "date"].includes(column.formatter.type)))) {

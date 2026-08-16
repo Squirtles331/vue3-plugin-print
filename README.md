@@ -118,7 +118,7 @@ const repository = createRestTemplateRepository({
 
 仓储适配器需要提供 `list()`、`get(id)`、`save(document)` 和 `delete(id)`。内置本地与 REST 仓储还提供 `create()`，用于在前端生成空白模板草稿；持久化使用 `GET /templates`、`GET /templates/:id`、`PUT /templates/:id` 与 `DELETE /templates/:id`。`clear()` 是本地仓储专用的可选能力。
 
-也可导入 `createLocalTemplateRepository`、`validateTemplateDocument`、`migrateTemplateDocument`、`serializeTemplateDocument` 和 `createPublishReadyTemplatePayload`，用于业务系统的模板管理流程。
+也可导入 `createLocalTemplateRepository`、`validateTemplateDocument`、`serializeTemplateDocument` 和 `createPublishReadyTemplatePayload`，用于业务系统的模板管理流程。模板仅接受并输出 `TemplateDocument v2`；导入、读取或传入其他版本会被拒绝，不提供自动迁移或兼容层。
 
 ## 浏览器打印
 

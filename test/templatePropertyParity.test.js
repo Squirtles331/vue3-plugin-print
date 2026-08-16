@@ -20,7 +20,7 @@ test("normalizes v2 editor hints, mappings, and options without losing unknown s
     schemaVersion: 2,
     id: "property-parity",
     pages: [{ id: "page-1", elements: [
-      { id: "table", type: "table", props: { columns: [{ field: "total", valuePath: "invoice.amount", header: "Total", width: "20", format: { type: "currency", symbol: "$" } }], columnsVariable: "unsafeRuntimeColumns", designOmitRows: false, designRowCount: 12, customScript: "return rows", vendorOption: "preserve" }, style: {} },
+      { id: "table", type: "table", editorHints: { omitRows: false, rowCount: 12 }, props: { columns: [{ key: "total", valuePath: "invoice.amount", title: "Total", width: "20", formatter: { type: "currency", symbol: "$" } }], vendorOption: "preserve" }, style: {} },
       { id: "labels", type: "multiLabel", props: { rows: 1, cols: 1, primaryPath: "product.name", secondaryPath: "sku", cellPadding: 3 }, style: {} },
     ] }],
   };
@@ -32,8 +32,6 @@ test("normalizes v2 editor hints, mappings, and options without losing unknown s
   assert.equal(table.props.columns[0].valuePath, "invoice.amount");
   assert.deepEqual(table.props.columns[0].formatter, { type: "currency", symbol: "$" });
   assert.equal(table.props.vendorOption, "preserve");
-  assert.equal("customScript" in table.props, false);
-  assert.equal("columnsVariable" in table.props, false);
   assert.deepEqual(labels.props.primaryPath, "product.name");
   assert.equal(labels.props.cellPadding, 3);
   assert.equal(serialized.valid, true, JSON.stringify(serialized.issues));
@@ -61,11 +59,10 @@ test("runtime data never overrides a template's static geometry or style", () =>
 
 test("normalization keeps a circle circular and stores opacity in print style", () => {
   const source = createBlankTemplateDocument({
-    pages: [{ id: "page-1", elements: [{ id: "circle", type: "circle", width: 30, height: 12, opacity: 0.4, props: {}, style: {} }] }],
+    pages: [{ id: "page-1", elements: [{ id: "circle", type: "circle", width: 30, height: 12, props: {}, style: { opacity: 0.4 } }] }],
   });
   const circle = serializeTemplateDocument(source).document.pages[0].elements[0];
 
   assert.equal(circle.width, circle.height);
   assert.equal(circle.style.opacity, 0.4);
-  assert.equal("opacity" in circle, false);
 });

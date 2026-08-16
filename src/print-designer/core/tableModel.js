@@ -34,17 +34,13 @@ export function normalizeTableColumn(column, index = 0) {
   const width = Number(column?.width);
   const key = typeof column?.key === "string" && column.key.trim()
     ? column.key.trim()
-    : typeof column?.field === "string" && column.field.trim()
-      ? column.field.trim()
-      : fallback;
+    : fallback;
   const valuePath = typeof column?.valuePath === "string" && column.valuePath.trim()
     ? column.valuePath.trim()
     : key;
   const title = typeof column?.title === "string"
     ? column.title
-    : typeof column?.header === "string"
-      ? column.header
-      : `列 ${index + 1}`;
+    : `列 ${index + 1}`;
 
   return {
     key,

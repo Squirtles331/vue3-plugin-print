@@ -58,10 +58,9 @@ test("normalizes v2 table data into the safe editable cell model", () => {
         id: "table-1",
         type: "table",
         props: {
-          columns: [{ field: "amount", header: "Amount" }],
-          data: [{ amount: { value: 3, rowSpan: 2, style: { backgroundColor: "#ffffff", customCss: "blocked" } } }],
+          columns: [{ key: "amount", title: "Amount" }],
+          sampleData: [{ amount: { value: 3, rowSpan: 2, style: { backgroundColor: "#ffffff", customCss: "blocked" } } }],
           rowHeights: { body: { 0: 9, bad: 20 }, footer: { 1: 7 } },
-          customScript: "alert('blocked')",
         },
       }],
     }],
@@ -72,7 +71,6 @@ test("normalizes v2 table data into the safe editable cell model", () => {
   assert.equal(table.props.sampleData[0].amount.value, 3);
   assert.deepEqual(table.props.sampleData[0].amount.style, { backgroundColor: "#ffffff" });
   assert.deepEqual(table.props.rowHeights, { body: { 0: 9 }, footer: { 1: 7 } });
-  assert.equal("customScript" in table.props, false);
 });
 
 test("template serialization strips editor-only page state", () => {
@@ -137,6 +135,22 @@ test("rejects v1 templates instead of migrating them", () => {
   assert.equal(result.valid, false);
   assert.equal(result.document, null);
   assert.match(result.issues[0].message, /Only template schema version 2/);
+});
+
+test("rejects removed v1 field aliases even when a document claims schema v2", () => {
+  const result = validateTemplateDocument({
+    schemaVersion: 2,
+    pageSettings: { pageWidthMm: 210 },
+    pages: [{
+      id: "page-1",
+      elements: [{ id: "table-1", type: "table", left: 10, props: { headers: [{ field: "sku", header: "SKU" }] }, style: {} }],
+    }],
+  });
+
+  assert.equal(result.valid, false);
+  assert.ok(result.issues.some((issue) => issue.path === "pageSettings.pageWidthMm"));
+  assert.ok(result.issues.some((issue) => issue.path.endsWith(".left")));
+  assert.ok(result.issues.some((issue) => issue.path.endsWith(".props.headers")));
 });
 
 test("normalizes v2 same-page groups and reports invalid group constraints", () => {

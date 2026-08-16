@@ -99,14 +99,14 @@ function elementStyle(element) { const style = element.style || {}; const isTabl
 function textValue(value, fallback) { return value?.value || (props.mode === "print" ? "" : fallback); }
 function valueClass(value) { return value?.status === 'missing' || value?.status === 'empty' ? 'runtime-placeholder' : ''; }
 function imageSource(element) { return String(element.runtime?.value?.value || '').trim(); }
-function columnKey(column) { return column?.key || column?.field || ''; }
+function columnKey(column) { return column?.key || ''; }
 function tableColumns(element) { return normalizeTableColumns(element.runtime?.table?.columns || []); }
 function tableRows(element) { return element.runtime?.table?.rows || []; }
 function tableAllRows(element) { return element.runtime?.table?.allRows || tableRows(element); }
 function tableDisplayRows(element) { const rows = tableRows(element); if (rows.length) return rows; return props.mode === 'print' ? [] : [null]; }
 function tableFooterRows(element) { return element.runtime?.table?.footerRows || []; }
-function hasBlankTableHeaders(element) { if (element.props?.blankHeaders === true) return true; const columns = tableColumns(element); return columns.length > 0 && columns.every((column, index) => { const key = String(column?.key || column?.field || `field${index + 1}`); const title = typeof column?.title === 'string' ? column.title.trim() : typeof column?.header === 'string' ? column.header.trim() : ''; return key === `field${index + 1}` && (!title || title === key || /^列\s*\d+$/.test(title)); }); }
-function tableHeaderValue(element, column) { if (hasBlankTableHeaders(element)) return ''; if (typeof column?.title === 'string') return column.title; if (typeof column?.header === 'string') return column.header; return ''; }
+function hasBlankTableHeaders(element) { if (element.props?.blankHeaders === true) return true; const columns = tableColumns(element); return columns.length > 0 && columns.every((column, index) => { const key = String(column?.key || `field${index + 1}`); const title = typeof column?.title === 'string' ? column.title.trim() : ''; return key === `field${index + 1}` && (!title || title === key || /^列\s*\d+$/.test(title)); }); }
+function tableHeaderValue(element, column) { if (hasBlankTableHeaders(element)) return ''; return typeof column?.title === 'string' ? column.title : ''; }
 function tableColumnStyle(column) { return { width: `${Math.max(1, Number(column?.width) || 1)}px` }; }
 function tableRowStyle(element, section, rowIndex) { const offset = section === 'body' ? Math.max(0, Number(element.runtime?.table?.rowOffset) || 0) : 0; const height = tableRowHeight(element.props, section, rowIndex + offset); return height > 0 ? { height: `${height}mm` } : {}; }
 function runtimeTableRawCell(row, column) { return row?.[columnKey(column)]; }

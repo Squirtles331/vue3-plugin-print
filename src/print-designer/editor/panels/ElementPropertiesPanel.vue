@@ -330,8 +330,8 @@
               <label class="element-properties-panel__field element-properties-panel__field--switch">
                 <span>设计行省略</span>
                 <PdSwitch
-                  :model-value="!!tablePropValue('designOmitRows', true)"
-                  @change="setTablePropValue('designOmitRows', !!$event)"
+                  :model-value="!!tableEditorHintValue('omitRows', true)"
+                  @change="setTableEditorHintValue('omitRows', !!$event)"
                 />
               </label>
               <label class="element-properties-panel__field">
@@ -340,7 +340,7 @@
                   :model-value="tableDesignRowCountValue()"
                   :min="1"
                   controls-position="right"
-                  @change="setTablePropValue('designRowCount', Math.max(1, numberValue($event) || 1))"
+                  @change="setTableEditorHintValue('rowCount', Math.max(1, numberValue($event) || 1))"
                 />
               </label>
               <label class="element-properties-panel__field">
@@ -1528,16 +1528,6 @@ function fieldControl(field) {
   return field.control || "";
 }
 
-/*
-function legacyCreateMultiLabelSampleDataField() {
-  return {
-    label: "示例数据",
-    valueType: "json",
-    rows: 8,
-  };
-}
-*/
-
 function normalizeField(field) {
   return {
     ...field,
@@ -2280,13 +2270,12 @@ function tableEditorPreview(key) {
 }
 
 function tablePropValue(key, fallback = "") {
-  if (key === "designOmitRows") {
-    return selectedObject.value?.editorHints?.omitRows ?? fallback;
-  }
-  if (key === "designRowCount") {
-    return selectedObject.value?.editorHints?.rowCount ?? fallback;
-  }
   const value = selectedObject.value?.props?.[key];
+  return value == null ? fallback : value;
+}
+
+function tableEditorHintValue(key, fallback = "") {
+  const value = selectedObject.value?.editorHints?.[key];
   return value == null ? fallback : value;
 }
 
@@ -2322,15 +2311,11 @@ function tableStringStyleValue(key, fallback = "") {
 }
 
 function setTablePropValue(key, value) {
-  if (key === "designOmitRows") {
-    setFieldValue({ source: "editorHints", key: "omitRows" }, value);
-    return;
-  }
-  if (key === "designRowCount") {
-    setFieldValue({ source: "editorHints", key: "rowCount" }, value);
-    return;
-  }
   setFieldValue({ source: "props", key }, value);
+}
+
+function setTableEditorHintValue(key, value) {
+  setFieldValue({ source: "editorHints", key }, value);
 }
 
 function setTableStyleValue(key, value) {
@@ -2488,114 +2473,6 @@ async function copySelectedObjectId() {
   }
 }
 
-function legacyNormalizeTableColumn(column, index) {
-  const width = Number(column?.width);
-
-  return {
-    key: typeof column?.key === "string" && column.key.trim() ? column.key : `field${index + 1}`,
-    title: typeof column?.title === "string" && column.title.trim() ? column.title : `列 ${index + 1}`,
-    width: Number.isFinite(width) ? width : 100,
-    align: column?.align === "center" || column?.align === "right" ? column.align : "left",
-  };
-}
-
-function legacyTableColumnsValue(field) {
-  const columns = getFieldValue(field);
-
-  if (!Array.isArray(columns)) {
-    return [];
-  }
-
-  return columns.map((column, index) => normalizeTableColumn(column, index));
-}
-
-function legacySetTableColumns(field, columns) {
-  setFieldValue(
-    field,
-    columns.map((column, index) => normalizeTableColumn(column, index))
-  );
-}
-
-function legacyNextTableColumnKey(columns) {
-  const existingKeys = new Set(columns.map((column) => column.key));
-  let index = columns.length + 1;
-
-  while (existingKeys.has(`field${index}`)) {
-    index += 1;
-  }
-
-  return `field${index}`;
-}
-
-function legacyAddTableColumn(field) {
-  const columns = tableColumnsValue(field);
-
-  setTableColumns(field, [
-    ...columns,
-    {
-      key: nextTableColumnKey(columns),
-      title: `列 ${columns.length + 1}`,
-      width: 100,
-      align: "left",
-    },
-  ]);
-}
-
-function legacyUpdateTableColumn(field, index, prop, value) {
-  const columns = tableColumnsValue(field);
-  const currentColumn = columns[index];
-
-  if (!currentColumn) {
-    return;
-  }
-
-  let nextValue = value;
-
-  if (prop === "width") {
-    nextValue = Number.isFinite(value) ? value : currentColumn.width;
-  }
-
-  if (prop === "align") {
-    nextValue = value === "center" || value === "right" ? value : "left";
-  }
-
-  if (prop === "key" || prop === "title") {
-    nextValue = value == null ? "" : String(value);
-  }
-
-  const nextColumns = columns.map((column, columnIndex) =>
-    columnIndex === index ? normalizeTableColumn({ ...column, [prop]: nextValue }, columnIndex) : column
-  );
-
-  setTableColumns(field, nextColumns);
-}
-
-function legacyMoveTableColumn(field, index, offset) {
-  const columns = tableColumnsValue(field);
-  const targetIndex = index + offset;
-
-  if (targetIndex < 0 || targetIndex >= columns.length) {
-    return;
-  }
-
-  const nextColumns = [...columns];
-  [nextColumns[index], nextColumns[targetIndex]] = [nextColumns[targetIndex], nextColumns[index]];
-  setTableColumns(field, nextColumns);
-}
-
-function legacyRemoveTableColumn(field, index) {
-  const columns = tableColumnsValue(field);
-
-  if (columns.length <= 1) {
-    return;
-  }
-
-  setTableColumns(
-    field,
-    columns.filter((_, columnIndex) => columnIndex !== index)
-  );
-}
-
 function setTableObjectProps(patch) {
   if (!selectedObject.value) {
     return;
@@ -2618,9 +2495,8 @@ function setTableObjectProps(patch) {
 
 function selectedTableRows(section = selectedTableSection.value) {
   const key = section === "footer" ? "footerData" : "sampleData";
-  const fallback = section === "body" ? selectedObject.value?.props?.data : [];
   const rows = selectedObject.value?.props?.[key];
-  return Array.isArray(rows) ? rows : Array.isArray(fallback) ? fallback : [];
+  return Array.isArray(rows) ? rows : [];
 }
 
 function tableSelectionCell() {
@@ -2808,23 +2684,17 @@ function normalizeTableColumn(column, index) {
     key:
       typeof column?.key === "string" && column.key.trim()
         ? column.key
-        : typeof column?.field === "string" && column.field.trim()
-          ? column.field
-           : `field${index + 1}`,
+        : `field${index + 1}`,
     valuePath:
       typeof column?.valuePath === "string" && column.valuePath.trim()
         ? column.valuePath
         : typeof column?.key === "string" && column.key.trim()
           ? column.key
-          : typeof column?.field === "string" && column.field.trim()
-            ? column.field
-            : `field${index + 1}`,
+          : `field${index + 1}`,
     title:
       typeof column?.title === "string" && column.title.trim()
         ? column.title
-        : typeof column?.header === "string" && column.header.trim()
-          ? column.header
-          : `列 ${index + 1}`,
+        : `列 ${index + 1}`,
     width: Number.isFinite(width) ? width : 100,
     align: column?.align === "center" || column?.align === "right" ? column.align : "left",
     ...(column?.formatter && typeof column.formatter === "object" ? { formatter: column.formatter } : {}),

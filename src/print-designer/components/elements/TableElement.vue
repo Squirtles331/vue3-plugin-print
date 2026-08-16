@@ -224,11 +224,11 @@ const columns = computed(() => normalizeTableColumns(props.object.props?.columns
 const canEditTable = computed(() => selectedIds.value.length === 1 && selectedIds.value[0] === props.object.id && !props.object.locked);
 const sourceRows = computed(() => {
   if (Array.isArray(props.object.props?.sampleData)) return props.object.props.sampleData;
-  return Array.isArray(props.object.props?.data) ? props.object.props.data : [];
+  return [];
 });
-const omitRows = computed(() => props.object.editorHints?.omitRows ?? props.object.props?.designOmitRows ?? true);
+const omitRows = computed(() => props.object.editorHints?.omitRows ?? true);
 const requestedRowCount = computed(() => {
-  const value = Number(props.object.editorHints?.rowCount ?? props.object.props?.designRowCount);
+  const value = Number(props.object.editorHints?.rowCount);
   return Number.isFinite(value) && value > 0 ? Math.round(value) : sourceRows.value.length || 5;
 });
 const visibleRowCount = computed(() => omitRows.value ? Math.min(requestedRowCount.value, 5) : requestedRowCount.value);

@@ -117,8 +117,8 @@ export function hasBlankTableHeaders(object) {
   const columns = object?.props?.columns;
 
   return Array.isArray(columns) && columns.length > 0 && columns.every((column, index) => {
-    const key = String(column?.key || column?.field || `field${index + 1}`);
-    const title = typeof column?.title === "string" ? column.title.trim() : typeof column?.header === "string" ? column.header.trim() : "";
+    const key = String(column?.key || `field${index + 1}`);
+    const title = typeof column?.title === "string" ? column.title.trim() : "";
     return key === `field${index + 1}` && (!title || title === key || /^列\s*\d+$/.test(title));
   });
 }
