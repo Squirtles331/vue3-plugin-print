@@ -34,7 +34,7 @@ Status: engineering remediation complete for the second full-property release. T
 ## Full-property release evidence
 
 - Change `complete-template-property-parity` records an independently authored capability matrix for the current page model and ten existing element types. It borrows only generic capability categories, not source code, templates, labels, visual design, assets, or stored data from the reference product.
-- `src/print-designer/core/propertyCapabilities.js`, `propertyMatrix.js`, and `runtime/propertySemantics.js` provide local contracts for defaults, validation, editor-only hints, and output effects. The independent runtime consumes normalized documents rather than editor selection or canvas state.
+- `src/print-designer/core/propertyCapabilities.ts`, `propertyMatrix.ts`, and `runtime/propertySemantics.ts` provide local contracts for defaults, validation, editor-only hints, and output effects. The independent runtime consumes normalized documents rather than editor selection or canvas state.
 - Table scripts and dynamic runtime column schemas are removed during migration. Runtime JSON can supply content and row collections only; it cannot introduce executable behaviour or dynamic presentation.
 - No dependencies were added by this release. The existing dependency manifest and lockfile remain the license inventory; an upstream-license review is still required before commercial distribution.
 

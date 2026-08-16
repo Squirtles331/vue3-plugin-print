@@ -2,7 +2,7 @@
 
 ## Template document
 
-`TemplateDocument v1` is the only persistence and runtime input. It contains `schemaVersion`, `id`, `meta`, `pageSettings`, and `pages[].elements`. Editor-only state such as selection, hover state, zoom, history, thumbnails, and preview caches is stripped before save or runtime use.
+`TemplateDocument v2` is the only persistence and runtime input. It contains `schemaVersion: 2`, `id`, `meta`, `pageSettings`, and `pages[].elements`. Editor-only state such as selection, hover state, zoom, history, thumbnails, and preview caches is stripped before save or runtime use. Documents using a different version or removed field aliases are rejected; no migration or compatibility normalization is performed.
 
 Use `createPublishReadyTemplatePayload()` to obtain the minimal validated payload for a service or business application. A document with validation errors must not be previewed or printed as a successful render.
 
@@ -27,7 +27,7 @@ The native browser dialog and printer driver still control physical non-printabl
 ## Authoring capabilities
 
 - Starter catalog entries are independently authored sales, dispatch, label-sheet, and blank-page definitions. Creating one always generates new document, page, and element IDs.
-- Templates can be exchanged as a versioned `print-template-studio/template` JSON envelope. Imports are size-limited, migrated through the document contract, and assigned a fresh document ID before they can be saved.
+- Templates can be exchanged as a versioned `print-template-studio/template` JSON envelope. Imports are size-limited, validated against the v2 document contract, and assigned a fresh document ID before they can be saved.
 - Element presets are stored independently from templates. A preset contains only an element blueprint; inserting it creates a new current-page element.
 - The property inspector supports common geometry, visibility, print state, lock state, typography, shape, image, machine-code, table, and multi-label properties. Locking prevents canvas and inspector mutation until the element is unlocked.
 - Text supports wrapping, vertical writing, automatic height, complete typography and box styling. Image fit/position is static; a missing bound image remains an explicit placeholder.

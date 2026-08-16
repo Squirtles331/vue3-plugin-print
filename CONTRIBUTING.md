@@ -1,6 +1,6 @@
 # 贡献指南
 
-感谢你帮助改进 Print Template Studio。v0.1 的首要目标是稳定的浏览器模板设计和原生打印闭环；请避免在同一个 Pull Request 中混入 PDF、静默/云打印、跨框架封装或无关格式重写。
+感谢你帮助改进 Print Template Studio。当前的首要目标是稳定的浏览器模板设计和原生打印闭环；请避免在同一个 Pull Request 中混入 PDF、静默/云打印、跨框架封装或无关格式重写。
 
 ## 开发流程
 
@@ -10,9 +10,15 @@
 4. 提交前运行 `npm run verify`。
 5. 使用 Pull Request 模板说明用户影响、测试结果、已知限制和截图（如涉及界面）。截图必须来自本项目，不得使用参考项目的界面或品牌资产。
 
+## 工具链约定
+
+- `src` 中的 Vue 和 Pinia 运行时 API 由 `unplugin-auto-import` 自动导入；不要为这些 API 添加显式导入。
+- 类型、组件和其他模块依赖必须继续使用显式导入，确保公共类型和模块边界清晰。
+- 代码格式由 `@antfu/eslint-config` 管理；提交前运行 `npm run lint`，需要修复时使用 `npm run lint -- --fix`。
+
 ## 设计约束
 
-- 持久化输入保持为 `TemplateDocument v1`；保存时不得写入选择态、缩放、历史或预览缓存。
+- 持久化输入保持为 `TemplateDocument v2`；不接受旧版本或已移除字段别名，保存时不得写入选择态、缩放、历史或预览缓存。
 - 运行时 JSON 仅驱动内容与集合数据，不能改变模板布局、样式或执行 JavaScript。
 - 预览和打印必须共用运行时渲染语义；编辑器控件不得进入打印输出。
 - 默认支持最新桌面 Chrome 与 Edge。涉及纸张尺寸或打印的变更必须更新并执行 [浏览器打印验收](docs/browser-print-acceptance.md)。

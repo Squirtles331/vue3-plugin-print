@@ -1,6 +1,6 @@
 # Property support matrix
 
-This is the independently authored support matrix for `TemplateDocument v2`. The executable source of truth is `src/print-designer/core/propertyCapabilities.js`; it supplies the field type, bounds, default, editor-only marker, and renderer effect. `src/print-designer/core/elementRegistry.js` supplies element-specific defaults. The matrix is intentionally capability-oriented and does not reproduce any external product's labels, stored format, or visual design.
+This is the independently authored support matrix for `TemplateDocument v2`. The executable source of truth is `src/print-designer/core/propertyCapabilities.ts`; it supplies the field type, bounds, default, editor-only marker, and renderer effect. `src/print-designer/core/elementRegistry.ts` supplies element-specific defaults. The matrix is intentionally capability-oriented and does not reproduce any external product's labels, stored format, or visual design.
 
 | Scope | Persisted fields (canonical storage) | Defaults and validation | Editor / output effect | Editor-only |
 | --- | --- | --- | --- | --- |

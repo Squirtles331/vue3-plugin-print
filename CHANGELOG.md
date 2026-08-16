@@ -2,7 +2,19 @@
 
 本项目遵循语义化版本。重大不兼容变更、功能、修复和安全更新会记录在此。
 
-## [0.2.0] - Unreleased
+## [Unreleased]
+
+### Breaking Changes
+
+- 模板持久化与运行时输入已固定为 `TemplateDocument v2`（`schemaVersion: 2`）。v1 模板及已移除的字段别名会被拒绝；包不再提供自动迁移或兼容层，升级前请在业务侧完成模板转换或重新创建模板。
+
+### Changed
+
+- 表格运行时分页与摘要统计得到完善；属性面板、多选提示以及撤销/重做交互同步优化。
+- 源码、测试、构建脚本与 VitePress 配置迁移至严格 TypeScript 工具链，启用严格模板类型检查与更严格的 ESLint 规则。
+- Vite 开发与构建配置加入 Vue、Pinia API 自动导入，并生成 `auto-imports.d.ts` 供类型检查使用；此变更不影响 npm 包的公开 API。
+
+## [0.2.0] - 2026-08-11
 
 ### Added
 

@@ -8,7 +8,7 @@ The following dependencies were added for the independent runtime and test imple
 | qrcode | 1.5.4 | MIT | Browser QR-code generation |
 | vitest | 3.2.7 | MIT | Automated unit tests |
 | CodeMirror 6 packages | See `package-lock.json` | MIT | JSON-only structured table-transform editor |
-| ESLint, @eslint/js, eslint-plugin-vue, globals | See `package-lock.json` | MIT | Static source and Vue correctness checks |
+| ESLint, @antfu/eslint-config, unplugin-auto-import | See `package-lock.json` | MIT | Static source, Vue correctness checks, and Vue/Pinia API auto imports |
 | jsdom and @vue/test-utils | See `package-lock.json` | MIT | Browser-DOM and component interaction regression tests |
 | nanoid and postcss | 3.3.18 / 8.5.26 | MIT | Audited indirect dependencies used by the build toolchain |
 

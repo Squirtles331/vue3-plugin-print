@@ -22,5 +22,5 @@ features:
   - title: 无第三方 UI 组件库依赖
     details: 编辑器按钮、弹窗、标签页、输入控件、反馈提示和图标均由项目内部 primitives 实现，宿主无需安装 Element Plus 等组件库。
   - title: 模板与运行时统一
-    details: 使用 TemplateDocument v1 保存模板，预览与打印共用运行时渲染、分页和预检结果。
+    details: 使用 TemplateDocument v2 保存模板，预览与打印共用运行时渲染、分页和预检结果。
 ---

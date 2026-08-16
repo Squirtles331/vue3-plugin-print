@@ -5,7 +5,7 @@ This project is a standalone Vue 3 print-template designer. The first commercial
 ## Template workflow
 
 - Start from independently authored sales, dispatch, label-sheet, or blank-page templates.
-- Save and reopen versioned `TemplateDocument v1` documents.
+- Save and reopen versioned `TemplateDocument v2` documents. Other schema versions are rejected rather than migrated automatically.
 - Import and export a validated versioned JSON interchange envelope.
 - Save reusable element presets locally and insert isolated copies into the current page.
 
@@ -18,7 +18,7 @@ This project is a standalone Vue 3 print-template designer. The first commercial
 - Tables and label grids accept array bindings. Table transforms use constrained declarative JSON, never arbitrary JavaScript.
 - Runtime JSON cannot replace template layout, colour, typography, column definitions, pagination settings, or other static presentation choices.
 - Table columns use a stable key plus an optional safe nested `valuePath`; labels use explicit primary, secondary, and tertiary paths.
-- Automatic text height, image fit/position, barcode/QR presentation, page numbering, line/shape styling, table pagination, and label-grid spacing are all stored in `TemplateDocument v1` and reflected by the standalone output renderer.
+- Automatic text height, image fit/position, barcode/QR presentation, page numbering, line/shape styling, table pagination, and label-grid spacing are all stored in `TemplateDocument v2` and reflected by the standalone output renderer.
 
 ## Layout workflow
 

@@ -2,7 +2,7 @@
 
 <p align="center">Vue 3 可嵌入打印设计器 · 内置 UI · JSON 数据绑定 · 浏览器原生打印</p>
 
-`@squirtles331/vue3-plugin-print` 是一个独立实现的 Vue 3 可视化打印模板设计器。业务项目安装后即可嵌入完整编辑器，保存 `TemplateDocument v1` 模板、绑定业务 JSON，并通过浏览器原生打印流程输出。
+`@squirtles331/vue3-plugin-print` 是一个独立实现的 Vue 3 可视化打印模板设计器。业务项目安装后即可嵌入完整编辑器，保存 `TemplateDocument v2` 模板、绑定业务 JSON，并通过浏览器原生打印流程输出。
 
 > **当前实现：** 项目已经移除第三方 UI 组件库依赖。按钮、弹窗、标签页、表单控件、反馈提示和图标都由仓库内的 `src/print-designer/ui` primitives 提供；宿主项目不需要安装 Element Plus、Ant Design Vue、Naive UI 等 UI 组件库。
 
@@ -25,7 +25,7 @@
 - **元素编辑：** 支持文本、图片、表格、条码、二维码、页码、直线、矩形、圆形和多标签。
 - **设计工作流：** 支持拖拽、缩放、层级、锁定、对齐/分布、撤销/重做、元素预设和起始模板。
 - **数据绑定：** 一个 JSON 对象驱动文本、图片、条码、二维码、表格和标签网格，路径支持 `customer.name`、`items[0].sku` 等格式。
-- **模板管理：** 使用 `TemplateDocument v1` 作为持久化格式，支持校验、迁移、本地保存、导入/导出与可替换仓储。
+- **模板管理：** 使用 `TemplateDocument v2` 作为持久化格式，支持校验、本地保存、导入/导出与可替换仓储；其他 schema 版本会被拒绝，不提供兼容层或自动迁移。
 - **打印运行时：** 预览与浏览器打印共用运行时渲染、分页和预检结果；打印 iframe 不包含选择框、辅助线或编辑器控件。
 
 ## 安装与注册
@@ -82,7 +82,7 @@ function handleError({ scope, error, message }) {
 
 | 接口 | 说明 |
 | --- | --- |
-| `v-model:template` | 接收并输出规范化后的 `TemplateDocument v1`。 |
+| `v-model:template` | 接收并输出规范化后的 `TemplateDocument v2`。 |
 | `v-model:runtime-data` | 预览和打印使用的 JSON 数据；预览面板修改后会回写。 |
 | `repository` | 可选模板仓储，覆盖默认浏览器本地存储。 |
 | `storage-key` | 默认本地仓储的命名空间；同页多实例必须使用不同值。 |
@@ -97,6 +97,7 @@ function handleError({ scope, error, message }) {
 | 方法 | 说明 |
 | --- | --- |
 | `loadTemplateDocument(document)` | 加载并校验模板文档。 |
+| `replaceTemplateDocument(document)` | 异步替换并校验模板文档。 |
 | `getTemplateDocument()` | 获取当前模板校验结果。 |
 | `getPublishReadyTemplatePayload()` | 获取适合保存到业务系统的发布载荷。 |
 | `setRuntimeData(data)` | 设置预览和打印数据。 |
@@ -138,6 +139,8 @@ npm run build:demo      # 构建演示站到 demo-dist/
 npm run build:library   # 构建 npm 包到 dist/
 npm run verify          # 完整校验
 ```
+
+源码已迁移到严格 TypeScript 配置，并在 Vite 开发与构建阶段自动导入 Vue 和 Pinia API。`auto-imports.d.ts` 是该自动导入配置生成的类型声明，不应手工编辑；这项设置只作用于本仓库源码，不会改变包的导出接口或向宿主应用注入全局变量。
 
 维护者在 GitHub 仓库 Secrets 中配置 `NPM_TOKEN` 后，推送与 `package.json` 版本一致的 `vX.Y.Z` 标签即可通过 GitHub Actions 发布公开包。
 
